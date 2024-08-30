@@ -69,19 +69,33 @@ class NewObjWindow:
         self.tab_menu.place(x=10, y=105)
 
     def add_coord_frame(self, parent, x: int, y: int):
-        fm = Frame(parent, width=200, height=40).place(x=x, y=y)
-        Label(fm, "X:", 10).place(x=10, y=10)
+        fm = Frame(parent, width=160, height=50)
+        fm.place(x=x, y=y)
+
+        Label(fm, "X:", 10).place(x=10, y=15)
+        tk.Entry(fm, width=4).place(x=30, y=10)
+        
+        Label(fm, "Y:", 10).place(x=80, y=15)
+        tk.Entry(fm, width=4).place(x=100, y=10)
+
 
     def add_point_tab(self):
         self.point_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
-        ttk.Label(self.point_tab, text="Coordinates").place(x=10, y=10)
 
+        ttk.Label(self.point_tab, text="Coordinates").place(x=10, y=10)
         self.add_coord_frame(self.point_tab, 10, 30)
 
         self.tab_menu.add(self.point_tab, text="Point")
 
     def add_line_tab(self):
         self.line_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
+
+        ttk.Label(self.line_tab, text="Start Coordinates").place(x=10, y=10)
+        self.add_coord_frame(self.line_tab, 10, 30)
+
+        ttk.Label(self.line_tab, text="End Coordinates").place(x=10, y=90)
+        self.add_coord_frame(self.line_tab, 10, 110)
+
         self.tab_menu.add(self.line_tab, text="Line")
 
     def add_wireframe_tab(self):
