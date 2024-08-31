@@ -15,26 +15,36 @@ class Tab(ttk.Frame):
         super().__init__(parent, width=width, height=height, borderwidth=3, relief="ridge")
 
 class NewObjWindow:
-    def __init__(self):
+    def __init__(self, parent):
+        self.parent = parent
         self.app = tk.Toplevel()
         self.app.title("New Object")
         self.app.geometry("400x400")
 
-        self.tab_menu        : ttk.Notebook
-        self.point_tab       : Tab
-        self.line_tab        : Tab
-        self.wireframe_tab   : Tab
-        self.curve_tab       : Tab
-        self.color_opt_frame : Frame
-        self.color_opt_var   : tk.StringVar
-        self.obj_name_var    : tk.StringVar
-        self.tab_width       : int
-        self.tab_height      : int
+        self.tab_menu                : ttk.Notebook
+        self.point_tab               : Tab
+        self.line_tab                : Tab
+        self.wireframe_tab           : Tab
+        self.polygon_tab             : Tab
+        self.color_opt_frame         : Frame
+        self.wireframe_coord_list    : list[tuple[int, int]]
+        self.polygon_coord_list      : list[tuple[int, int]]
+        self.wireframe_coord_listbox : tk.Listbox
+        self.polygon_coord_listbox   : tk.Listbox
+        self.color_opt_var           : tk.StringVar
+        self.obj_name_var            : tk.StringVar
+        self.tab_width               : int
+        self.tab_height              : int
+
+        self.point_coord_tuple       : tuple[tk.IntVar, tk.IntVar]
+        self.line_start_coord_tuple  : tuple[tk.IntVar, tk.IntVar]
+        self.line_end_coord_tuple    : tuple[tk.IntVar, tk.IntVar]
+        self.wireframe_coord_tuple   : tuple[tk.IntVar, tk.IntVar]
+        self.polygon_coord_tuple     : tuple[tk.IntVar, tk.IntVar]
 
         self.add_name_obj_entry()
         self.add_color_buttons()
         self.add_tabs()
-        self.add_button()
 
 
     def add_name_obj_entry(self):
@@ -59,31 +69,35 @@ class NewObjWindow:
         self.tab_menu = ttk.Notebook(self.app)
 
         self.tab_width = self.app.winfo_width()-20
-        self.tab_height = self.app.winfo_height()-self.color_opt_frame.winfo_height()-180
+        self.tab_height = self.app.winfo_height()-self.color_opt_frame.winfo_height()-135
 
         self.add_point_tab()
         self.add_line_tab()
         self.add_wireframe_tab()
-        self.add_curve_tab()
+        self.add_polygon_tab()
 
         self.tab_menu.place(x=10, y=105)
 
-    def add_coord_frame(self, parent, x: int, y: int):
+    def add_coord_frame(self, parent, x: int, y: int, variables: tuple[tk.IntVar, tk.IntVar]):
         fm = Frame(parent, width=160, height=50)
         fm.place(x=x, y=y)
 
         Label(fm, "X:", 10).place(x=10, y=15)
-        tk.Entry(fm, width=4).place(x=30, y=10)
+        tk.Entry(fm, textvariable=variables[0], width=4).place(x=30, y=10)
         
         Label(fm, "Y:", 10).place(x=80, y=15)
-        tk.Entry(fm, width=4).place(x=100, y=10)
+        tk.Entry(fm, textvariable=variables[1], width=4).place(x=100, y=10)
 
 
     def add_point_tab(self):
         self.point_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
 
+        self.point_coord_tuple = (tk.IntVar(), tk.IntVar())
         ttk.Label(self.point_tab, text="Coordinates").place(x=10, y=10)
-        self.add_coord_frame(self.point_tab, 10, 30)
+        self.add_coord_frame(self.point_tab, 10, 30, self.point_coord_tuple)
+
+        tk.Button(self.point_tab, text="Add", command=self.add_point).place(x=80, y=self.tab_height-45)
+        tk.Button(self.point_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
 
         self.tab_menu.add(self.point_tab, text="Point")
 
@@ -91,27 +105,96 @@ class NewObjWindow:
         self.line_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
 
         ttk.Label(self.line_tab, text="Start Coordinates").place(x=10, y=10)
-        self.add_coord_frame(self.line_tab, 10, 30)
-
         ttk.Label(self.line_tab, text="End Coordinates").place(x=10, y=90)
-        self.add_coord_frame(self.line_tab, 10, 110)
+
+        self.line_start_coord_tuple = (tk.IntVar(), tk.IntVar())
+        self.line_end_coord_tuple = (tk.IntVar(), tk.IntVar())
+        self.add_coord_frame(self.line_tab, 10, 30, self.line_start_coord_tuple)
+        self.add_coord_frame(self.line_tab, 10, 110, self.line_end_coord_tuple)
+
+        tk.Button(self.line_tab, text="Add", command=self.add_line).place(x=80, y=self.tab_height-45)
+        tk.Button(self.line_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
 
         self.tab_menu.add(self.line_tab, text="Line")
 
     def add_wireframe_tab(self):
         self.wireframe_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
+
+        self.wireframe_coord_list = list()
+        self.wireframe_coord_tuple = (tk.IntVar(), tk.IntVar())
+        ttk.Label(self.wireframe_tab, text="Coordinates").place(x=10, y=10)
+        self.add_coord_frame(self.wireframe_tab, 10, 30, self.wireframe_coord_tuple)
+
+        ttk.Label(self.wireframe_tab, text="Added Coordinates").place(x=200, y=10)
+        self.wireframe_coord_listbox = tk.Listbox(self.wireframe_tab, width=10, height=7)
+        self.wireframe_coord_listbox.place(x=200, y=30)
+
+        tk.Button(self.wireframe_tab, text="Add Coord", command=self.add_wireframe_coord).place(x=10, y=90)
+        tk.Button(self.wireframe_tab, text="Del Coord", command=self.del_wireframe_coord).place(x=10, y=130)
+        tk.Button(self.wireframe_tab, text="Add", command=self.add_wireframe).place(x=80, y=self.tab_height-45)
+        tk.Button(self.wireframe_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
+
+
         self.tab_menu.add(self.wireframe_tab, text="WireFrame")
 
-    def add_curve_tab(self):
-        self.curve_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
-        self.tab_menu.add(self.curve_tab, text="Curve")
+    def add_polygon_tab(self):
+        self.polygon_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
 
-    def add_button(self):
-        tk.Button(self.app, text="Add", command=self.add_object).place(x=100, y=self.app.winfo_height()-40)
-        tk.Button(self.app, text="Cancel", command=self.cancel).place(x=230, y=self.app.winfo_height()-40)
+        self.polygon_coord_list = list()
+        self.polygon_coord_tuple = (tk.IntVar(), tk.IntVar())
+        ttk.Label(self.polygon_tab, text="Coordinates").place(x=10, y=10)
+        self.add_coord_frame(self.polygon_tab, 10, 30, self.polygon_coord_tuple)
 
-    def add_object(self):
-        pass
+        ttk.Label(self.polygon_tab, text="Added Coordinates").place(x=200, y=10)
+        self.polygon_coord_listbox = tk.Listbox(self.polygon_tab, width=10, height=7)
+        self.polygon_coord_listbox.place(x=200, y=30)
+
+        tk.Button(self.polygon_tab, text="Add Coord", command=self.add_polygon_coord).place(x=10, y=90)
+        tk.Button(self.polygon_tab, text="Add Coord", command=self.del_polygon_coord).place(x=10, y=130)
+        tk.Button(self.polygon_tab, text="Add", command=self.add_polygon).place(x=80, y=self.tab_height-45)
+        tk.Button(self.polygon_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
+
+        self.tab_menu.add(self.polygon_tab, text="Polygon")
+
+    def add_wireframe_coord(self):
+        coord = (self.wireframe_coord_tuple[0].get(), self.wireframe_coord_tuple[1].get())
+        self.wireframe_coord_list.append(coord)
+        self.wireframe_coord_listbox.insert(tk.END, "(%d , %d)" % (coord[0], coord[1]))
+
+    def add_polygon_coord(self):
+        coord = (self.polygon_coord_tuple[0].get(), self.polygon_coord_tuple[1].get())
+        self.polygon_coord_list.append(coord)
+        self.polygon_coord_listbox.insert(tk.END, "(%d , %d)" % (coord[0], coord[1]))
+
+    def del_wireframe_coord(self):
+        id = self.wireframe_coord_listbox.curselection()[0]
+        self.wireframe_coord_listbox.delete(id)
+        self.wireframe_coord_list.pop(id)
+
+    def del_polygon_coord(self):
+        id = self.polygon_coord_listbox.curselection()[0]
+        self.polygon_coord_listbox.delete(id)
+        self.polygon_coord_list.pop(id)
+        self.app.destroy()
+
+    def add_point(self):
+        coord=(self.point_coord_tuple[0].get(), self.point_coord_tuple[1].get())
+        self.parent.add_point(self.obj_name_var.get(), self.color_opt_var.get(), coord)
+        self.app.destroy()
+
+    def add_line(self):
+        start_coord = (self.line_start_coord_tuple[0].get(), self.line_start_coord_tuple[1].get())
+        end_coord = (self.line_end_coord_tuple[0].get(), self.line_end_coord_tuple[1].get())
+        self.parent.add_line(self.obj_name_var.get(), self.color_opt_var.get(), start_coord, end_coord)
+        self.app.destroy()
+
+    def add_wireframe(self):
+        self.parent.add_wireframe(self.obj_name_var.get(), self.color_opt_var.get(), self.wireframe_coord_list)
+        self.app.destroy()
+
+    def add_polygon(self):
+        self.parent.add_polygon(self.obj_name_var.get(), self.color_opt_var.get(), self.polygon_coord_list)
+        self.app.destroy()
 
     def cancel(self):
         self.app.destroy()
@@ -128,12 +211,14 @@ class CGSystem():
         self.viewport_frame    : Frame
         self.messageBox_frame  : Frame
         self.messageBox        : tk.Listbox
-        self.objects_list      : tk.Listbox
+        self.objects_listbox   : tk.Listbox
         self.canvas            : tk.Canvas
-        self.pace_var          : tk.StringVar
+        self.pace_var          : tk.IntVar
         self.pace_entry        : tk.Entry
         self.viewport_width    : int
         self.viewport_height   : int
+
+        self.objects_list = list()
 
         self.add_menu()
         self.add_viewport()
@@ -183,19 +268,23 @@ class CGSystem():
 
         Label(self.object_menu_frame, "Objects", 10).place(x=10, y=10)
 
-        self.objects_list = tk.Listbox(self.object_menu_frame, width=26, height=5)
-        self.objects_list.place(x=10, y=30)
+        self.objects_listbox = tk.Listbox(self.object_menu_frame, width=26, height=5)
+        self.objects_listbox.place(x=10, y=30)
 
         tk.Button(self.object_menu_frame, text="Add", command=self.add_object).place(x=45, y=135)
         tk.Button(self.object_menu_frame, text="Del", command=self.del_object).place(x=145, y=135)
 
     def add_object(self):
-        new_obj_window = NewObjWindow()
-        self.add_message("Added object")
+        NewObjWindow(self)
 
     def del_object(self):
-        self.add_message("Deleted object")
+        id = self.objects_listbox.curselection()[0]
 
+        self.objects_listbox.delete(id)
+        obj = self.objects_list.pop(id)
+        self.canvas.delete(obj)
+
+        self.add_message("Object Deleted")
 
     def add_window_menu(self):
         self.window_menu_frame = Frame(self.menu_frame, self.menu_frame.winfo_width()-26, 180)
@@ -212,35 +301,100 @@ class CGSystem():
         tk.Button(self.window_menu_frame, text="Zoom Out", command=self.zoom_window_out).place(x=150, y=90)
 
         Label(self.window_menu_frame, "Pace", 10).place(x=10, y=145)
-        self.pace_var = tk.StringVar()
-        self.pace_var.set("10")
+        self.pace_var = tk.IntVar()
+        self.pace_var.set(10)
         self.pace_entry = tk.Entry(self.window_menu_frame, textvariable=self.pace_var, width=4)
         self.pace_entry.place(x=50, y=140)
 
+    def add_point(self,name: str, color: str, coord: tuple[int, int]):
+        point = self.canvas.create_oval(coord[0], coord[1], coord[0], coord[1], fill=color, width=5)
+
+        self.objects_list.append(point)
+        self.objects_listbox.insert(tk.END, "%s [%s - Point]" % (name, color))
+
+        self.add_message("    - Coord:  (%d, %d)" % coord)
+        self.add_message("    - Color:  %s" % color)
+        self.add_message("    - Name:  %s" % name)
+        self.add_message("Point added:")
+
+    def add_line(self, name: str, color: str, start_coord: tuple[int, int], end_coord: tuple[int, int]):
+        line = self.canvas.create_line(start_coord[0], start_coord[1], end_coord[0], end_coord[1], fill=color, width=2)
+
+        self.objects_list.append(line)
+        self.objects_listbox.insert(tk.END, "%s [%s - Line]" % (name, color))
+
+        self.add_message("    - Coord:  (%d, %d) to (%d, %d)" % (start_coord[0], start_coord[1], end_coord[0], end_coord[1]))
+        self.add_message("    - Color:  %s" % color)
+        self.add_message("    - Name:  %s" % name)
+        self.add_message("Line added:")
+
+    def add_wireframe(self, name: str, color: str, coord_list: list[tuple[int, int]]):
+        if (len(coord_list) == 1):
+            self.add_point(name, color, coord_list[0])
+
+        elif (len(coord_list) == 2):
+            self.add_line(name, color, coord_list[0], coord_list[1])
+
+        else:
+            flat_list : list[int]
+            flat_list = list(sum(coord_list, ()))
+            wf = self.canvas.create_line(flat_list, fill=color, width=2)
+
+            self.objects_list.append(wf)
+            self.objects_listbox.insert(tk.END, "%s [%s - Wireframe]" % (name, color))
+
+            coords = ""
+            for v in coord_list: coords += "(%d, %d) " % v
+            self.add_message("    - Coord:  %s" % coords)
+            self.add_message("    - Color:  %s" % color)
+            self.add_message("    - Name:  %s" % name)
+            self.add_message("Wireframe added:")
+
+    def add_polygon(self, name: str, color: str, coord_list: list[tuple[int, int]]):
+        if (len(coord_list) == 1):
+            self.add_point(name, color, coord_list[0])
+
+        elif (len(coord_list) == 2):
+            self.add_line(name, color, coord_list[0], coord_list[1])
+
+        else:
+            flat_list : list[int]
+            flat_list = list(sum(coord_list, ()))
+            plg = self.canvas.create_polygon(flat_list, fill=color, width=2)
+
+            self.objects_list.append(plg)
+            self.objects_listbox.insert(tk.END, "%s [%s - Polygon]" % (name, color))
+
+            coords = ""
+            for v in coord_list: coords += "(%d, %d) " % v
+            self.add_message("    - Coord:  %s" % coords)
+            self.add_message("    - Color:  %s" % color)
+            self.add_message("    - Name:  %s" % name)
+            self.add_message("Polygon added:")
 
     def move_window_up(self):
         pace = self.pace_var.get()
-        self.add_message("window moved up by %s" % pace)
+        self.add_message("window moved up by %d" % pace)
 
     def move_window_down(self):
         pace = self.pace_var.get()
-        self.add_message("window moved down by %s" % pace)
+        self.add_message("window moved down by %d" % pace)
 
     def move_window_left(self):
         pace = self.pace_var.get()
-        self.add_message("window moved left by %s" % pace)
+        self.add_message("window moved left by %d" % pace)
 
     def move_window_right(self):
         pace = self.pace_var.get()
-        self.add_message("window moved right by %s" % pace)
+        self.add_message("window moved right by %d" % pace)
 
     def zoom_window_in(self):
         pace = self.pace_var.get()
-        self.add_message("window zoomed in by %s" % pace)
+        self.add_message("window zoomed in by %d" % pace)
 
     def zoom_window_out(self):
         pace = self.pace_var.get()
-        self.add_message("window zoomed out by %s" % pace)
+        self.add_message("window zoomed out by %d" % pace)
 
     def add_message(self, message: str):
         self.messageBox.insert(0, message)
