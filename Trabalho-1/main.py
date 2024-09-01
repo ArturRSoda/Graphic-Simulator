@@ -300,6 +300,8 @@ class CGSystem():
         tk.Button(self.window_menu_frame, text="Zoom In", command=self.zoom_window_in).place(x=150, y=50)
         tk.Button(self.window_menu_frame, text="Zoom Out", command=self.zoom_window_out).place(x=150, y=90)
 
+        tk.Button(self.window_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=150, y=135)
+
         Label(self.window_menu_frame, "Pace", 10).place(x=10, y=145)
         self.pace_var = tk.IntVar()
         self.pace_var.set(10)
@@ -371,6 +373,29 @@ class CGSystem():
             self.add_message("    - Color:  %s" % color)
             self.add_message("    - Name:  %s" % name)
             self.add_message("Polygon added:")
+
+    def set_window_coord(self):
+        app = tk.Toplevel()
+        app.title("Set Coordinates")
+        app.geometry("180x150")
+
+        Label(app, "Coordinates", 10).place(x=10, y=10)
+
+        fm = Frame(app, width=160, height=50)
+        fm.place(x=10, y=30)
+
+        coord = (tk.IntVar(), tk.IntVar())
+
+        Label(fm, "X:", 10).place(x=10, y=15)
+        tk.Entry(fm, textvariable=coord[0], width=4).place(x=30, y=10)
+        Label(fm, "Y:", 10).place(x=80, y=15)
+        tk.Entry(fm, textvariable=coord[1], width=4).place(x=100, y=10)
+
+        tk.Button(app, text="Set", command=lambda: self.set_window_coord_command((coord[0].get(), coord[1].get())) ).place(x=20, y=90)
+        tk.Button(app, text="Cancel", command=app.destroy).place(x=80, y=90)
+
+    def set_window_coord_command(self, coord: tuple[int, int]):
+        self.add_message("Window coordinates seted to (%d, %d)" % (coord[0], coord[1]))
 
     def move_window_up(self):
         pace = self.pace_var.get()
