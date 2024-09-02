@@ -125,6 +125,16 @@ class CGSystem():
         self.update_viewport()
 
     def set_window_coord(self, coord: tuple[int, int]):
+        width = abs(self.Wcoord_max[0] - self.Wcoord_min[0])
+        height = abs(self.Wcoord_max[1] - self.Wcoord_min[1])
+
+        offset_X = width / 2
+        offset_Y = height / 2
+
+        self.Wcoord_min = (coord[0]-offset_X, coord[1]-offset_Y)
+        self.Wcoord_max = (coord[0]+offset_X, coord[1]+offset_Y)
+        self.update_viewport()
+
         self.add_message("Window coordinates seted to (%d, %d)" % (coord[0], coord[1]))
 
     def move_window_up(self):

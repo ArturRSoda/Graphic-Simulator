@@ -124,3 +124,4 @@ class CGSystemInterface():
         self.app.update()
         self.messageBox = tk.Listbox(self.messageBox_frame, width=72, height=8)
         self.messageBox.place(x=10, y=10)
+
