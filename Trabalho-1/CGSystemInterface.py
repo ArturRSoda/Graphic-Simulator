@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox
 
 class Frame(tk.Frame):
     def __init__(self, parent, width: int, height: int):
@@ -78,13 +78,13 @@ class CGSystemInterface():
 
         Label(self.window_menu_frame, "Window", 10).place(x=10, y=10)
 
-        tk.Button(self.window_menu_frame, text="Up", command=self.system.move_window_up).place(x=40, y=40)
-        tk.Button(self.window_menu_frame, text="Left", command=self.system.move_window_left).place(x=10, y=70)
-        tk.Button(self.window_menu_frame, text="Right", command=self.system.move_window_right).place(x=62, y=70)
-        tk.Button(self.window_menu_frame, text="Down", command=self.system.move_window_down).place(x=30, y=100)
+        tk.Button(self.window_menu_frame, text="Up", command=self.move_up).place(x=40, y=40)
+        tk.Button(self.window_menu_frame, text="Left", command=self.move_left).place(x=10, y=70)
+        tk.Button(self.window_menu_frame, text="Right", command=self.move_right).place(x=62, y=70)
+        tk.Button(self.window_menu_frame, text="Down", command=self.move_down).place(x=30, y=100)
 
-        tk.Button(self.window_menu_frame, text="Zoom In", command=self.system.zoom_window_in).place(x=150, y=50)
-        tk.Button(self.window_menu_frame, text="Zoom Out", command=self.system.zoom_window_out).place(x=150, y=90)
+        tk.Button(self.window_menu_frame, text="Zoom In", command=self.zoom_in).place(x=150, y=50)
+        tk.Button(self.window_menu_frame, text="Zoom Out", command=self.zoom_out).place(x=150, y=90)
 
         tk.Button(self.window_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=150, y=135)
 
@@ -124,4 +124,45 @@ class CGSystemInterface():
         self.app.update()
         self.messageBox = tk.Listbox(self.messageBox_frame, width=72, height=8)
         self.messageBox.place(x=10, y=10)
+
+    def move_up(self):
+        offset = self.verify_int_entry(self.offset_var)
+        if (offset):
+            self.system.move_window_up(offset)
+
+    def move_down(self):
+        offset = self.verify_int_entry(self.offset_var)
+        if (offset):
+            self.system.move_window_down(offset)
+
+    def move_left(self):
+        offset = self.verify_int_entry(self.offset_var)
+        if (offset):
+            self.system.move_window_left(offset)
+
+    def move_right(self):
+        offset = self.verify_int_entry(self.offset_var)
+        if (offset):
+            self.system.move_window_right(offset)
+
+    def zoom_in(self):
+        offset = self.verify_int_entry(self.offset_var)
+        if (offset):
+            self.system.zoom_window_in(offset)
+
+    def zoom_out(self):
+        offset = self.verify_int_entry(self.offset_var)
+        if (offset):
+            self.system.zoom_window_out(offset)
+
+    def verify_int_entry(self, entry) -> int|None:
+        try:
+            value = entry.get()
+        except Exception as e:
+            self.send_error("Value Error", "Please enter a integer value on entry")
+        else:
+            return value
+
+    def send_error(self, title: str, message: str):
+        messagebox.showerror(title, message)
 

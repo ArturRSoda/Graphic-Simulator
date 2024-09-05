@@ -137,54 +137,42 @@ class CGSystem():
 
         self.add_message("Window coordinates seted to (%d, %d)" % (coord[0], coord[1]))
 
-    def move_window_up(self):
-        offset = self.interface.offset_var.get()
-
+    def move_window_up(self, offset: int):
         self.Wcoord_min = (self.Wcoord_min[0], self.Wcoord_min[1]+offset)
         self.Wcoord_max = (self.Wcoord_max[0], self.Wcoord_max[1]+offset)
         self.update_viewport()
         
         self.add_message("window moved up by %d" % offset)
 
-    def move_window_down(self):
-        offset = self.interface.offset_var.get()
-
+    def move_window_down(self, offset: int):
         self.Wcoord_min = (self.Wcoord_min[0], self.Wcoord_min[1]-offset)
         self.Wcoord_max = (self.Wcoord_max[0], self.Wcoord_max[1]-offset)
         self.update_viewport()
 
         self.add_message("window moved down by %d" % offset)
 
-    def move_window_left(self):
-        offset = self.interface.offset_var.get()
-
+    def move_window_left(self, offset: int):
         self.Wcoord_min = (self.Wcoord_min[0]-offset, self.Wcoord_min[1])
         self.Wcoord_max = (self.Wcoord_max[0]-offset, self.Wcoord_max[1])
         self.update_viewport()
 
         self.add_message("window moved left by %d" % offset)
 
-    def move_window_right(self):
-        offset = self.interface.offset_var.get()
-
+    def move_window_right(self, offset: int):
         self.Wcoord_min = (self.Wcoord_min[0]+offset, self.Wcoord_min[1])
         self.Wcoord_max = (self.Wcoord_max[0]+offset, self.Wcoord_max[1])
         self.update_viewport()
 
         self.add_message("window moved right by %d" % offset)
 
-    def zoom_window_in(self):
-        offset = self.interface.offset_var.get()
-
+    def zoom_window_in(self, offset: int):
         self.Wcoord_min = (self.Wcoord_min[0]+offset, self.Wcoord_min[1]+offset)
         self.Wcoord_max = (self.Wcoord_max[0]-offset, self.Wcoord_max[1]-offset)
         self.update_viewport()
 
         self.add_message("window zoomed in by %d" % offset)
 
-    def zoom_window_out(self):
-        offset = self.interface.offset_var.get()
-
+    def zoom_window_out(self, offset):
         self.Wcoord_min = (self.Wcoord_min[0]-offset, self.Wcoord_min[1]-offset)
         self.Wcoord_max = (self.Wcoord_max[0]+offset, self.Wcoord_max[1]+offset)
         self.update_viewport()

@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 from CGSystemInterface import Label, Frame
 
@@ -125,12 +125,13 @@ class NewObjWindow:
 
         self.tab_menu.add(self.wireframe_tab, text="WireFrame")
 
-
     def add_wireframe_coord(self):
-        coord = (self.wireframe_coord_tuple[0].get(), self.wireframe_coord_tuple[1].get())
-        self.wireframe_coord_list.append(coord)
-        self.wireframe_coord_listbox.insert(tk.END, "(%d , %d)" % (coord[0], coord[1]))
+        coord_x = self.verify_int_entry(self.wireframe_coord_tuple[0])
+        coord_y = self.verify_int_entry(self.wireframe_coord_tuple[1])
 
+        if (coord_x and coord_y):
+            self.wireframe_coord_list.append((coord_x, coord_y))
+            self.wireframe_coord_listbox.insert(tk.END, "(%d , %d)" % (coord_x, coord_y))
 
     def del_wireframe_coord(self):
         id = self.wireframe_coord_listbox.curselection()[0]
@@ -138,15 +139,25 @@ class NewObjWindow:
         self.wireframe_coord_list.pop(id)
 
     def add_point(self):
-        coord=(self.point_coord_tuple[0].get(), self.point_coord_tuple[1].get())
-        self.system.add_point(self.obj_name_var.get(), self.color_opt_var.get(), coord)
-        self.app.destroy()
+        coord_x = self.verify_int_entry(self.point_coord_tuple[0])
+        coord_y = self.verify_int_entry(self.point_coord_tuple[1])
+
+        if (coord_x and coord_y):
+            self.system.add_point(self.obj_name_var.get(), self.color_opt_var.get(), (coord_x, coord_y))
+            self.app.destroy()
 
     def add_line(self):
-        start_coord = (self.line_start_coord_tuple[0].get(), self.line_start_coord_tuple[1].get())
-        end_coord = (self.line_end_coord_tuple[0].get(), self.line_end_coord_tuple[1].get())
-        self.system.add_line(self.obj_name_var.get(), self.color_opt_var.get(), start_coord, end_coord)
-        self.app.destroy()
+        start_coord_x = self.verify_int_entry(self.line_start_coord_tuple[0])
+        start_coord_y = self.verify_int_entry(self.line_start_coord_tuple[1])
+
+        end_coord_x = self.verify_int_entry(self.line_end_coord_tuple[0])
+        end_coord_y = self.verify_int_entry(self.line_end_coord_tuple[1])
+
+        if (start_coord_x and start_coord_y and end_coord_x,):
+            start_coord = (start_coord_x, start_coord_y)
+            end_coord = (end_coord_x, end_coord_y)
+            self.system.add_line(self.obj_name_var.get(), self.color_opt_var.get(), start_coord, end_coord)
+            self.app.destroy()
 
     def add_wireframe(self):
         self.system.add_wireframe(self.obj_name_var.get(), self.color_opt_var.get(), self.wireframe_coord_list)
@@ -154,3 +165,14 @@ class NewObjWindow:
 
     def cancel(self):
         self.app.destroy()
+
+    def verify_int_entry(self, entry) -> int|None:
+        try:
+            value = entry.get()
+        except Exception as e:
+            self.send_error("Value Error", "Please enter a integer value on entry")
+        else:
+            return value
+
+    def send_error(self, title: str, message: str):
+        messagebox.showerror(title, message)
