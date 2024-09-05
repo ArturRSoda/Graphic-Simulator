@@ -81,6 +81,7 @@ class NewObjWindow:
         self.point_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
 
         self.point_coord_tuple = (tk.IntVar(), tk.IntVar())
+
         ttk.Label(self.point_tab, text="Coordinates").place(x=10, y=10)
         self.add_coord_frame(self.point_tab, 10, 30, self.point_coord_tuple)
 
@@ -97,6 +98,7 @@ class NewObjWindow:
 
         self.line_start_coord_tuple = (tk.IntVar(), tk.IntVar())
         self.line_end_coord_tuple = (tk.IntVar(), tk.IntVar())
+
         self.add_coord_frame(self.line_tab, 10, 30, self.line_start_coord_tuple)
         self.add_coord_frame(self.line_tab, 10, 110, self.line_end_coord_tuple)
 
@@ -110,6 +112,7 @@ class NewObjWindow:
 
         self.wireframe_coord_list = list()
         self.wireframe_coord_tuple = (tk.IntVar(), tk.IntVar())
+
         ttk.Label(self.wireframe_tab, text="Coordinates").place(x=10, y=10)
         self.add_coord_frame(self.wireframe_tab, 10, 30, self.wireframe_coord_tuple)
 
@@ -129,7 +132,7 @@ class NewObjWindow:
         coord_x = self.verify_int_entry(self.wireframe_coord_tuple[0])
         coord_y = self.verify_int_entry(self.wireframe_coord_tuple[1])
 
-        if (coord_x and coord_y):
+        if (coord_x is not None) and (coord_y is not None):
             self.wireframe_coord_list.append((coord_x, coord_y))
             self.wireframe_coord_listbox.insert(tk.END, "(%d , %d)" % (coord_x, coord_y))
 
@@ -142,7 +145,7 @@ class NewObjWindow:
         coord_x = self.verify_int_entry(self.point_coord_tuple[0])
         coord_y = self.verify_int_entry(self.point_coord_tuple[1])
 
-        if (coord_x and coord_y):
+        if (coord_x is not None) and (coord_y is not None):
             self.system.add_point(self.obj_name_var.get(), self.color_opt_var.get(), (coord_x, coord_y))
             self.app.destroy()
 
@@ -153,7 +156,7 @@ class NewObjWindow:
         end_coord_x = self.verify_int_entry(self.line_end_coord_tuple[0])
         end_coord_y = self.verify_int_entry(self.line_end_coord_tuple[1])
 
-        if (start_coord_x and start_coord_y and end_coord_x,):
+        if (start_coord_x is not None) and (start_coord_y is not None) and (end_coord_x is not None):
             start_coord = (start_coord_x, start_coord_y)
             end_coord = (end_coord_x, end_coord_y)
             self.system.add_line(self.obj_name_var.get(), self.color_opt_var.get(), start_coord, end_coord)

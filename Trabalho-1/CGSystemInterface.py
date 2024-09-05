@@ -127,32 +127,32 @@ class CGSystemInterface():
 
     def move_up(self):
         offset = self.verify_int_entry(self.offset_var)
-        if (offset):
+        if (offset is not None):
             self.system.move_window_up(offset)
 
     def move_down(self):
         offset = self.verify_int_entry(self.offset_var)
-        if (offset):
+        if (offset is not None):
             self.system.move_window_down(offset)
 
     def move_left(self):
         offset = self.verify_int_entry(self.offset_var)
-        if (offset):
+        if (offset is not None):
             self.system.move_window_left(offset)
 
     def move_right(self):
         offset = self.verify_int_entry(self.offset_var)
-        if (offset):
+        if (offset is not None):
             self.system.move_window_right(offset)
 
     def zoom_in(self):
         offset = self.verify_int_entry(self.offset_var)
-        if (offset):
+        if (offset is not None):
             self.system.zoom_window_in(offset)
 
     def zoom_out(self):
         offset = self.verify_int_entry(self.offset_var)
-        if (offset):
+        if (offset is not None):
             self.system.zoom_window_out(offset)
 
     def verify_int_entry(self, entry) -> int|None:
