@@ -129,32 +129,37 @@ class NewObjWindow:
         self.tab_menu.add(self.wireframe_tab, text="WireFrame")
 
     def add_wireframe_coord(self):
-        coord_x = self.verify_int_entry(self.wireframe_coord_tuple[0])
-        coord_y = self.verify_int_entry(self.wireframe_coord_tuple[1])
+        coord_x = self.verify_num_entry(self.wireframe_coord_tuple[0])
+        coord_y = self.verify_num_entry(self.wireframe_coord_tuple[1])
 
         if (coord_x is not None) and (coord_y is not None):
             self.wireframe_coord_list.append((coord_x, coord_y))
             self.wireframe_coord_listbox.insert(tk.END, "(%d , %d)" % (coord_x, coord_y))
 
     def del_wireframe_coord(self):
-        id = self.wireframe_coord_listbox.curselection()[0]
+        tp = self.wireframe_coord_listbox.curselection()
+        if (not tp):
+            self.send_error("Select an item", "Please select an item to delete!")
+            return
+
+        id = tp[0]
         self.wireframe_coord_listbox.delete(id)
         self.wireframe_coord_list.pop(id)
 
     def add_point(self):
-        coord_x = self.verify_int_entry(self.point_coord_tuple[0])
-        coord_y = self.verify_int_entry(self.point_coord_tuple[1])
+        coord_x = self.verify_num_entry(self.point_coord_tuple[0])
+        coord_y = self.verify_num_entry(self.point_coord_tuple[1])
 
         if (coord_x is not None) and (coord_y is not None):
             self.system.add_point(self.obj_name_var.get(), self.color_opt_var.get(), (coord_x, coord_y))
             self.app.destroy()
 
     def add_line(self):
-        start_coord_x = self.verify_int_entry(self.line_start_coord_tuple[0])
-        start_coord_y = self.verify_int_entry(self.line_start_coord_tuple[1])
+        start_coord_x = self.verify_num_entry(self.line_start_coord_tuple[0])
+        start_coord_y = self.verify_num_entry(self.line_start_coord_tuple[1])
 
-        end_coord_x = self.verify_int_entry(self.line_end_coord_tuple[0])
-        end_coord_y = self.verify_int_entry(self.line_end_coord_tuple[1])
+        end_coord_x = self.verify_num_entry(self.line_end_coord_tuple[0])
+        end_coord_y = self.verify_num_entry(self.line_end_coord_tuple[1])
 
         if (start_coord_x is not None) and (start_coord_y is not None) and (end_coord_x is not None):
             start_coord = (start_coord_x, start_coord_y)
@@ -169,11 +174,11 @@ class NewObjWindow:
     def cancel(self):
         self.app.destroy()
 
-    def verify_int_entry(self, entry) -> int|None:
+    def verify_num_entry(self, entry) -> int|None:
         try:
             value = entry.get()
         except Exception as e:
-            self.send_error("Value Error", "Please enter a integer value on entry")
+            self.send_error("Value Error", "Please enter a numeric value on entry")
         else:
             return value
 

@@ -21,7 +21,8 @@ class CGSystemInterface():
         self.canvas            : tk.Canvas
         self.offset_var        : tk.IntVar
         self.offset_entry      : tk.Entry
-        self.zoom_factor_var   : tk.StringVar
+        self.zoom_factor_var   : tk.DoubleVar
+        self.Wcoord_var        : tuple[tk.IntVar, tk.IntVar]
         self.zoom_factor_entry : tk.Entry
         self.canvas_width      : int
         self.canvas_height     : int
@@ -72,13 +73,13 @@ class CGSystemInterface():
         self.objects_listbox.place(x=10, y=30)
 
         tk.Button(self.object_menu_frame, text="Add", command=self.system.add_object).place(x=45, y=135)
-        tk.Button(self.object_menu_frame, text="Del", command=self.system.del_object).place(x=145, y=135)
+        tk.Button(self.object_menu_frame, text="Del", command=self.del_object).place(x=145, y=135)
 
     def add_window_menu(self):
         self.window_menu_frame = Frame(self.menu_frame, self.menu_frame.winfo_width()-26, 220)
         self.window_menu_frame.place(x=10, y=200)
 
-        Label(self.window_menu_frame, "Window", 10).place(x=10, y=10)
+        Label(self.window_menu_frame, "Controls", 10).place(x=10, y=10)
 
         tk.Button(self.window_menu_frame, text="Up", command=self.move_up).place(x=40, y=40)
         tk.Button(self.window_menu_frame, text="Left", command=self.move_left).place(x=10, y=70)
@@ -97,11 +98,20 @@ class CGSystemInterface():
         self.offset_entry.place(x=50, y=140)
 
         Label(self.window_menu_frame, "zoom factor", 10).place(x=115, y=140)
-        self.zoom_factor_var = tk.StringVar()
-        self.zoom_factor_var.set("2.0")
+        self.zoom_factor_var = tk.DoubleVar()
+        self.zoom_factor_var.set(2.0)
         self.zoom_factor_entry = tk.Entry(self.window_menu_frame, textvariable=self.zoom_factor_var, width=4)
         self.zoom_factor_entry.place(x=200, y=140)
         
+
+    def del_object(self):
+        tp = self.objects_listbox.curselection()
+        if (not tp):
+            self.send_error("Select an item", "Please select an item to delte!")
+            return
+
+        id = tp[0]
+        self.system.del_object(id)
 
     def set_window_coord(self):
         app = tk.Toplevel()
@@ -113,15 +123,23 @@ class CGSystemInterface():
         fm = Frame(app, width=160, height=50)
         fm.place(x=10, y=30)
 
-        coord = (tk.IntVar(), tk.IntVar())
+        self.Wcoord_var = (tk.IntVar(), tk.IntVar())
 
         Label(fm, "X:", 10).place(x=10, y=15)
-        tk.Entry(fm, textvariable=coord[0], width=4).place(x=30, y=10)
+        tk.Entry(fm, textvariable=self.Wcoord_var[0], width=4).place(x=30, y=10)
         Label(fm, "Y:", 10).place(x=80, y=15)
-        tk.Entry(fm, textvariable=coord[1], width=4).place(x=100, y=10)
+        tk.Entry(fm, textvariable=self.Wcoord_var[1], width=4).place(x=100, y=10)
 
-        tk.Button(app, text="Set", command=lambda: self.system.set_window_coord((coord[0].get(), coord[1].get())) ).place(x=20, y=90)
+        tk.Button(app, text="Set", command=self.set_Wcoord).place(x=20, y=90)
         tk.Button(app, text="Cancel", command=app.destroy).place(x=80, y=90)
+
+    def set_Wcoord(self):
+        coord_x = self.verify_num_entry(self.Wcoord_var[0])
+        coord_y = self.verify_num_entry(self.Wcoord_var[1])
+
+        if (coord_x is not None) and (coord_y is not None):
+            self.system.set_window_coord((coord_x, coord_y))
+
 
     def add_messagesBox(self):
         self.app.update()
@@ -135,40 +153,40 @@ class CGSystemInterface():
         self.messageBox.place(x=10, y=10)
 
     def move_up(self):
-        offset = self.verify_int_entry(self.offset_var)
+        offset = self.verify_num_entry(self.offset_var)
         if (offset is not None):
             self.system.move_window_up(offset)
 
     def move_down(self):
-        offset = self.verify_int_entry(self.offset_var)
+        offset = self.verify_num_entry(self.offset_var)
         if (offset is not None):
             self.system.move_window_down(offset)
 
     def move_left(self):
-        offset = self.verify_int_entry(self.offset_var)
+        offset = self.verify_num_entry(self.offset_var)
         if (offset is not None):
             self.system.move_window_left(offset)
 
     def move_right(self):
-        offset = self.verify_int_entry(self.offset_var)
+        offset = self.verify_num_entry(self.offset_var)
         if (offset is not None):
             self.system.move_window_right(offset)
 
     def zoom_in(self):
-        zoom_factor = self.verify_int_entry(self.zoom_factor_var)
+        zoom_factor = self.verify_num_entry(self.zoom_factor_var)
         if (zoom_factor is not None):
-            self.system.zoom_window_in(float(zoom_factor))
+            self.system.zoom_window_in(zoom_factor)
 
     def zoom_out(self):
-        zoom_factor = self.verify_int_entry(self.zoom_factor_var)
+        zoom_factor = self.verify_num_entry(self.zoom_factor_var)
         if (zoom_factor is not None):
-            self.system.zoom_window_out(float(zoom_factor))
+            self.system.zoom_window_out(zoom_factor)
 
-    def verify_int_entry(self, entry) -> int|None:
+    def verify_num_entry(self, entry) -> int|None:
         try:
             value = entry.get()
-        except Exception as e:
-            self.send_error("Value Error", "Please enter a integer value on entry")
+        except Exception:
+            self.send_error("Value Error", "Please enter a numeric value on entry")
         else:
             return value
 

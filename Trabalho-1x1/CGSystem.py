@@ -50,9 +50,7 @@ class CGSystem():
 
         return (Xvp, Yvp)
 
-    def del_object(self):
-        id = self.interface.objects_listbox.curselection()[0]
-
+    def del_object(self, id: int):
         self.interface.objects_listbox.delete(id)
         self.display_file.pop(id+2)
 
