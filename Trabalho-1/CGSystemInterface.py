@@ -21,6 +21,8 @@ class CGSystemInterface():
         self.canvas            : tk.Canvas
         self.offset_var        : tk.IntVar
         self.offset_entry      : tk.Entry
+        self.zoom_factor_var   : tk.StringVar
+        self.zoom_factor_entry : tk.Entry
         self.canvas_width      : int
         self.canvas_height     : int
 
@@ -73,7 +75,7 @@ class CGSystemInterface():
         tk.Button(self.object_menu_frame, text="Del", command=self.system.del_object).place(x=145, y=135)
 
     def add_window_menu(self):
-        self.window_menu_frame = Frame(self.menu_frame, self.menu_frame.winfo_width()-26, 180)
+        self.window_menu_frame = Frame(self.menu_frame, self.menu_frame.winfo_width()-26, 220)
         self.window_menu_frame.place(x=10, y=200)
 
         Label(self.window_menu_frame, "Window", 10).place(x=10, y=10)
@@ -86,13 +88,20 @@ class CGSystemInterface():
         tk.Button(self.window_menu_frame, text="Zoom In", command=self.zoom_in).place(x=150, y=50)
         tk.Button(self.window_menu_frame, text="Zoom Out", command=self.zoom_out).place(x=150, y=90)
 
-        tk.Button(self.window_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=150, y=135)
+        tk.Button(self.window_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=170)
 
-        Label(self.window_menu_frame, "offset", 10).place(x=10, y=145)
+        Label(self.window_menu_frame, "offset", 10).place(x=10, y=140)
         self.offset_var = tk.IntVar()
         self.offset_var.set(10)
         self.offset_entry = tk.Entry(self.window_menu_frame, textvariable=self.offset_var, width=4)
         self.offset_entry.place(x=50, y=140)
+
+        Label(self.window_menu_frame, "zoom factor", 10).place(x=115, y=140)
+        self.zoom_factor_var = tk.StringVar()
+        self.zoom_factor_var.set("2.0")
+        self.zoom_factor_entry = tk.Entry(self.window_menu_frame, textvariable=self.zoom_factor_var, width=4)
+        self.zoom_factor_entry.place(x=200, y=140)
+        
 
     def set_window_coord(self):
         app = tk.Toplevel()
@@ -146,14 +155,14 @@ class CGSystemInterface():
             self.system.move_window_right(offset)
 
     def zoom_in(self):
-        offset = self.verify_int_entry(self.offset_var)
-        if (offset is not None):
-            self.system.zoom_window_in(offset)
+        zoom_factor = self.verify_int_entry(self.zoom_factor_var)
+        if (zoom_factor is not None):
+            self.system.zoom_window_in(float(zoom_factor))
 
     def zoom_out(self):
-        offset = self.verify_int_entry(self.offset_var)
-        if (offset is not None):
-            self.system.zoom_window_out(offset)
+        zoom_factor = self.verify_int_entry(self.zoom_factor_var)
+        if (zoom_factor is not None):
+            self.system.zoom_window_out(float(zoom_factor))
 
     def verify_int_entry(self, entry) -> int|None:
         try:

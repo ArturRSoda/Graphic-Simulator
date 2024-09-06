@@ -25,6 +25,9 @@ class CGSystem():
         self.Wcoord_min = (-self.VPcoord_max[0]/2, -self.VPcoord_max[1]/2)
         self.Wcoord_max = (self.VPcoord_max[0]/2, self.VPcoord_max[1]/2)
 
+        # test objects
+        self.add_test()
+
         self.update_viewport()
         self.interface.app.mainloop()
 
@@ -165,19 +168,63 @@ class CGSystem():
 
         self.add_message("window moved right by %d" % offset)
 
-    def zoom_window_in(self, offset: int):
-        self.Wcoord_min = (self.Wcoord_min[0]+offset, self.Wcoord_min[1]+offset)
-        self.Wcoord_max = (self.Wcoord_max[0]-offset, self.Wcoord_max[1]-offset)
+    def zoom_window_in(self, zoom_factor: float):
+        self.add_message("window zoomed in by %f" % zoom_factor)
+        zoom_factor = 1/zoom_factor
+
+        p0 = self.Wcoord_min
+        p2 = self.Wcoord_max
+        p1 = (p2[0], p0[1])
+        p3 = (p0[0], p2[1])
+
+        new_points = self.scale_points(zoom_factor, [p0, p1, p2, p3])
+
+        self.Wcoord_min = new_points[0]
+        self.Wcoord_max = new_points[2]
+
         self.update_viewport()
 
-        self.add_message("window zoomed in by %d" % offset)
 
-    def zoom_window_out(self, offset):
-        self.Wcoord_min = (self.Wcoord_min[0]-offset, self.Wcoord_min[1]-offset)
-        self.Wcoord_max = (self.Wcoord_max[0]+offset, self.Wcoord_max[1]+offset)
+    def zoom_window_out(self, zoom_factor: float):
+        self.add_message("window zoomed out by %f" % zoom_factor)
+        p0 = self.Wcoord_min
+        p2 = self.Wcoord_max
+        p1 = (p2[0], p0[1])
+        p3 = (p0[0], p2[1])
+
+        new_points = self.scale_points(zoom_factor, [p0, p1, p2, p3])
+
+        self.Wcoord_min = new_points[0]
+        self.Wcoord_max = new_points[2]
         self.update_viewport()
 
-        self.add_message("window zoomed out by %d" % offset)
+
+    def scale_points(self, scale_factor: float, coord_list: [(float, float)]):
+        # only works on window, needs adjustment for objects (objects points list is points + 1)
+        average_x = 0
+        average_y = 0
+        for x, y in coord_list:
+            average_x += x
+            average_y += y
+        points_num = len(coord_list)
+        average_x /= points_num
+        average_y /= points_num
+
+        new_coord_list = []
+        for i in range(points_num):
+            x = coord_list[i][0]
+            y = coord_list[i][1]
+            x_new = x * scale_factor + average_x - average_x * scale_factor
+            y_new = y * scale_factor + average_y - average_y * scale_factor
+            new_coord_list.append((x_new , y_new))
+
+        return new_coord_list
 
     def add_message(self, message: str):
         self.interface.messageBox.insert(0, message)
+        
+    def add_test(self):
+        self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
+        self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
+        self.add_wireframe("triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
+ 
