@@ -153,8 +153,8 @@ class CGSystemInterface():
         self.origin_rb.place(x=100, y=65)
         self.other_rb.place(x=160, y=65)
 
-        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise").place(x=10, y=100)
-        tk.Button(self.rotation_menu_frame, text="ClockWise").place(x=150, y=100)
+        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotation(True)).place(x=10, y=100)
+        tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotation(False)).place(x=150, y=100)
 
 
     def rotation_point_entry_state(self):
@@ -213,6 +213,34 @@ class CGSystemInterface():
         self.app.update()
         self.messageBox = tk.Listbox(self.messageBox_frame, width=self.messageBox_frame.winfo_width()-575, height=10)
         self.messageBox.place(x=10, y=10)
+
+
+    def rotation(self, antiClockwise: bool):
+        degrees = self.verify_num_entry(self.rotation_degrees_var)
+        if (degrees is None):
+            return None
+
+        selected = self.objects_listbox.curselection()
+        if (not selected):
+            self.system.rotate_window(antiClockwise, degrees)
+            return
+
+        rotation_opt = self.rotation_opt_var.get()
+        obj_id = selected[0]
+
+        if (rotation_opt == "Other"):
+            coord_x = self.verify_num_entry(self.rotation_coord_var[0])
+            coord_y = self.verify_num_entry(self.rotation_coord_var[1])
+
+            if (coord_x is None) or (coord_y is None):
+                return
+
+        else:
+            coord_x = 0
+            coord_y = 0
+
+        self.system.rotate_object(antiClockwise, degrees, obj_id, rotation_opt, (coord_x, coord_y))
+
 
     def move_up(self):
         offset = self.verify_num_entry(self.offset_var)

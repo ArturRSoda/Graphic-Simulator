@@ -197,7 +197,7 @@ class CGSystem():
         self.update_viewport()
 
 
-    def scale_points(self, scale_factor: float, coord_list: [(float, float)]):
+    def scale_points(self, scale_factor: float, coord_list: list[tuple[float, float]]):
         # only works on window, needs adjustment for objects (objects points list is points + 1)
         average_x = 0
         average_y = 0
@@ -218,9 +218,30 @@ class CGSystem():
 
         return new_coord_list
 
+    def rotate_window(self, antiClockwise: bool, degrees: int):
+        self.add_message("Window rotated %d degrees %s" % (degrees, ("anti-clockwise" if (antiClockwise) else "clockwise")))
+
+
+    def rotate_object(self, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[int, int]):
+        # rotation_opt can be: "Origin", "Obj Center" and "Other"
+
+        obj = self.display_file[object_id+2]
+        obj_name = obj.name + "-" + obj.type
+
+        message: str
+        if (rotation_opt == "Origin"):
+            message = "%s rotated %d degree by the Origin %s" % (obj_name, degrees, ("anti-clockwise" if (antiClockwise) else "clockwise"))
+        elif(rotation_opt == "Obj Center"):
+            message = "%s rotated %d degree by the Object Center %s" % (obj_name, degrees, ("anti-clockwise" if (antiClockwise) else "clockwise"))
+        else:
+            message = "%s rotated %d degree by the point (%d, %d) %s" % (obj_name, degrees, rotation_point[0], rotation_point[1], ("anti-clockwise" if (antiClockwise) else "clockwise"))
+
+        self.add_message(message)
+
     def add_message(self, message: str):
         self.interface.messageBox.insert(0, message)
-        
+
+
     def add_test(self):
         self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
         self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
