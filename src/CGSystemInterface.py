@@ -30,6 +30,9 @@ class CGSystemInterface():
         self.canvas_height         : int
         self.rotation_Xpoint_entry : tk.Entry
         self.rotation_Ypoint_entry : tk.Entry
+        self.obj_center_rb         : tk.Radiobutton
+        self.origin_rb             : tk.Radiobutton
+        self.other_rb              : tk.Radiobutton
 
         self.app = tk.Tk()
         self.app.title("Computer Graphics System")
@@ -39,6 +42,7 @@ class CGSystemInterface():
         self.add_menu()
         self.add_canvas()
         self.add_messagesBox()
+
 
     def add_canvas(self):
         self.app.update()
@@ -75,11 +79,26 @@ class CGSystemInterface():
         Label(self.object_menu_frame, "Objects", 10).place(x=10, y=10)
 
         self.app.update()
-        self.objects_listbox = tk.Listbox(self.object_menu_frame, width=self.object_menu_frame.winfo_width()-235, height=6)
+        self.objects_listbox = tk.Listbox(self.object_menu_frame, exportselection=False, width=self.object_menu_frame.winfo_width()-235, height=6)
+        self.objects_listbox.bind("<<ListboxSelect>>", lambda e: self.select_obj())
         self.objects_listbox.place(x=10, y=30)
 
-        tk.Button(self.object_menu_frame, text="Add", command=self.system.add_object).place(x=45, y=135)
-        tk.Button(self.object_menu_frame, text="Del", command=self.del_object).place(x=145, y=135)
+        tk.Button(self.object_menu_frame, text="Add", command=self.system.add_object).place(x=35, y=135)
+        tk.Button(self.object_menu_frame, text="Del", command=self.del_object).place(x=90, y=135)
+        tk.Button(self.object_menu_frame, text="Deselect", command=self.deselect_obj).place(x=145, y=135)
+
+
+    def select_obj(self):
+        self.obj_center_rb.config(state="normal")
+        self.other_rb.config(state="normal")
+
+    def deselect_obj(self):
+        self.objects_listbox.selection_clear(0, tk.END)
+
+        self.obj_center_rb.config(state="disabled")
+        self.other_rb.config(state="disabled")
+        self.rotation_opt_var.set("Origin")
+
 
     def add_controls_menu(self):
         self.controls_menu_frame = Frame(self.menu_frame, self.menu_frame.winfo_width()-26, 220)
@@ -126,13 +145,16 @@ class CGSystemInterface():
         self.rotation_Ypoint_entry = tk.Entry(self.rotation_menu_frame, textvariable=self.rotation_coord_var[1], state="disabled", width=4)
         self.rotation_Ypoint_entry.place(x=190, y=35)
 
-        self.rotation_opt_var = tk.StringVar(self.rotation_menu_frame, "Obj Center")
-        tk.Radiobutton(self.rotation_menu_frame, text="Obj Center", variable=self.rotation_opt_var, value="Obj Center", command=self.rotation_point_entry_state).place(x=20, y=65)
-        tk.Radiobutton(self.rotation_menu_frame, text="Origin", variable=self.rotation_opt_var, value="Origin", command=self.rotation_point_entry_state).place(x=100, y=65)
-        tk.Radiobutton(self.rotation_menu_frame, text="Other", variable=self.rotation_opt_var, value="Other", command=self.rotation_point_entry_state).place(x=160, y=65)
+        self.rotation_opt_var = tk.StringVar(self.rotation_menu_frame, "Origin")
+        self.obj_center_rb = tk.Radiobutton(self.rotation_menu_frame, text="Obj Center", variable=self.rotation_opt_var, value="Obj Center", state="disabled", command=self.rotation_point_entry_state)
+        self.origin_rb = tk.Radiobutton(self.rotation_menu_frame, text="Origin", variable=self.rotation_opt_var, value="Origin", command=self.rotation_point_entry_state)
+        self.other_rb = tk.Radiobutton(self.rotation_menu_frame, text="Other", variable=self.rotation_opt_var, value="Other", state="disabled", command=self.rotation_point_entry_state)
+        self.obj_center_rb.place(x=20, y=65)
+        self.origin_rb.place(x=100, y=65)
+        self.other_rb.place(x=160, y=65)
 
-        tk.Button(self.rotation_menu_frame, text="CW Rotation").place(x=10, y=100)
-        tk.Button(self.rotation_menu_frame, text="ACW Rotation").place(x=130, y=100)
+        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise").place(x=10, y=100)
+        tk.Button(self.rotation_menu_frame, text="ClockWise").place(x=150, y=100)
 
 
     def rotation_point_entry_state(self):
