@@ -11,21 +11,25 @@ class Label(tk.Label):
 
 class CGSystemInterface():
     def __init__(self, system):
-        self.menu_frame        : Frame
-        self.object_menu_frame : Frame
-        self.window_menu_frame : Frame
-        self.canvas_frame      : Frame
-        self.messageBox_frame  : Frame
-        self.messageBox        : tk.Listbox
-        self.objects_listbox   : tk.Listbox
-        self.canvas            : tk.Canvas
-        self.offset_var        : tk.IntVar
-        self.offset_entry      : tk.Entry
-        self.zoom_factor_var   : tk.DoubleVar
-        self.Wcoord_var        : tuple[tk.IntVar, tk.IntVar]
-        self.zoom_factor_entry : tk.Entry
-        self.canvas_width      : int
-        self.canvas_height     : int
+        self.menu_frame            : Frame
+        self.object_menu_frame     : Frame
+        self.controls_menu_frame   : Frame
+        self.rotation_menu_frame   : Frame
+        self.canvas_frame          : Frame
+        self.messageBox_frame      : Frame
+        self.messageBox            : tk.Listbox
+        self.objects_listbox       : tk.Listbox
+        self.canvas                : tk.Canvas
+        self.offset_var            : tk.IntVar
+        self.zoom_factor_var       : tk.DoubleVar
+        self.rotation_opt_var      : tk.StringVar
+        self.rotation_degrees_var  : tk.IntVar
+        self.rotation_coord_var    : tuple[tk.IntVar, tk.IntVar]
+        self.Wcoord_var            : tuple[tk.IntVar, tk.IntVar]
+        self.canvas_width          : int
+        self.canvas_height         : int
+        self.rotation_Xpoint_entry : tk.Entry
+        self.rotation_Ypoint_entry : tk.Entry
 
         self.app = tk.Tk()
         self.app.title("Computer Graphics System")
@@ -42,7 +46,7 @@ class CGSystemInterface():
         self.canvas_frame = Frame(self.app, self.app.winfo_width()-self.menu_frame.winfo_width()-20, 500)
         self.canvas_frame.place(x=self.menu_frame.winfo_width()+20, y=10)
 
-        Label(self.canvas_frame, "Viewport", 10).place(x=10, y=10)
+        Label(self.canvas_frame, "Viewport", 15).place(x=10, y=10)
 
         self.app.update()
         self.canvas_width = self.canvas_frame.winfo_width()-35
@@ -60,7 +64,8 @@ class CGSystemInterface():
 
         self.app.update()
         self.add_object_menu()
-        self.add_window_menu()
+        self.add_controls_menu()
+        self.add_rotation_menu()
 
 
     def add_object_menu(self):
@@ -69,40 +74,75 @@ class CGSystemInterface():
 
         Label(self.object_menu_frame, "Objects", 10).place(x=10, y=10)
 
-        self.objects_listbox = tk.Listbox(self.object_menu_frame, width=26, height=5)
+        self.app.update()
+        self.objects_listbox = tk.Listbox(self.object_menu_frame, width=self.object_menu_frame.winfo_width()-235, height=6)
         self.objects_listbox.place(x=10, y=30)
 
         tk.Button(self.object_menu_frame, text="Add", command=self.system.add_object).place(x=45, y=135)
         tk.Button(self.object_menu_frame, text="Del", command=self.del_object).place(x=145, y=135)
 
-    def add_window_menu(self):
-        self.window_menu_frame = Frame(self.menu_frame, self.menu_frame.winfo_width()-26, 220)
-        self.window_menu_frame.place(x=10, y=200)
+    def add_controls_menu(self):
+        self.controls_menu_frame = Frame(self.menu_frame, self.menu_frame.winfo_width()-26, 220)
+        self.controls_menu_frame.place(x=10, y=200)
 
-        Label(self.window_menu_frame, "Controls", 10).place(x=10, y=10)
+        Label(self.controls_menu_frame, "Controls", 10).place(x=10, y=10)
 
-        tk.Button(self.window_menu_frame, text="Up", command=self.move_up).place(x=40, y=40)
-        tk.Button(self.window_menu_frame, text="Left", command=self.move_left).place(x=10, y=70)
-        tk.Button(self.window_menu_frame, text="Right", command=self.move_right).place(x=62, y=70)
-        tk.Button(self.window_menu_frame, text="Down", command=self.move_down).place(x=30, y=100)
+        tk.Button(self.controls_menu_frame, text="Up", command=self.move_up).place(x=40, y=40)
+        tk.Button(self.controls_menu_frame, text="Left", command=self.move_left).place(x=10, y=70)
+        tk.Button(self.controls_menu_frame, text="Right", command=self.move_right).place(x=62, y=70)
+        tk.Button(self.controls_menu_frame, text="Down", command=self.move_down).place(x=30, y=100)
 
-        tk.Button(self.window_menu_frame, text="Zoom In", command=self.zoom_in).place(x=150, y=50)
-        tk.Button(self.window_menu_frame, text="Zoom Out", command=self.zoom_out).place(x=150, y=90)
+        tk.Button(self.controls_menu_frame, text="Zoom In", command=self.zoom_in).place(x=150, y=50)
+        tk.Button(self.controls_menu_frame, text="Zoom Out", command=self.zoom_out).place(x=150, y=90)
 
-        tk.Button(self.window_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=170)
+        tk.Button(self.controls_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=170)
 
-        Label(self.window_menu_frame, "offset", 10).place(x=10, y=140)
+        Label(self.controls_menu_frame, "offset", 10).place(x=10, y=140)
         self.offset_var = tk.IntVar()
         self.offset_var.set(10)
-        self.offset_entry = tk.Entry(self.window_menu_frame, textvariable=self.offset_var, width=4)
-        self.offset_entry.place(x=50, y=140)
+        tk.Entry(self.controls_menu_frame, textvariable=self.offset_var, width=4).place(x=50, y=140)
 
-        Label(self.window_menu_frame, "zoom factor", 10).place(x=115, y=140)
+        Label(self.controls_menu_frame, "zoom factor", 10).place(x=115, y=140)
         self.zoom_factor_var = tk.DoubleVar()
         self.zoom_factor_var.set(2.0)
-        self.zoom_factor_entry = tk.Entry(self.window_menu_frame, textvariable=self.zoom_factor_var, width=4)
-        self.zoom_factor_entry.place(x=200, y=140)
-        
+        tk.Entry(self.controls_menu_frame, textvariable=self.zoom_factor_var, width=4).place(x=200, y=140)
+
+
+    def add_rotation_menu(self):
+        self.rotation_menu_frame = Frame(self.menu_frame, self.menu_frame.winfo_width()-26,150)
+        self.rotation_menu_frame.place(x=10, y=430)
+
+        Label(self.rotation_menu_frame, "Rotation", 10).place(x=10, y=10)
+
+        self.rotation_degrees_var = tk.IntVar()
+        Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=35)
+        tk.Entry(self.rotation_menu_frame, textvariable=self.rotation_degrees_var, width=4).place(x=60, y=35)
+
+        self.rotation_coord_var = (tk.IntVar(), tk.IntVar())
+        Label(self.rotation_menu_frame, "X:", 10).place(x=100, y=35)
+        Label(self.rotation_menu_frame, "Y:", 10).place(x=170, y=35)
+        self.rotation_Xpoint_entry = tk.Entry(self.rotation_menu_frame, textvariable=self.rotation_coord_var[0], state="disabled", width=4)
+        self.rotation_Xpoint_entry.place(x=120, y=35)
+        self.rotation_Ypoint_entry = tk.Entry(self.rotation_menu_frame, textvariable=self.rotation_coord_var[1], state="disabled", width=4)
+        self.rotation_Ypoint_entry.place(x=190, y=35)
+
+        self.rotation_opt_var = tk.StringVar(self.rotation_menu_frame, "Obj Center")
+        tk.Radiobutton(self.rotation_menu_frame, text="Obj Center", variable=self.rotation_opt_var, value="Obj Center", command=self.rotation_point_entry_state).place(x=20, y=65)
+        tk.Radiobutton(self.rotation_menu_frame, text="Origin", variable=self.rotation_opt_var, value="Origin", command=self.rotation_point_entry_state).place(x=100, y=65)
+        tk.Radiobutton(self.rotation_menu_frame, text="Other", variable=self.rotation_opt_var, value="Other", command=self.rotation_point_entry_state).place(x=160, y=65)
+
+        tk.Button(self.rotation_menu_frame, text="CW Rotation").place(x=10, y=100)
+        tk.Button(self.rotation_menu_frame, text="ACW Rotation").place(x=130, y=100)
+
+
+    def rotation_point_entry_state(self):
+        if (self.rotation_opt_var.get() == "Other"):
+            self.rotation_Xpoint_entry.config(state="normal")
+            self.rotation_Ypoint_entry.config(state="normal")
+        else:
+            self.rotation_Xpoint_entry.config(state="disabled")
+            self.rotation_Ypoint_entry.config(state="disabled")
+
 
     def del_object(self):
         tp = self.objects_listbox.curselection()
@@ -149,7 +189,7 @@ class CGSystemInterface():
         self.messageBox_frame.place(x=self.menu_frame.winfo_width()+20, y=self.canvas_frame.winfo_height()+20)
 
         self.app.update()
-        self.messageBox = tk.Listbox(self.messageBox_frame, width=72, height=8)
+        self.messageBox = tk.Listbox(self.messageBox_frame, width=self.messageBox_frame.winfo_width()-575, height=10)
         self.messageBox.place(x=10, y=10)
 
     def move_up(self):

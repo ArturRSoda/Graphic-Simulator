@@ -70,10 +70,10 @@ class NewObjWindow:
         fm = Frame(parent, width=160, height=50)
         fm.place(x=x, y=y)
 
-        Label(fm, "X:", 10).place(x=10, y=15)
+        Label(fm, "X:", 10).place(x=10, y=10)
         tk.Entry(fm, textvariable=variables[0], width=4).place(x=30, y=10)
         
-        Label(fm, "Y:", 10).place(x=80, y=15)
+        Label(fm, "Y:", 10).place(x=80, y=10)
         tk.Entry(fm, textvariable=variables[1], width=4).place(x=100, y=10)
 
 
