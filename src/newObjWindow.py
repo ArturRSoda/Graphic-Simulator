@@ -1,11 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from CGSystemInterface import Label, Frame
-
-class Tab(ttk.Frame):
-    def __init__(self, parent, width: int, height: int):
-        super().__init__(parent, width=width, height=height, borderwidth=3, relief="ridge")
+from CGSystemInterface import Label, Frame, Tab
 
 class NewObjWindow:
     def __init__(self, system):

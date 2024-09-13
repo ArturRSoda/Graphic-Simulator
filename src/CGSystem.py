@@ -138,63 +138,119 @@ class CGSystem():
 
         self.add_message("Window coordinates seted to (%d, %d)" % (coord[0], coord[1]))
 
-    def move_window_up(self, offset: int):
-        self.Wcoord_min = (self.Wcoord_min[0], self.Wcoord_min[1]+offset)
-        self.Wcoord_max = (self.Wcoord_max[0], self.Wcoord_max[1]+offset)
-        self.update_viewport()
-        
-        self.add_message("window moved up by %d" % offset)
+    def move_up(self, offset: int, object: bool, object_id: int):
+        # if object == True then
+        #     - move object
+        #     - and object_id will have a value (remember to sum +2 on object_id, because of the 2 central lines)
+        # else:
+        #     - move window
+        #     - object_id = None
 
-    def move_window_down(self, offset: int):
-        self.Wcoord_min = (self.Wcoord_min[0], self.Wcoord_min[1]-offset)
-        self.Wcoord_max = (self.Wcoord_max[0], self.Wcoord_max[1]-offset)
-        self.update_viewport()
+        if (object):
+            obj = self.display_file[object_id+2]
+            obj_name = obj.name + "-" + obj.type
+            self.add_message("%s moved up by %d" % (obj_name, offset))
 
-        self.add_message("window moved down by %d" % offset)
+        else:
+            self.Wcoord_min = (self.Wcoord_min[0], self.Wcoord_min[1]+offset)
+            self.Wcoord_max = (self.Wcoord_max[0], self.Wcoord_max[1]+offset)
+            self.update_viewport()
+            
+            self.add_message("window moved up by %d" % offset)
 
-    def move_window_left(self, offset: int):
-        self.Wcoord_min = (self.Wcoord_min[0]-offset, self.Wcoord_min[1])
-        self.Wcoord_max = (self.Wcoord_max[0]-offset, self.Wcoord_max[1])
-        self.update_viewport()
+    def move_down(self, offset: int, object: bool, object_id: int):
+        # see move_up function for details
 
-        self.add_message("window moved left by %d" % offset)
+        if (object):
+            obj = self.display_file[object_id+2]
+            obj_name = obj.name + "-" + obj.type
+            self.add_message("%s moved down by %d" % (obj_name, offset))
 
-    def move_window_right(self, offset: int):
-        self.Wcoord_min = (self.Wcoord_min[0]+offset, self.Wcoord_min[1])
-        self.Wcoord_max = (self.Wcoord_max[0]+offset, self.Wcoord_max[1])
-        self.update_viewport()
+        else:
+            self.Wcoord_min = (self.Wcoord_min[0], self.Wcoord_min[1]-offset)
+            self.Wcoord_max = (self.Wcoord_max[0], self.Wcoord_max[1]-offset)
+            self.update_viewport()
 
-        self.add_message("window moved right by %d" % offset)
+            self.add_message("window moved down by %d" % offset)
 
-    def zoom_window_in(self, zoom_factor: float):
-        self.add_message("window zoomed in by %f" % zoom_factor)
-        zoom_factor = 1/zoom_factor
+    def move_left(self, offset: int, object: bool, object_id: int):
+        # see move_up function for details
 
-        p0 = self.Wcoord_min
-        p2 = self.Wcoord_max
-        p1 = (p2[0], p0[1])
-        p3 = (p0[0], p2[1])
+        if (object):
+            obj = self.display_file[object_id+2]
+            obj_name = obj.name + "-" + obj.type
+            self.add_message("%s moved left by %d" % (obj_name, offset))
 
-        new_points = self.scale_points(zoom_factor, [p0, p1, p2, p3])
+        else:
+            self.Wcoord_min = (self.Wcoord_min[0]-offset, self.Wcoord_min[1])
+            self.Wcoord_max = (self.Wcoord_max[0]-offset, self.Wcoord_max[1])
+            self.update_viewport()
 
-        self.Wcoord_min = new_points[0]
-        self.Wcoord_max = new_points[2]
+            self.add_message("window moved left by %d" % offset)
 
-        self.update_viewport()
+    def move_right(self, offset: int, object: bool, object_id: int):
+        # see move_up function for details
+
+        if (object):
+            obj = self.display_file[object_id+2]
+            obj_name = obj.name + "-" + obj.type
+            self.add_message("%s moved right by %d" % (obj_name, offset))
+
+        else:
+            self.Wcoord_min = (self.Wcoord_min[0]+offset, self.Wcoord_min[1])
+            self.Wcoord_max = (self.Wcoord_max[0]+offset, self.Wcoord_max[1])
+            self.update_viewport()
+
+            self.add_message("window moved right by %d" % offset)
+
+    def zoom_in(self, zoom_factor: float, object: bool, object_id: int):
+        # see move_up function for details
+
+        if (object):
+            obj = self.display_file[object_id+2]
+            obj_name = obj.name + "-" + obj.type
+            self.add_message("%s zoomed in by %d" % (obj_name, zoom_factor))
+
+        else:
+            zoom_factor = 1/zoom_factor
+
+            p0 = self.Wcoord_min
+            p2 = self.Wcoord_max
+            p1 = (p2[0], p0[1])
+            p3 = (p0[0], p2[1])
+
+            new_points = self.scale_points(zoom_factor, [p0, p1, p2, p3])
+
+            self.Wcoord_min = new_points[0]
+            self.Wcoord_max = new_points[2]
+
+            self.update_viewport()
+
+            self.add_message("window zoomed in by %f" % zoom_factor)
 
 
-    def zoom_window_out(self, zoom_factor: float):
-        self.add_message("window zoomed out by %f" % zoom_factor)
-        p0 = self.Wcoord_min
-        p2 = self.Wcoord_max
-        p1 = (p2[0], p0[1])
-        p3 = (p0[0], p2[1])
+    def zoom_out(self, zoom_factor: float, object: bool, object_id: int):
+        # see move_up function for details
 
-        new_points = self.scale_points(zoom_factor, [p0, p1, p2, p3])
+        if (object):
+            obj = self.display_file[object_id+2]
+            obj_name = obj.name + "-" + obj.type
+            self.add_message("%s zoomed out by %d" % (obj_name, zoom_factor))
 
-        self.Wcoord_min = new_points[0]
-        self.Wcoord_max = new_points[2]
-        self.update_viewport()
+        else:
+            p0 = self.Wcoord_min
+            p2 = self.Wcoord_max
+            p1 = (p2[0], p0[1])
+            p3 = (p0[0], p2[1])
+
+            new_points = self.scale_points(zoom_factor, [p0, p1, p2, p3])
+
+            self.Wcoord_min = new_points[0]
+            self.Wcoord_max = new_points[2]
+
+            self.update_viewport()
+
+            self.add_message("window zoomed out by %f" % zoom_factor)
 
 
     def scale_points(self, scale_factor: float, coord_list: list[tuple[float, float]]):
@@ -218,25 +274,32 @@ class CGSystem():
 
         return new_coord_list
 
-    def rotate_window(self, antiClockwise: bool, degrees: int):
-        self.add_message("Window rotated %d degrees %s" % (degrees, ("anti-clockwise" if (antiClockwise) else "clockwise")))
 
-
-    def rotate_object(self, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[int, int]):
+    def rotate(self, object: bool, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[int, int]):
+        # Similar to move up function
+        #     if object == True then 
+        #         object_id = None
+        #         rotation_opt = None
+        #         rotation_point = None
+        #
         # rotation_opt can be: "Origin", "Obj Center" and "Other"
 
-        obj = self.display_file[object_id+2]
-        obj_name = obj.name + "-" + obj.type
+        if (object):
+            obj = self.display_file[object_id+2]
+            obj_name = obj.name + "-" + obj.type
 
-        message: str
-        if (rotation_opt == "Origin"):
-            message = "%s rotated %d degree by the Origin %s" % (obj_name, degrees, ("anti-clockwise" if (antiClockwise) else "clockwise"))
-        elif(rotation_opt == "Obj Center"):
-            message = "%s rotated %d degree by the Object Center %s" % (obj_name, degrees, ("anti-clockwise" if (antiClockwise) else "clockwise"))
+            message: str
+            if (rotation_opt == "Origin"):
+                message = "%s rotated %d degree by the Origin %s" % (obj_name, degrees, ("anti-clockwise" if (antiClockwise) else "clockwise"))
+            elif(rotation_opt == "Obj Center"):
+                message = "%s rotated %d degree by the Object Center %s" % (obj_name, degrees, ("anti-clockwise" if (antiClockwise) else "clockwise"))
+            else:
+                message = "%s rotated %d degree by the point (%d, %d) %s" % (obj_name, degrees, rotation_point[0], rotation_point[1], ("anti-clockwise" if (antiClockwise) else "clockwise"))
+
+            self.add_message(message)
+        
         else:
-            message = "%s rotated %d degree by the point (%d, %d) %s" % (obj_name, degrees, rotation_point[0], rotation_point[1], ("anti-clockwise" if (antiClockwise) else "clockwise"))
-
-        self.add_message(message)
+            self.add_message("Window rotated %d degrees %s" % (degrees, ("anti-clockwise" if (antiClockwise) else "clockwise")))
 
     def add_message(self, message: str):
         self.interface.messageBox.insert(0, message)

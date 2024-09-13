@@ -1,13 +1,22 @@
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import ttk
+
 
 class Frame(tk.Frame):
     def __init__(self, parent, width: int, height: int):
         super().__init__(parent, width=width, height=height, borderwidth=3, relief="groove")
 
+
 class Label(tk.Label):
     def __init__(self, parent, text: str, size: int):
         super().__init__(parent, text=text, font=("Helvetica", size))
+
+
+class Tab(ttk.Frame):
+    def __init__(self, parent, width: int, height: int):
+        super().__init__(parent, width=width, height=height, borderwidth=3, relief="ridge")
+
 
 class CGSystemInterface():
     def __init__(self, system):
@@ -20,19 +29,27 @@ class CGSystemInterface():
         self.messageBox            : tk.Listbox
         self.objects_listbox       : tk.Listbox
         self.canvas                : tk.Canvas
-        self.offset_var            : tk.IntVar
-        self.zoom_factor_var       : tk.DoubleVar
+        self.w_offset_var          : tk.IntVar
+        self.obj_offset_var        : tk.IntVar
+        self.w_zoom_factor_var     : tk.DoubleVar
+        self.obj_zoom_factor_var   : tk.DoubleVar
         self.rotation_opt_var      : tk.StringVar
-        self.rotation_degrees_var  : tk.IntVar
-        self.rotation_coord_var    : tuple[tk.IntVar, tk.IntVar]
+        self.window_degrees_var    : tk.IntVar
+        self.object_degrees_var    : tk.IntVar
+        self.obj_rotation_coord_var: tuple[tk.IntVar, tk.IntVar]
         self.Wcoord_var            : tuple[tk.IntVar, tk.IntVar]
         self.canvas_width          : int
         self.canvas_height         : int
+        self.tab_width             : int
+        self.tab_height            : int
         self.rotation_Xpoint_entry : tk.Entry
         self.rotation_Ypoint_entry : tk.Entry
         self.obj_center_rb         : tk.Radiobutton
         self.origin_rb             : tk.Radiobutton
         self.other_rb              : tk.Radiobutton
+        self.controls_menu_tab     : ttk.Notebook
+        self.window_controls_tab   : Tab
+        self.obj_controls_tab      : Tab
 
         self.app = tk.Tk()
         self.app.title("Computer Graphics System")
@@ -68,8 +85,7 @@ class CGSystemInterface():
 
         self.app.update()
         self.add_object_menu()
-        self.add_controls_menu()
-        self.add_rotation_menu()
+        self.add_controls_tab()
 
 
     def add_object_menu(self):
@@ -79,82 +95,121 @@ class CGSystemInterface():
         Label(self.object_menu_frame, "Objects", 10).place(x=10, y=10)
 
         self.app.update()
-        self.objects_listbox = tk.Listbox(self.object_menu_frame, exportselection=False, width=self.object_menu_frame.winfo_width()-235, height=6)
-        self.objects_listbox.bind("<<ListboxSelect>>", lambda e: self.select_obj())
+        self.objects_listbox = tk.Listbox(self.object_menu_frame, width=self.object_menu_frame.winfo_width()-235, height=6)
         self.objects_listbox.place(x=10, y=30)
 
-        tk.Button(self.object_menu_frame, text="Add", command=self.system.add_object).place(x=35, y=135)
-        tk.Button(self.object_menu_frame, text="Del", command=self.del_object).place(x=90, y=135)
-        tk.Button(self.object_menu_frame, text="Deselect", command=self.deselect_obj).place(x=145, y=135)
+        tk.Button(self.object_menu_frame, text="Add", command=self.system.add_object).place(x=45, y=135)
+        tk.Button(self.object_menu_frame, text="Del", command=self.del_object).place(x=145, y=135)
 
 
-    def select_obj(self):
-        self.obj_center_rb.config(state="normal")
-        self.other_rb.config(state="normal")
+    def add_controls_tab(self):
+        self.app.update()
+        self.controls_menu_tab = ttk.Notebook(self.menu_frame)
 
-    def deselect_obj(self):
-        self.objects_listbox.selection_clear(0, tk.END)
+        self.tab_width = self.menu_frame.winfo_width()-26
+        self.tab_height = self.menu_frame.winfo_height()-self.object_menu_frame.winfo_height()-50
 
-        self.obj_center_rb.config(state="disabled")
-        self.other_rb.config(state="disabled")
-        self.rotation_opt_var.set("Origin")
+        self.add_window_tab_elements()
+        self.add_object_tab_elements()
+
+        self.controls_menu_tab.place(x=10, y=self.object_menu_frame.winfo_height()+15)
 
 
-    def add_controls_menu(self):
-        self.controls_menu_frame = Frame(self.menu_frame, self.menu_frame.winfo_width()-26, 220)
-        self.controls_menu_frame.place(x=10, y=200)
+    def add_window_tab_elements(self):
+        self.window_controls_tab = Tab(self.controls_menu_tab, width=self.tab_width, height=self.tab_height)
+
+        self.add_controls_menu(object=False)
+        self.add_window_rotation_menu()
+
+        self.controls_menu_tab.add(self.window_controls_tab, text="Window")
+
+    def add_object_tab_elements(self):
+        self.obj_controls_tab = Tab(self.controls_menu_tab, width=self.tab_width, height=self.tab_height)
+
+        self.add_controls_menu(object=True)
+        self.add_obj_rotation_menu()
+
+        self.controls_menu_tab.add(self.obj_controls_tab, text="Object")
+
+    def add_controls_menu(self, object: bool):
+        # if object == True then "object controls" else "window controls"
+
+        parent = self.obj_controls_tab if (object) else self.window_controls_tab
+
+        self.controls_menu_frame = Frame(parent, self.tab_width-26, 220)
+        self.controls_menu_frame.place(x=10, y=10)
 
         Label(self.controls_menu_frame, "Controls", 10).place(x=10, y=10)
 
-        tk.Button(self.controls_menu_frame, text="Up", command=self.move_up).place(x=40, y=40)
-        tk.Button(self.controls_menu_frame, text="Left", command=self.move_left).place(x=10, y=70)
-        tk.Button(self.controls_menu_frame, text="Right", command=self.move_right).place(x=62, y=70)
-        tk.Button(self.controls_menu_frame, text="Down", command=self.move_down).place(x=30, y=100)
+        tk.Button(self.controls_menu_frame, text="Up", command=lambda: self.move_up(object)).place(x=40, y=40)
+        tk.Button(self.controls_menu_frame, text="Left", command=lambda: self.move_left(object)).place(x=10, y=70)
+        tk.Button(self.controls_menu_frame, text="Right", command=lambda: self.move_right(object)).place(x=62, y=70)
+        tk.Button(self.controls_menu_frame, text="Down", command=lambda: self.move_down(object)).place(x=30, y=100)
 
-        tk.Button(self.controls_menu_frame, text="Zoom In", command=self.zoom_in).place(x=150, y=50)
-        tk.Button(self.controls_menu_frame, text="Zoom Out", command=self.zoom_out).place(x=150, y=90)
+        tk.Button(self.controls_menu_frame, text="Zoom In", command=lambda: self.zoom_in(object)).place(x=150, y=50)
+        tk.Button(self.controls_menu_frame, text="Zoom Out", command=lambda: self.zoom_out(object)).place(x=150, y=90)
 
         tk.Button(self.controls_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=170)
 
         Label(self.controls_menu_frame, "offset", 10).place(x=10, y=140)
-        self.offset_var = tk.IntVar()
-        self.offset_var.set(10)
-        tk.Entry(self.controls_menu_frame, textvariable=self.offset_var, width=4).place(x=50, y=140)
+        self.obj_offset_var = tk.IntVar()
+        self.w_offset_var = tk.IntVar()
+        self.obj_offset_var.set(10)
+        self.w_offset_var.set(10)
+        tv = self.obj_offset_var if (object) else self.w_offset_var
+        tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=50, y=140)
 
         Label(self.controls_menu_frame, "zoom factor", 10).place(x=115, y=140)
-        self.zoom_factor_var = tk.DoubleVar()
-        self.zoom_factor_var.set(2.0)
-        tk.Entry(self.controls_menu_frame, textvariable=self.zoom_factor_var, width=4).place(x=200, y=140)
+        self.obj_zoom_factor_var = tk.DoubleVar()
+        self.w_zoom_factor_var = tk.DoubleVar()
+        self.obj_zoom_factor_var.set(2.0)
+        self.w_zoom_factor_var.set(2.0)
+        tv = self.obj_zoom_factor_var if (object) else self.w_zoom_factor_var
+        tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=200, y=140)
 
 
-    def add_rotation_menu(self):
-        self.rotation_menu_frame = Frame(self.menu_frame, self.menu_frame.winfo_width()-26,150)
-        self.rotation_menu_frame.place(x=10, y=430)
+    def add_window_rotation_menu(self):
+        self.rotation_menu_frame = Frame(self.window_controls_tab, self.tab_width-26,110)
+        self.rotation_menu_frame.place(x=10, y=240)
 
         Label(self.rotation_menu_frame, "Rotation", 10).place(x=10, y=10)
 
-        self.rotation_degrees_var = tk.IntVar()
-        Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=35)
-        tk.Entry(self.rotation_menu_frame, textvariable=self.rotation_degrees_var, width=4).place(x=60, y=35)
+        self.window_degrees_var = tk.IntVar()
+        Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=50)
+        tk.Entry(self.rotation_menu_frame, textvariable=self.window_degrees_var, width=4).place(x=60, y=50)
 
-        self.rotation_coord_var = (tk.IntVar(), tk.IntVar())
+        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotation(False, True)).place(x=110, y=25)
+        tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotation(False, False)).place(x=110, y=65)
+
+
+    def add_obj_rotation_menu(self):
+        self.rotation_menu_frame = Frame(self.obj_controls_tab, self.tab_width-26,150)
+        self.rotation_menu_frame.place(x=10, y=240)
+
+        Label(self.rotation_menu_frame, "Rotation", 10).place(x=10, y=10)
+
+        self.object_degrees_var = tk.IntVar()
+        Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=35)
+        tk.Entry(self.rotation_menu_frame, textvariable=self.object_degrees_var, width=4).place(x=60, y=35)
+
+        self.obj_rotation_coord_var = (tk.IntVar(), tk.IntVar())
         Label(self.rotation_menu_frame, "X:", 10).place(x=100, y=35)
         Label(self.rotation_menu_frame, "Y:", 10).place(x=170, y=35)
-        self.rotation_Xpoint_entry = tk.Entry(self.rotation_menu_frame, textvariable=self.rotation_coord_var[0], state="disabled", width=4)
+        self.rotation_Xpoint_entry = tk.Entry(self.rotation_menu_frame, textvariable=self.obj_rotation_coord_var[0], state="disabled", width=4)
         self.rotation_Xpoint_entry.place(x=120, y=35)
-        self.rotation_Ypoint_entry = tk.Entry(self.rotation_menu_frame, textvariable=self.rotation_coord_var[1], state="disabled", width=4)
+        self.rotation_Ypoint_entry = tk.Entry(self.rotation_menu_frame, textvariable=self.obj_rotation_coord_var[1], state="disabled", width=4)
         self.rotation_Ypoint_entry.place(x=190, y=35)
 
         self.rotation_opt_var = tk.StringVar(self.rotation_menu_frame, "Origin")
-        self.obj_center_rb = tk.Radiobutton(self.rotation_menu_frame, text="Obj Center", variable=self.rotation_opt_var, value="Obj Center", state="disabled", command=self.rotation_point_entry_state)
+        self.obj_center_rb = tk.Radiobutton(self.rotation_menu_frame, text="Obj Center", variable=self.rotation_opt_var, value="Obj Center", command=self.rotation_point_entry_state)
         self.origin_rb = tk.Radiobutton(self.rotation_menu_frame, text="Origin", variable=self.rotation_opt_var, value="Origin", command=self.rotation_point_entry_state)
-        self.other_rb = tk.Radiobutton(self.rotation_menu_frame, text="Other", variable=self.rotation_opt_var, value="Other", state="disabled", command=self.rotation_point_entry_state)
+        self.other_rb = tk.Radiobutton(self.rotation_menu_frame, text="Other", variable=self.rotation_opt_var, value="Other", command=self.rotation_point_entry_state)
         self.obj_center_rb.place(x=20, y=65)
         self.origin_rb.place(x=100, y=65)
         self.other_rb.place(x=160, y=65)
 
-        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotation(True)).place(x=10, y=100)
-        tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotation(False)).place(x=150, y=100)
+        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotation(True, True)).place(x=10, y=100)
+        tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotation(True, False)).place(x=150, y=100)
 
 
     def rotation_point_entry_state(self):
@@ -174,6 +229,7 @@ class CGSystemInterface():
 
         id = tp[0]
         self.system.del_object(id)
+
 
     def set_window_coord(self):
         app = tk.Toplevel()
@@ -195,6 +251,7 @@ class CGSystemInterface():
         tk.Button(app, text="Set", command=self.set_Wcoord).place(x=20, y=90)
         tk.Button(app, text="Cancel", command=app.destroy).place(x=80, y=90)
 
+
     def set_Wcoord(self):
         coord_x = self.verify_num_entry(self.Wcoord_var[0])
         coord_y = self.verify_num_entry(self.Wcoord_var[1])
@@ -215,22 +272,28 @@ class CGSystemInterface():
         self.messageBox.place(x=10, y=10)
 
 
-    def rotation(self, antiClockwise: bool):
-        degrees = self.verify_num_entry(self.rotation_degrees_var)
+    def rotation(self, object: bool, antiClockwise: bool):
+        # if object == True then move object else move window
+
+        degrees = self.verify_num_entry(self.object_degrees_var) if (object) else self.verify_num_entry(self.window_degrees_var)
         if (degrees is None):
-            return None
+            return
+
+        if (not object):
+            self.system.rotate(False, antiClockwise, degrees, None, None, None)
+            return
 
         selected = self.objects_listbox.curselection()
         if (not selected):
-            self.system.rotate_window(antiClockwise, degrees)
+            self.send_error("Object not selected", "Please select an object!")
             return
 
         rotation_opt = self.rotation_opt_var.get()
         obj_id = selected[0]
 
         if (rotation_opt == "Other"):
-            coord_x = self.verify_num_entry(self.rotation_coord_var[0])
-            coord_y = self.verify_num_entry(self.rotation_coord_var[1])
+            coord_x = self.verify_num_entry(self.obj_rotation_coord_var[0])
+            coord_y = self.verify_num_entry(self.obj_rotation_coord_var[1])
 
             if (coord_x is None) or (coord_y is None):
                 return
@@ -239,38 +302,32 @@ class CGSystemInterface():
             coord_x = 0
             coord_y = 0
 
-        self.system.rotate_object(antiClockwise, degrees, obj_id, rotation_opt, (coord_x, coord_y))
+        self.system.rotate(True, antiClockwise, degrees, obj_id, rotation_opt, (coord_x, coord_y))
 
 
-    def move_up(self):
-        offset = self.verify_num_entry(self.offset_var)
-        if (offset is not None):
-            self.system.move_window_up(offset)
+    def move_up(self, object: bool):
+        var = self.obj_offset_var if (object) else self.w_offset_var
+        self.verify_move(var, self.system.move_up, object)
 
-    def move_down(self):
-        offset = self.verify_num_entry(self.offset_var)
-        if (offset is not None):
-            self.system.move_window_down(offset)
+    def move_down(self, object: bool):
+        var = self.obj_offset_var if (object) else self.w_offset_var
+        self.verify_move(var, self.system.move_down, object)
 
-    def move_left(self):
-        offset = self.verify_num_entry(self.offset_var)
-        if (offset is not None):
-            self.system.move_window_left(offset)
+    def move_left(self, object: bool):
+        var = self.obj_offset_var if (object) else self.w_offset_var
+        self.verify_move(var, self.system.move_left, object)
 
-    def move_right(self):
-        offset = self.verify_num_entry(self.offset_var)
-        if (offset is not None):
-            self.system.move_window_right(offset)
+    def move_right(self, object: bool):
+        var = self.obj_offset_var if (object) else self.w_offset_var
+        self.verify_move(var, self.system.move_right, object)
 
-    def zoom_in(self):
-        zoom_factor = self.verify_num_entry(self.zoom_factor_var)
-        if (zoom_factor is not None):
-            self.system.zoom_window_in(zoom_factor)
+    def zoom_in(self, object: bool):
+        var = self.obj_zoom_factor_var if (object) else self.w_zoom_factor_var
+        self.verify_move(var, self.system.zoom_in, object)
 
-    def zoom_out(self):
-        zoom_factor = self.verify_num_entry(self.zoom_factor_var)
-        if (zoom_factor is not None):
-            self.system.zoom_window_out(zoom_factor)
+    def zoom_out(self, object: bool):
+        var = self.obj_zoom_factor_var if (object) else self.w_zoom_factor_var
+        self.verify_move(var, self.system.zoom_out, object)
 
     def verify_num_entry(self, entry) -> int|None:
         try:
@@ -279,6 +336,25 @@ class CGSystemInterface():
             self.send_error("Value Error", "Please enter a numeric value on entry")
         else:
             return value
+
+
+    def verify_move(self, variable: tk.IntVar|tk.DoubleVar, func, object: bool):
+        var = self.verify_num_entry(variable)
+        if (var is None):
+            return
+
+        if (not object):
+            func(var, object, None)
+            return
+
+        selected=self.objects_listbox.curselection()
+        if (not selected):
+            self.send_error("Object not selected", "Please select an object")
+            return
+
+        object_id = selected[0]
+        func(var, object, object_id)
+
 
     def send_error(self, title: str, message: str):
         messagebox.showerror(title, message)
