@@ -1,3 +1,6 @@
+import numpy as np
+import math as m
+
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 
@@ -33,6 +36,9 @@ class CGSystem():
 
     def add_object(self):
         NewObjWindow(self)
+
+    def add_message(self, message: str):
+        self.interface.messageBox.insert(0, message)
 
     def transform_coordinates(self, coord: tuple[int, int]) -> tuple[float, float]:
         Xw = coord[0]
@@ -138,102 +144,103 @@ class CGSystem():
 
         self.add_message("Window coordinates seted to (%d, %d)" % (coord[0], coord[1]))
 
-    def move_up(self, offset: int, object: bool, object_id: int):
-        # if object == True then
-        #     - move object
-        #     - and object_id will have a value (remember to sum +2 on object_id, because of the 2 central lines)
-        # else:
-        #     - move window
-        #     - object_id = None
-
-        if (object):
+    # if isObject == True then
+    #     - move object
+    #     - and object_id will have a value (remember to sum +2 on object_id, because of the 2 central lines)
+    # else:
+    #     - move window
+    #     - object_id = None
+    def move_up(self, offset: int, isObject: bool, object_id: int):
+        if (isObject):
             obj = self.display_file[object_id+2]
+            obj.coordinates = self.transform(obj.coordinates, 0, offset)
             obj_name = obj.name + "-" + obj.type
             self.add_message("%s moved up by %d" % (obj_name, offset))
 
         else:
             self.Wcoord_min = (self.Wcoord_min[0], self.Wcoord_min[1]+offset)
             self.Wcoord_max = (self.Wcoord_max[0], self.Wcoord_max[1]+offset)
-            self.update_viewport()
             
             self.add_message("window moved up by %d" % offset)
 
-    def move_down(self, offset: int, object: bool, object_id: int):
-        # see move_up function for details
+        self.update_viewport()
 
-        if (object):
+
+    def move_down(self, offset: int, isObject: bool, object_id: int):
+        if (isObject):
             obj = self.display_file[object_id+2]
+            obj.coordinates = self.transform(obj.coordinates, 0, -offset)
             obj_name = obj.name + "-" + obj.type
             self.add_message("%s moved down by %d" % (obj_name, offset))
 
         else:
             self.Wcoord_min = (self.Wcoord_min[0], self.Wcoord_min[1]-offset)
             self.Wcoord_max = (self.Wcoord_max[0], self.Wcoord_max[1]-offset)
-            self.update_viewport()
 
             self.add_message("window moved down by %d" % offset)
 
-    def move_left(self, offset: int, object: bool, object_id: int):
-        # see move_up function for details
+        self.update_viewport()
 
-        if (object):
+    def move_left(self, offset: int, isObject: bool, object_id: int):
+        if (isObject):
             obj = self.display_file[object_id+2]
+            obj.coordinates = self.transform(obj.coordinates, -offset, 0)
             obj_name = obj.name + "-" + obj.type
             self.add_message("%s moved left by %d" % (obj_name, offset))
 
         else:
             self.Wcoord_min = (self.Wcoord_min[0]-offset, self.Wcoord_min[1])
             self.Wcoord_max = (self.Wcoord_max[0]-offset, self.Wcoord_max[1])
-            self.update_viewport()
 
             self.add_message("window moved left by %d" % offset)
 
-    def move_right(self, offset: int, object: bool, object_id: int):
-        # see move_up function for details
+        self.update_viewport()
 
-        if (object):
+    def move_right(self, offset: int, isObject: bool, object_id: int):
+        if (isObject):
             obj = self.display_file[object_id+2]
+            obj.coordinates = self.transform(obj.coordinates, offset, 0)
             obj_name = obj.name + "-" + obj.type
             self.add_message("%s moved right by %d" % (obj_name, offset))
 
         else:
             self.Wcoord_min = (self.Wcoord_min[0]+offset, self.Wcoord_min[1])
             self.Wcoord_max = (self.Wcoord_max[0]+offset, self.Wcoord_max[1])
-            self.update_viewport()
 
             self.add_message("window moved right by %d" % offset)
 
-    def zoom_in(self, zoom_factor: float, object: bool, object_id: int):
-        # see move_up function for details
+        self.update_viewport()
 
-        if (object):
+
+    def zoom_in(self, zoom_factor: float, isObject: bool, object_id: int):
+        if (isObject):
             obj = self.display_file[object_id+2]
+            obj.coordinates = self.transform(obj.coordinates, 0, 0, zoom_factor, 0, self.get_center(obj.coordinates))
             obj_name = obj.name + "-" + obj.type
             self.add_message("%s zoomed in by %d" % (obj_name, zoom_factor))
 
         else:
             zoom_factor = 1/zoom_factor
-
             p0 = self.Wcoord_min
             p2 = self.Wcoord_max
             p1 = (p2[0], p0[1])
             p3 = (p0[0], p2[1])
-
-            new_points = self.scale_points(zoom_factor, [p0, p1, p2, p3])
+            window_coordinates = [p0, p1, p2, p3]
+            new_points = self.transform(window_coordinates, 0, 0, zoom_factor, 0, self.get_center(window_coordinates))
 
             self.Wcoord_min = new_points[0]
             self.Wcoord_max = new_points[2]
 
-            self.update_viewport()
-
             self.add_message("window zoomed in by %f" % zoom_factor)
 
+        self.update_viewport()
 
-    def zoom_out(self, zoom_factor: float, object: bool, object_id: int):
-        # see move_up function for details
 
-        if (object):
+    def zoom_out(self, zoom_factor: float, isObject: bool, object_id: int):
+        if (isObject):
+            zoom_factor = 1/zoom_factor
             obj = self.display_file[object_id+2]
+            obj.coordinates = self.transform(obj.coordinates, 0, 0, zoom_factor, 0, self.get_center(obj.coordinates))
             obj_name = obj.name + "-" + obj.type
             self.add_message("%s zoomed out by %d" % (obj_name, zoom_factor))
 
@@ -243,67 +250,106 @@ class CGSystem():
             p1 = (p2[0], p0[1])
             p3 = (p0[0], p2[1])
 
-            new_points = self.scale_points(zoom_factor, [p0, p1, p2, p3])
+            window_coordinates = [p0, p1, p2, p3]
+            new_points = self.transform(window_coordinates, 0, 0, zoom_factor, 0, self.get_center(window_coordinates))
 
             self.Wcoord_min = new_points[0]
             self.Wcoord_max = new_points[2]
 
-            self.update_viewport()
-
             self.add_message("window zoomed out by %f" % zoom_factor)
 
+        self.update_viewport()
 
-    def scale_points(self, scale_factor: float, coord_list: list[tuple[float, float]]):
-        # only works on window, needs adjustment for objects (objects points list is points + 1)
-        average_x = 0
-        average_y = 0
-        for x, y in coord_list:
-            average_x += x
-            average_y += y
-        points_num = len(coord_list)
-        average_x /= points_num
-        average_y /= points_num
+    # Similar to move up function
+    #     if isObject == True then 
+    #         object_id = None
+    #         rotation_opt = None
+    #         rotation_point = None
+    #
+    # rotation_opt can be: "Origin", "Obj Center" and "Other"
+    def rotate(self, isObject: bool, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[int, int]):
+        if not antiClockwise:
+            degrees = -degrees
 
-        new_coord_list = []
-        for i in range(points_num):
-            x = coord_list[i][0]
-            y = coord_list[i][1]
-            x_new = x * scale_factor + average_x - average_x * scale_factor
-            y_new = y * scale_factor + average_y - average_y * scale_factor
-            new_coord_list.append((x_new , y_new))
-
-        return new_coord_list
-
-
-    def rotate(self, object: bool, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[int, int]):
-        # Similar to move up function
-        #     if object == True then 
-        #         object_id = None
-        #         rotation_opt = None
-        #         rotation_point = None
-        #
-        # rotation_opt can be: "Origin", "Obj Center" and "Other"
-
-        if (object):
+        if (isObject):
             obj = self.display_file[object_id+2]
             obj_name = obj.name + "-" + obj.type
 
             message: str
             if (rotation_opt == "Origin"):
+                obj.coordinates = self.transform(obj.coordinates, 0, 0, 0, degrees)
                 message = "%s rotated %d degree by the Origin %s" % (obj_name, degrees, ("anti-clockwise" if (antiClockwise) else "clockwise"))
             elif(rotation_opt == "Obj Center"):
+                obj.coordinates = self.transform(obj.coordinates, 0, 0, 0, degrees, self.get_center(obj.coordinates))
                 message = "%s rotated %d degree by the Object Center %s" % (obj_name, degrees, ("anti-clockwise" if (antiClockwise) else "clockwise"))
             else:
+                obj.coordinates = self.transform(obj.coordinates, 0, 0, 0, degrees, rotation_point)
                 message = "%s rotated %d degree by the point (%d, %d) %s" % (obj_name, degrees, rotation_point[0], rotation_point[1], ("anti-clockwise" if (antiClockwise) else "clockwise"))
 
             self.add_message(message)
         
         else:
-            self.add_message("Window rotated %d degrees %s" % (degrees, ("anti-clockwise" if (antiClockwise) else "clockwise")))
+            self.add_message("1.3 TODO")
+            #self.add_message("Window rotated %d degrees %s" % (degrees, ("anti-clockwise" if (antiClockwise) else "clockwise")))
 
-    def add_message(self, message: str):
-        self.interface.messageBox.insert(0, message)
+        self.update_viewport()
 
+    def get_center(self, coordinates: list[tuple[float, float]]):
+        # if the object is a polygon, the first and the last points are the same
+        coordinates = coordinates.copy()
+        if coordinates[0] == coordinates[-1]:
+            last_coord = coordinates.pop()
+
+        average_x = 0
+        average_y = 0
+        for x, y in coordinates:
+            average_x += x
+            average_y += y
+        points_num = len(coordinates)
+        average_x /= points_num
+        average_y /= points_num
+
+        return (average_x, average_y)
+
+    def transform(self, coordinates: list[tuple[float, float]], offset_x: float=0, offset_y: float=0, scale_factor: float=0, rotation_degrees: float=0, transform_point: tuple[float, float]=(0,0)):
+        transform_list = []
+        center = self.get_center(coordinates)
+        if transform_point != (0, 0):
+            transform_list.append(np.array([[1, 0, 0],
+                                            [0, 1, 0],
+                                            [-transform_point[0], -transform_point[1], 1]]))
+            transform_list.append(np.array([[1, 0, 0],
+                                            [0, 1, 0],
+                                            [transform_point[0], transform_point[1], 1]]))
+        if offset_x != 0 or offset_y != 0:
+            transform_list.insert(1, np.array([[1, 0, 0],
+                                               [0, 1, 0],
+                                               [offset_x, offset_y, 1]]))
+        if scale_factor != 0:
+            transform_list.insert(1, np.array([[scale_factor, 0, 0],
+                                               [0, scale_factor, 0],
+                                               [0, 0, 1]]))
+        if rotation_degrees != 0:
+            s = m.sin(m.radians(rotation_degrees))
+            c = m.cos(m.radians(rotation_degrees))
+            transform_list.insert(1, np.array([[c, -s, 0],
+                                               [s, c, 0],
+                                               [0, 0, 1]]))
+
+        transform_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        for matrix in transform_list:
+            transform_matrix = np.matmul(transform_matrix, matrix)
+
+        new_coordinates = []
+        for i in range(len(coordinates)):
+            x = coordinates[i][0]
+            y = coordinates[i][1]
+            coord_matrix = np.array([x, y, 1])
+            new_coord_matrix = np.matmul(coord_matrix, transform_matrix)
+            new_coordinates.append((new_coord_matrix[0].item(), new_coord_matrix[1].item()))
+
+        return new_coordinates
+            
 
     def add_test(self):
         self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])

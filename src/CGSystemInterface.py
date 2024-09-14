@@ -34,8 +34,8 @@ class CGSystemInterface():
         self.w_zoom_factor_var     : tk.DoubleVar
         self.obj_zoom_factor_var   : tk.DoubleVar
         self.rotation_opt_var      : tk.StringVar
-        self.window_degrees_var    : tk.IntVar
-        self.object_degrees_var    : tk.IntVar
+        self.window_degrees_var    : tk.DoubleVar
+        self.object_degrees_var    : tk.DoubleVar
         self.obj_rotation_coord_var: tuple[tk.IntVar, tk.IntVar]
         self.Wcoord_var            : tuple[tk.IntVar, tk.IntVar]
         self.canvas_width          : int
@@ -118,7 +118,7 @@ class CGSystemInterface():
     def add_window_tab_elements(self):
         self.window_controls_tab = Tab(self.controls_menu_tab, width=self.tab_width, height=self.tab_height)
 
-        self.add_controls_menu(object=False)
+        self.add_controls_menu(isObject=False)
         self.add_window_rotation_menu()
 
         self.controls_menu_tab.add(self.window_controls_tab, text="Window")
@@ -126,28 +126,28 @@ class CGSystemInterface():
     def add_object_tab_elements(self):
         self.obj_controls_tab = Tab(self.controls_menu_tab, width=self.tab_width, height=self.tab_height)
 
-        self.add_controls_menu(object=True)
+        self.add_controls_menu(isObject=True)
         self.add_obj_rotation_menu()
 
         self.controls_menu_tab.add(self.obj_controls_tab, text="Object")
 
-    def add_controls_menu(self, object: bool):
-        # if object == True then "object controls" else "window controls"
+    def add_controls_menu(self, isObject: bool):
+        # if isObject == True then "object controls" else "window controls"
 
-        parent = self.obj_controls_tab if (object) else self.window_controls_tab
+        parent = self.obj_controls_tab if (isObject) else self.window_controls_tab
 
         self.controls_menu_frame = Frame(parent, self.tab_width-26, 220)
         self.controls_menu_frame.place(x=10, y=10)
 
         Label(self.controls_menu_frame, "Controls", 10).place(x=10, y=10)
 
-        tk.Button(self.controls_menu_frame, text="Up", command=lambda: self.move_up(object)).place(x=40, y=40)
-        tk.Button(self.controls_menu_frame, text="Left", command=lambda: self.move_left(object)).place(x=10, y=70)
-        tk.Button(self.controls_menu_frame, text="Right", command=lambda: self.move_right(object)).place(x=62, y=70)
-        tk.Button(self.controls_menu_frame, text="Down", command=lambda: self.move_down(object)).place(x=30, y=100)
+        tk.Button(self.controls_menu_frame, text="Up", command=lambda: self.move_up(isObject)).place(x=40, y=40)
+        tk.Button(self.controls_menu_frame, text="Left", command=lambda: self.move_left(isObject)).place(x=10, y=70)
+        tk.Button(self.controls_menu_frame, text="Right", command=lambda: self.move_right(isObject)).place(x=62, y=70)
+        tk.Button(self.controls_menu_frame, text="Down", command=lambda: self.move_down(isObject)).place(x=30, y=100)
 
-        tk.Button(self.controls_menu_frame, text="Zoom In", command=lambda: self.zoom_in(object)).place(x=150, y=50)
-        tk.Button(self.controls_menu_frame, text="Zoom Out", command=lambda: self.zoom_out(object)).place(x=150, y=90)
+        tk.Button(self.controls_menu_frame, text="Zoom In", command=lambda: self.zoom_in(isObject)).place(x=150, y=50)
+        tk.Button(self.controls_menu_frame, text="Zoom Out", command=lambda: self.zoom_out(isObject)).place(x=150, y=90)
 
         tk.Button(self.controls_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=170)
 
@@ -156,7 +156,7 @@ class CGSystemInterface():
         self.w_offset_var = tk.IntVar()
         self.obj_offset_var.set(10)
         self.w_offset_var.set(10)
-        tv = self.obj_offset_var if (object) else self.w_offset_var
+        tv = self.obj_offset_var if (isObject) else self.w_offset_var
         tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=50, y=140)
 
         Label(self.controls_menu_frame, "zoom factor", 10).place(x=115, y=140)
@@ -164,7 +164,7 @@ class CGSystemInterface():
         self.w_zoom_factor_var = tk.DoubleVar()
         self.obj_zoom_factor_var.set(2.0)
         self.w_zoom_factor_var.set(2.0)
-        tv = self.obj_zoom_factor_var if (object) else self.w_zoom_factor_var
+        tv = self.obj_zoom_factor_var if (isObject) else self.w_zoom_factor_var
         tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=200, y=140)
 
 
@@ -174,7 +174,7 @@ class CGSystemInterface():
 
         Label(self.rotation_menu_frame, "Rotation", 10).place(x=10, y=10)
 
-        self.window_degrees_var = tk.IntVar()
+        self.window_degrees_var = tk.DoubleVar()
         Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=50)
         tk.Entry(self.rotation_menu_frame, textvariable=self.window_degrees_var, width=4).place(x=60, y=50)
 
@@ -188,7 +188,8 @@ class CGSystemInterface():
 
         Label(self.rotation_menu_frame, "Rotation", 10).place(x=10, y=10)
 
-        self.object_degrees_var = tk.IntVar()
+        self.object_degrees_var = tk.DoubleVar()
+        self.object_degrees_var.set(10.)
         Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=35)
         tk.Entry(self.rotation_menu_frame, textvariable=self.object_degrees_var, width=4).place(x=60, y=35)
 
@@ -272,14 +273,14 @@ class CGSystemInterface():
         self.messageBox.place(x=10, y=10)
 
 
-    def rotation(self, object: bool, antiClockwise: bool):
-        # if object == True then move object else move window
+    def rotation(self, isObject: bool, antiClockwise: bool):
+        # if isObject == True then move object else move window
 
         degrees = self.verify_num_entry(self.object_degrees_var) if (object) else self.verify_num_entry(self.window_degrees_var)
         if (degrees is None):
             return
 
-        if (not object):
+        if (not isObject):
             self.system.rotate(False, antiClockwise, degrees, None, None, None)
             return
 
@@ -305,29 +306,29 @@ class CGSystemInterface():
         self.system.rotate(True, antiClockwise, degrees, obj_id, rotation_opt, (coord_x, coord_y))
 
 
-    def move_up(self, object: bool):
-        var = self.obj_offset_var if (object) else self.w_offset_var
-        self.verify_move(var, self.system.move_up, object)
+    def move_up(self, isObject: bool):
+        var = self.obj_offset_var if (isObject) else self.w_offset_var
+        self.verify_move(var, self.system.move_up, isObject)
 
-    def move_down(self, object: bool):
-        var = self.obj_offset_var if (object) else self.w_offset_var
-        self.verify_move(var, self.system.move_down, object)
+    def move_down(self, isObject: bool):
+        var = self.obj_offset_var if (isObject) else self.w_offset_var
+        self.verify_move(var, self.system.move_down, isObject)
 
-    def move_left(self, object: bool):
-        var = self.obj_offset_var if (object) else self.w_offset_var
-        self.verify_move(var, self.system.move_left, object)
+    def move_left(self, isObject: bool):
+        var = self.obj_offset_var if (isObject) else self.w_offset_var
+        self.verify_move(var, self.system.move_left, isObject)
 
-    def move_right(self, object: bool):
-        var = self.obj_offset_var if (object) else self.w_offset_var
-        self.verify_move(var, self.system.move_right, object)
+    def move_right(self, isObject: bool):
+        var = self.obj_offset_var if (isObject) else self.w_offset_var
+        self.verify_move(var, self.system.move_right, isObject)
 
-    def zoom_in(self, object: bool):
-        var = self.obj_zoom_factor_var if (object) else self.w_zoom_factor_var
-        self.verify_move(var, self.system.zoom_in, object)
+    def zoom_in(self, isObject: bool):
+        var = self.obj_zoom_factor_var if (isObject) else self.w_zoom_factor_var
+        self.verify_move(var, self.system.zoom_in, isObject)
 
-    def zoom_out(self, object: bool):
-        var = self.obj_zoom_factor_var if (object) else self.w_zoom_factor_var
-        self.verify_move(var, self.system.zoom_out, object)
+    def zoom_out(self, isObject: bool):
+        var = self.obj_zoom_factor_var if (isObject) else self.w_zoom_factor_var
+        self.verify_move(var, self.system.zoom_out, isObject)
 
     def verify_num_entry(self, entry) -> int|None:
         try:
@@ -338,13 +339,13 @@ class CGSystemInterface():
             return value
 
 
-    def verify_move(self, variable: tk.IntVar|tk.DoubleVar, func, object: bool):
+    def verify_move(self, variable: tk.IntVar|tk.DoubleVar, func, isObject: bool):
         var = self.verify_num_entry(variable)
         if (var is None):
             return
 
-        if (not object):
-            func(var, object, None)
+        if (not isObject):
+            func(var, isObject, None)
             return
 
         selected=self.objects_listbox.curselection()
