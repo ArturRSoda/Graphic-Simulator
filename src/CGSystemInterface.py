@@ -365,7 +365,7 @@ class CGSystemInterface():
             return
 
         object_id = selected[0]
-        func(var, object, object_id)
+        func(var, isObject, object_id)
 
 
     def send_error(self, title: str, message: str):

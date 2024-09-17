@@ -10,10 +10,10 @@ class TransformationWindow:
         self.transformation_list_frame  : Frame
         self.controls_frame             : Frame
         self.translation_controls_frame : Frame
-        self.escale_controls_frame      : Frame
+        self.scale_controls_frame       : Frame
         self.rotation_controls_frame    : Frame
         self.offset_entry               : tk.Entry
-        self.escale_factor_entry        : tk.Entry
+        self.scale_factor_entry         : tk.Entry
         self.degrees_entry              : tk.Entry
         self.rotation_Xpoint_entry      : tk.Entry
         self.rotation_Ypoint_entry      : tk.Entry
@@ -55,7 +55,7 @@ class TransformationWindow:
 
         self.app.update()
         self.add_translation_controls()
-        self.add_escale_controls()
+        self.add_scale_controls()
         self.add_rotation_controls()
 
     def add_translation_controls(self):
@@ -74,19 +74,19 @@ class TransformationWindow:
         self.offset_entry.place(x=55, y=140)
         self.offset_entry.insert("end", "10")
 
-    def add_escale_controls(self):
-        self.escale_controls_frame = Frame(self.controls_frame, 135, 180)
-        self.escale_controls_frame.place(x=155, y=30)
+    def add_scale_controls(self):
+        self.scale_controls_frame = Frame(self.controls_frame, 135, 180)
+        self.scale_controls_frame.place(x=155, y=30)
 
-        Label(self.escale_controls_frame, "Escale", 10).place(x=10, y=10)
+        Label(self.scale_controls_frame, "Escale", 10).place(x=10, y=10)
 
-        tk.Button(self.escale_controls_frame, text="Increase", command=self.increase_escale).place(x=10, y=50)
-        tk.Button(self.escale_controls_frame, text="Decrease", command=self.decrease_escale).place(x=10, y=90)
+        tk.Button(self.scale_controls_frame, text="Increase", command=self.increase_scale).place(x=10, y=50)
+        tk.Button(self.scale_controls_frame, text="Decrease", command=self.decrease_scale).place(x=10, y=90)
 
-        Label(self.escale_controls_frame, "Escal. Factor", 10).place(x=10, y=140)
-        self.escale_factor_entry = tk.Entry(self.escale_controls_frame, width=4)
-        self.escale_factor_entry.place(x=90, y=140)
-        self.escale_factor_entry.insert("end", "2.0")
+        Label(self.scale_controls_frame, "Escal. Factor", 10).place(x=10, y=140)
+        self.scale_factor_entry = tk.Entry(self.scale_controls_frame, width=4)
+        self.scale_factor_entry.place(x=90, y=140)
+        self.scale_factor_entry.insert("end", "2.0")
 
     def add_rotation_controls(self):
         width = self.controls_frame.winfo_width()-26
@@ -181,19 +181,19 @@ class TransformationWindow:
         self.transformation_list.append(("move_right", v, None, None))
         self.transformation_listbox.insert("end", "Move right by %.1f" % v)
 
-    def increase_escale(self):
-        v = self.verify_num_entry(self.escale_factor_entry)
+    def increase_scale(self):
+        v = self.verify_num_entry(self.scale_factor_entry)
         if (not v): return
 
-        self.transformation_list.append(("increase_escale", v, None, None))
-        self.transformation_listbox.insert("end", "Increase escale by %.1f" % v)
+        self.transformation_list.append(("increase_scale", v, None, None))
+        self.transformation_listbox.insert("end", "Increase scale by %.1f" % v)
 
-    def decrease_escale(self):
-        v = self.verify_num_entry(self.escale_factor_entry)
+    def decrease_scale(self):
+        v = self.verify_num_entry(self.scale_factor_entry)
         if (not v): return
 
-        self.transformation_list.append(("decrease_escale", v, None, None))
-        self.transformation_listbox.insert("end", "Decrease escale by %.1f" % v)
+        self.transformation_list.append(("decrease_scale", v, None, None))
+        self.transformation_listbox.insert("end", "Decrease scale by %.1f" % v)
 
     def rotate(self, antiClockwise: bool):
         v = self.verify_num_entry(self.degrees_entry)
