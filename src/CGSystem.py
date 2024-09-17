@@ -6,7 +6,7 @@ from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
 
 from objects import Object, Point, Line, WireFrame
-import transformationWindow
+
 
 class CGSystem():
     def __init__(self):
@@ -169,7 +169,7 @@ class CGSystem():
         else:
             self.Wcoord_min = (self.Wcoord_min[0], self.Wcoord_min[1]+offset)
             self.Wcoord_max = (self.Wcoord_max[0], self.Wcoord_max[1]+offset)
-            
+
             self.add_message("window moved up by %d" % offset)
 
         self.update_viewport()
@@ -320,11 +320,11 @@ class CGSystem():
 
         self.update_viewport()
 
-    def get_center(self, coordinates: list[tuple[float, float]]):
+    def get_center(self, coordinates: list[tuple[int, int]]):
         # if the object is a polygon, the first and the last points are the same
         coordinates = coordinates.copy()
-        if coordinates[0] == coordinates[-1]:
-            last_coord = coordinates.pop()
+        if (coordinates[0] == coordinates[-1]) and (len(coordinates) > 1):
+            coordinates.pop()
 
         average_x = 0
         average_y = 0
@@ -370,7 +370,7 @@ class CGSystem():
                                                 [-s, c, 0],
                                                 [0, 0, 1]]))
 
-    def transform(self, coordinates: list[tuple[float, float]], transformation_list: list[list[list]]):
+    def transform(self, coordinates: list[tuple[int, int]], transformation_list: list[list[list]]):
         transformation_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         for matrix in transformation_list:
             transformation_matrix = np.matmul(transformation_matrix, matrix)
@@ -403,7 +403,7 @@ class CGSystem():
                 case "move_down":
                     self.add_translation(transformation_list, 0, -factor)
                 case "move_left":
-                    self.add_translation(tranformation_list, -factor, 0)
+                    self.add_translation(transformation_list, -factor, 0)
                 case "move_right":
                     self.add_translation(transformation_list, factor, 0)
                 case "increase_scale":
@@ -420,12 +420,10 @@ class CGSystem():
         obj.coordinates = self.transform(obj.coordinates, transformation_list)
         self.update_viewport()
 
-        print(obj.name)
-        print(transformation_list)
-        print(transformation_tuple_list)
 
     def add_test(self):
         self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
         self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
         self.add_wireframe("triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
+        self.add_point("point", "green", (50,-50))
  

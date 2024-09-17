@@ -138,8 +138,9 @@ class TransformationWindow:
         self.transformation_listbox = tk.Listbox(self.transformation_list_frame, width=45, height=24)
         self.transformation_listbox.place(x=10, y=30)
 
-        tk.Button(self.transformation_list_frame, text="Delete", command=self.del_transformation).place(x=60, y=390)
-        tk.Button(self.transformation_list_frame, text="Apply", command=self.apply).place(x=160, y=390)
+        tk.Button(self.transformation_list_frame, text="Delete", command=self.del_transformation).place(x=30, y=390)
+        tk.Button(self.transformation_list_frame, text="Apply", command=self.apply).place(x=120, y=390)
+        tk.Button(self.transformation_list_frame, text="Cancel", command=self.app.destroy).place(x=200, y=390)
 
     def del_transformation(self):
         selected = self.transformation_listbox.curselection()
@@ -151,6 +152,12 @@ class TransformationWindow:
 
     def apply(self):
         self.system.apply_transformations(self.object, self.transformation_list)
+
+        coord = ""
+        for c in self.object.coordinates:
+            coord += "(%.1f, %.1f) " % c
+        self.system.add_message("    - " + coord)
+        self.system.add_message(self.object.name + " - " + self.object.type + " was transformed. New coordinates: ")
         self.app.destroy()
 
     def move_up(self):
