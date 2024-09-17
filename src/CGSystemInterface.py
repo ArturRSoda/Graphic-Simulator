@@ -75,8 +75,10 @@ class CGSystemInterface():
         self.canvas = tk.Canvas(self.canvas_frame, width=self.canvas_width, height=self.canvas_height, bg="white", borderwidth=5, relief="groove")
         self.canvas.place(x=10, y=30)
 
+
     def clear_canvas(self):
         self.canvas.delete("all")
+
 
     def add_menu(self):
         self.app.update()
@@ -98,9 +100,18 @@ class CGSystemInterface():
         self.objects_listbox = tk.Listbox(self.object_menu_frame, width=self.object_menu_frame.winfo_width()-235, height=6)
         self.objects_listbox.place(x=10, y=30)
 
-        tk.Button(self.object_menu_frame, text="Add", command=self.system.add_object).place(x=45, y=135)
-        tk.Button(self.object_menu_frame, text="Del", command=self.del_object).place(x=145, y=135)
+        tk.Button(self.object_menu_frame, text="Add", command=self.system.add_object).place(x=35, y=135)
+        tk.Button(self.object_menu_frame, text="Del", command=self.del_object).place(x=90, y=135)
+        tk.Button(self.object_menu_frame, text="Transform", command=self.init_transformation_window).place(x=145, y=135)
 
+
+    def init_transformation_window(self):
+        selected = self.objects_listbox.curselection()
+        if (not selected):
+            self.send_error("Object not selected", "Please select an object!")
+            return
+        obj_id = selected[0]
+        self.system.init_transformation_window(obj_id)
 
     def add_controls_tab(self):
         self.app.update()
@@ -146,12 +157,12 @@ class CGSystemInterface():
         tk.Button(self.controls_menu_frame, text="Right", command=lambda: self.move_right(isObject)).place(x=62, y=70)
         tk.Button(self.controls_menu_frame, text="Down", command=lambda: self.move_down(isObject)).place(x=30, y=100)
 
-        tk.Button(self.controls_menu_frame, text="Zoom In", command=lambda: self.zoom_in(isObject)).place(x=150, y=50)
-        tk.Button(self.controls_menu_frame, text="Zoom Out", command=lambda: self.zoom_out(isObject)).place(x=150, y=90)
+        tk.Button(self.controls_menu_frame, text="Increase" if (isObject) else "Zoom In", command=lambda: self.zoom_in(isObject)).place(x=150, y=50)
+        tk.Button(self.controls_menu_frame, text="Decrease" if (isObject) else "Zoom Out", command=lambda: self.zoom_out(isObject)).place(x=150, y=90)
 
         tk.Button(self.controls_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=170)
 
-        Label(self.controls_menu_frame, "offset", 10).place(x=10, y=140)
+        Label(self.controls_menu_frame, "Offset", 10).place(x=10, y=140)
         self.obj_offset_var = tk.IntVar()
         self.w_offset_var = tk.IntVar()
         self.obj_offset_var.set(10)
@@ -159,7 +170,7 @@ class CGSystemInterface():
         tv = self.obj_offset_var if (isObject) else self.w_offset_var
         tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=50, y=140)
 
-        Label(self.controls_menu_frame, "zoom factor", 10).place(x=115, y=140)
+        Label(self.controls_menu_frame, "Escal. Factor" if (isObject) else "zoom factor", 10).place(x=115, y=140)
         self.obj_zoom_factor_var = tk.DoubleVar()
         self.w_zoom_factor_var = tk.DoubleVar()
         self.obj_zoom_factor_var.set(2.0)

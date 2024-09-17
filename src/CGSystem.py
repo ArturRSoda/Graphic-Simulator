@@ -3,8 +3,10 @@ import math as m
 
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
+from transformationWindow import TransformationWindow
 
 from objects import Object, Point, Line, WireFrame
+import transformationWindow
 
 class CGSystem():
     def __init__(self):
@@ -36,6 +38,11 @@ class CGSystem():
 
     def add_object(self):
         NewObjWindow(self)
+
+
+    def init_transformation_window(self, obj_id: int):
+        obj = self.display_file[obj_id+2]
+        TransformationWindow(self, obj)
 
     def add_message(self, message: str):
         self.interface.messageBox.insert(0, message)
@@ -349,7 +356,33 @@ class CGSystem():
             new_coordinates.append((new_coord_matrix[0].item(), new_coord_matrix[1].item()))
 
         return new_coordinates
-            
+
+    def apply_transformations(self, object: Object, transformation_list: list[tuple[str, float, tuple[int, int]|None, bool|None]]):
+        # transformation_list = [ tranformation  : str,
+        #                         factor         : float,
+        #                         rotation_coord : (int, int) | None
+        #                         antiClockwise  : bool | None
+        #                       ]
+        #   - tranformation can be: "move_up", "move_down", "move_left", "move_right",
+        #                           "increase_escale", "decrease_escale",
+        #                           "rotate_origin", "rotate_obj_center", "rotate_other"
+        #
+        #   if transformaton in ("move_up", "move_down", "move_left", "move_right") then:
+        #       - factor is the offset 
+        #       - rotation_coord = None
+        #       - antiClockwise = None
+        #
+        #   if transformation in ("increase_escale", "decrease_escale") then
+        #       - factor is the escale factor to increase or decrease
+        #       - rotation_coord = None
+        #       - antiClockwise = None
+        #
+        #   if transformation in ("rotate_origin", "rotate_obj_center", "rotate_other") then
+        #       - factor is the degrees
+        #       - rotation_coord is the coord to rotate IF TRANSFORMATION = "rotate_other"
+        #       - antiClockwise = True if antiClockwise else False
+        print(object.name)
+        print(transformation_list)
 
     def add_test(self):
         self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
