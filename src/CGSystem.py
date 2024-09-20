@@ -118,6 +118,8 @@ class CGSystem():
             normalized_y = (y - y_Wmin) / height
             normalized_coords.append((normalized_x, normalized_y))
 
+        print(normalized_coords)
+
         return normalized_coords
 
     def norm_coords_to_vp_coords(self, norm_coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
