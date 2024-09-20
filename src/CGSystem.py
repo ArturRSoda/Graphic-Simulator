@@ -32,10 +32,12 @@ class CGSystem():
         self.display_file.append(Line("X", "black", [(-10000, 0), (10000, 0)], norm_coord_x))
         norm_coord_y = self.normalize_coordinates([(0, -10000), (0, 10000)])
         self.display_file.append(Line("Y", "black", [(0, -10000), (0, 10000)], norm_coord_y))
+
+        # window center lines
         norm_coord_x = self.normalize_coordinates([(-10000, 0), (10000, 0)])
-        self.display_file.append(Line("X", "gray", [(-10000, 0), (10000, 0)], norm_coord_x))
+        self.display_file.append(Line("X_window", "gray", [(-10000, 0), (10000, 0)], norm_coord_x))
         norm_coord_y = self.normalize_coordinates([(0, -10000), (0, 10000)])
-        self.display_file.append(Line("Y", "gray", [(0, -10000), (0, 10000)], norm_coord_y))
+        self.display_file.append(Line("Y_window", "gray", [(0, -10000), (0, 10000)], norm_coord_y))
 
         # test objects
         self.add_test()
@@ -118,8 +120,8 @@ class CGSystem():
 
         for coord in coords:
             x, y = coord
-            normalized_x = (x - x_Wmin) / width
-            normalized_y = (y - y_Wmin) / height
+            normalized_x = 2 * (x - x_Wmin) / width - 1
+            normalized_y = 2 * (y - y_Wmin) / height - 1 
             normalized_coords.append((normalized_x, normalized_y))
 
         for i, coord in enumerate(normalized_coords):
@@ -134,6 +136,7 @@ class CGSystem():
         x_VPmax, y_VPmax = self.VPcoord_max
 
         for norm_coord in norm_coords:
+            norm_coord = (((norm_coord[0] + 1) / 2), ((norm_coord[1] +1) / 2))
             x = norm_coord[0] * x_VPmax 
             y = self.VPcoord_max[1] - (norm_coord[1] * y_VPmax)
             vp_coords.append((x, y))
@@ -208,7 +211,7 @@ class CGSystem():
     # direction can be: "up", "down", "left", "right"
     # remember to sum +2 in obj_id
     def move_object(self, offset: int, direction: str, obj_id: int):
-        obj = self.display_file[obj_id+2]
+        obj = self.display_file[obj_id+4]
 
         offset_x: int = 0
         offset_y: int = 0
@@ -261,8 +264,9 @@ class CGSystem():
         self.Wcoord_min = (self.Wcoord_min[0]+offset_x_min, self.Wcoord_min[1]+offset_y_min)
         self.Wcoord_max = (self.Wcoord_max[0]+offset_x_max, self.Wcoord_max[1]+offset_y_max)
 
-        self.move_object(offset, direction, 1)
-        self.move_object(offset, direction, 0)
+        # window lines
+        self.move_object(offset, direction, -1)
+        self.move_object(offset, direction, -2)
 
         self.update_normalized_coordinates()
         self.update_viewport()
@@ -272,7 +276,7 @@ class CGSystem():
 
     # inORout can be: "in", "out"
     def escale_object(self, escale_factor: float, object_id: int, inORout: str):
-            obj = self.display_file[object_id+2]
+            obj = self.display_file[object_id+4]
 
             escale_factor = 1/escale_factor if (inORout == "out") else escale_factor 
 
@@ -311,7 +315,7 @@ class CGSystem():
 
     def zoom_in(self, zoom_factor: float, isObject: bool, object_id: int):
         if (isObject):
-            obj = self.display_file[object_id+2]
+            obj = self.display_file[object_id+4]
             transformation_list = []
             self.add_scaling(transformation_list, zoom_factor, self.get_center(obj.coordinates))
             obj.coordinates = self.transform(obj.coordinates, transformation_list)
@@ -340,7 +344,7 @@ class CGSystem():
     def zoom_out(self, zoom_factor: float, isObject: bool, object_id: int):
         if (isObject):
             zoom_factor = 1/zoom_factor
-            obj = self.display_file[object_id+2]
+            obj = self.display_file[object_id+4]
             transformation_list = []
             self.add_scaling(transformation_list, zoom_factor, self.get_center(obj.coordinates))
             obj.coordinates = self.transform(obj.coordinates, transformation_list)
@@ -370,7 +374,7 @@ class CGSystem():
         if not antiClockwise:
             degrees = -degrees
 
-        obj = self.display_file[object_id+2]
+        obj = self.display_file[object_id+4]
         obj_name = obj.name + "-" + obj.type
 
         transformation_list = []
