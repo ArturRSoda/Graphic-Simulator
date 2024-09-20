@@ -6,7 +6,7 @@ from CGSystemInterface import Label, Frame
 
 class TransformationWindow:
     def __init__(self, system, obj: Object):
-        self.object                     : Object
+        self.obj                        : Object
         self.transformation_list_frame  : Frame
         self.controls_frame             : Frame
         self.translation_controls_frame : Frame
@@ -30,7 +30,7 @@ class TransformationWindow:
 
         self.transformation_list = list()
         self.system = system
-        self.object = obj
+        self.obj = obj
 
         self.add_header()
         self.add_controls()
@@ -39,9 +39,9 @@ class TransformationWindow:
 
 
     def add_header(self):
-        obj_name = self.object.name + " - " + self.object.type
+        obj_name = self.obj.name + " - " + self.obj.type
         coord_str = ""
-        for c in self.object.coordinates:
+        for c in self.obj.coordinates:
             coord_str += "(%.1f, %.1f)" % c
 
         Label(self.app, "SELECTED OBJECT: %s" % obj_name, 10).place(x=10, y=10)
@@ -151,13 +151,13 @@ class TransformationWindow:
         self.transformation_listbox.delete(selected[0])
 
     def apply(self):
-        self.system.apply_transformations(self.object, self.transformation_list)
+        self.system.apply_transformations(self.obj, self.transformation_list)
 
         coord = ""
-        for c in self.object.coordinates:
+        for c in self.obj.coordinates:
             coord += "(%.1f, %.1f) " % c
         self.system.add_message("    - " + coord)
-        self.system.add_message(self.object.name + " - " + self.object.type + " was transformed. New coordinates: ")
+        self.system.add_message(self.obj.name + " - " + self.obj.type + " was transformed. New coordinates: ")
         self.app.destroy()
 
     def move_up(self):
@@ -236,8 +236,3 @@ class TransformationWindow:
 
     def send_error(self, title: str, message: str):
         messagebox.showerror(title, message)
-
-
-
-
-

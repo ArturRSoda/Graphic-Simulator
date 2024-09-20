@@ -11,10 +11,10 @@ from objects import Object, Point, Line, WireFrame
 class CGSystem():
     def __init__(self):
         self.interface    : CGSystemInterface
-        self.Wcoord_min   : tuple[float, float]
-        self.Wcoord_max   : tuple[float, float]
-        self.VPcoord_min  : tuple[float, float]
-        self.VPcoord_max  : tuple[float, float]
+        self.w_coord_min   : tuple[float, float]
+        self.w_coord_max   : tuple[float, float]
+        self.vp_coord_min  : tuple[float, float]
+        self.vp_coord_max  : tuple[float, float]
         self.display_file : list[Object]
 
         self.display_file = list()
@@ -22,11 +22,11 @@ class CGSystem():
     def run(self):
         self.interface = CGSystemInterface(self)
 
-        self.VPcoord_max = (self.interface.canvas_width, self.interface.canvas_height)
-        self.VPcoord_min = (0, 0)
+        self.vp_coord_max = (self.interface.canvas_width, self.interface.canvas_height)
+        self.vp_coord_min = (0, 0)
 
-        self.Wcoord_min = (-self.VPcoord_max[0]/2, -self.VPcoord_max[1]/2)
-        self.Wcoord_max = (self.VPcoord_max[0]/2, self.VPcoord_max[1]/2)
+        self.w_coord_min = (-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2)
+        self.w_coord_max = (self.vp_coord_max[0]/2, self.vp_coord_max[1]/2)
 
         norm_coord_x = self.normalize_coordinates([(-10000, 0), (10000, 0)])
         self.display_file.append(Line("X", "black", [(-10000, 0), (10000, 0)], norm_coord_x))
@@ -50,31 +50,31 @@ class CGSystem():
 
 
     def init_transformation_window(self, obj_id: int):
-        obj = self.display_file[obj_id+2]
+        obj = self.display_file[obj_id+4]
         TransformationWindow(self, obj)
 
     def add_message(self, message: str):
         self.interface.messageBox.insert(0, message)
 
     def transform_window_to_vp_coordinates(self, coord: tuple[float, float]) -> tuple[float, float]:
-        Xw = coord[0]
-        Yw = coord[1]
+        x_w = coord[0]
+        y_w = coord[1]
 
-        Xwmin, Ywmin  = self.Wcoord_min
-        Xwmax, Ywmax = self.Wcoord_max
+        x_wmin, y_wmin  = self.w_coord_min
+        x_wmax, y_wmax = self.w_coord_max
 
-        Xvpmin, Yvpmin = self.VPcoord_min
-        Xvpmax, Yvpmax = self.VPcoord_max
+        x_vpmin, y_vpmin = self.vp_coord_min
+        x_vpmax, y_vpmax = self.vp_coord_max
 
-        Xvp = ( (Xw - Xwmin) / (Xwmax - Xwmin) ) * (Xvpmax - Xvpmin)
-        Yvp = ( 1 - ((Yw - Ywmin) / (Ywmax - Ywmin)) ) * (Yvpmax - Yvpmin)
+        x_vp = ( (x_w - x_wmin) / (x_wmax - x_wmin) ) * (x_vpmax - x_vpmin)
+        y_vp = ( 1 - ((y_w - y_wmin) / (y_wmax - y_wmin)) ) * (y_vpmax - y_vpmin)
 
 
-        return (Xvp, Yvp)
+        return (x_vp, y_vp)
 
     def del_object(self, id: int):
         self.interface.objects_listbox.delete(id)
-        self.display_file.pop(id+2)
+        self.display_file.pop(id+4)
 
         self.update_viewport()
 
@@ -112,16 +112,16 @@ class CGSystem():
     def normalize_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
         normalized_coords: list[tuple[float, float]] = list()
 
-        x_Wmin, y_Wmin = self.Wcoord_min
-        x_Wmax, y_Wmax = self.Wcoord_max
+        x_wmin, y_wmin = self.w_coord_min
+        x_wmax, y_wmax = self.w_coord_max
 
-        width = x_Wmax - x_Wmin
-        height = y_Wmax - y_Wmin
+        width = x_wmax - x_wmin
+        height = y_wmax - y_wmin
 
         for coord in coords:
             x, y = coord
-            normalized_x = 2 * (x - x_Wmin) / width - 1
-            normalized_y = 2 * (y - y_Wmin) / height - 1 
+            normalized_x = 2 * (x - x_wmin) / width - 1
+            normalized_y = 2 * (y - y_wmin) / height - 1 
             normalized_coords.append((normalized_x, normalized_y))
 
         for i, coord in enumerate(normalized_coords):
@@ -133,12 +133,12 @@ class CGSystem():
     def norm_coords_to_vp_coords(self, norm_coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
         vp_coords: list[tuple[float, float]] = list()
 
-        x_VPmax, y_VPmax = self.VPcoord_max
+        x_vp_max, y_vp_max = self.vp_coord_max
 
         for norm_coord in norm_coords:
             norm_coord = (((norm_coord[0] + 1) / 2), ((norm_coord[1] +1) / 2))
-            x = norm_coord[0] * x_VPmax 
-            y = self.VPcoord_max[1] - (norm_coord[1] * y_VPmax)
+            x = norm_coord[0] * x_vp_max 
+            y = self.vp_coord_max[1] - (norm_coord[1] * y_vp_max)
             vp_coords.append((x, y))
 
         return vp_coords
@@ -193,14 +193,14 @@ class CGSystem():
         self.update_viewport()
 
     def set_window_coord(self, coord: tuple[float, float]):
-        width = abs(self.Wcoord_max[0] - self.Wcoord_min[0])
-        height = abs(self.Wcoord_max[1] - self.Wcoord_min[1])
+        width = abs(self.w_coord_max[0] - self.w_coord_min[0])
+        height = abs(self.w_coord_max[1] - self.w_coord_min[1])
 
         offset_X = width / 2
         offset_Y = height / 2
 
-        self.Wcoord_min = (coord[0]-offset_X, coord[1]-offset_Y)
-        self.Wcoord_max = (coord[0]+offset_X, coord[1]+offset_Y)
+        self.w_coord_min = (coord[0]-offset_X, coord[1]-offset_Y)
+        self.w_coord_max = (coord[0]+offset_X, coord[1]+offset_Y)
 
         self.update_normalized_coordinates()
         self.update_viewport()
@@ -261,8 +261,8 @@ class CGSystem():
                 offset_x_min = -offset
                 offset_x_max = -offset
 
-        self.Wcoord_min = (self.Wcoord_min[0]+offset_x_min, self.Wcoord_min[1]+offset_y_min)
-        self.Wcoord_max = (self.Wcoord_max[0]+offset_x_max, self.Wcoord_max[1]+offset_y_max)
+        self.w_coord_min = (self.w_coord_min[0]+offset_x_min, self.w_coord_min[1]+offset_y_min)
+        self.w_coord_max = (self.w_coord_max[0]+offset_x_max, self.w_coord_max[1]+offset_y_max)
 
         # window lines
         self.move_object(offset, direction, -1)
@@ -295,8 +295,8 @@ class CGSystem():
     def zoom_window(self, zoom_factor: float, inORout: str):
         zoom_factor = 1/zoom_factor if (inORout == "in") else zoom_factor
 
-        p0 = self.Wcoord_min
-        p2 = self.Wcoord_max
+        p0 = self.w_coord_min
+        p2 = self.w_coord_max
         p1 = (p2[0], p0[1])
         p3 = (p0[0], p2[1])
         window_coordinates = [p0, p1, p2, p3]
@@ -305,8 +305,8 @@ class CGSystem():
         self.add_scaling(transformation_list, zoom_factor)
         new_points = self.transform(window_coordinates, transformation_list)
 
-        self.Wcoord_min = new_points[0]
-        self.Wcoord_max = new_points[2]
+        self.w_coord_min = new_points[0]
+        self.w_coord_max = new_points[2]
 
         self.update_normalized_coordinates()
         self.update_viewport()
@@ -324,8 +324,8 @@ class CGSystem():
 
         else:
             zoom_factor = 1/zoom_factor
-            p0 = self.Wcoord_min
-            p2 = self.Wcoord_max
+            p0 = self.w_coord_min
+            p2 = self.w_coord_max
             p1 = (p2[0], p0[1])
             p3 = (p0[0], p2[1])
             window_coordinates = [p0, p1, p2, p3]
@@ -333,8 +333,8 @@ class CGSystem():
             self.add_scaling(transformation_list, zoom_factor)
             new_points = self.transform(window_coordinates, transformation_list)
 
-            self.Wcoord_min = new_points[0]
-            self.Wcoord_max = new_points[2]
+            self.w_coord_min = new_points[0]
+            self.w_coord_max = new_points[2]
 
             self.add_message("window zoomed in by %f" % zoom_factor)
 
@@ -352,8 +352,8 @@ class CGSystem():
             self.add_message("%s zoomed out by %d" % (obj_name, zoom_factor))
 
         else:
-            p0 = self.Wcoord_min
-            p2 = self.Wcoord_max
+            p0 = self.w_coord_min
+            p2 = self.w_coord_max
             p1 = (p2[0], p0[1])
             p3 = (p0[0], p2[1])
 
@@ -362,8 +362,8 @@ class CGSystem():
             self.add_scaling(transformation_list, zoom_factor)
             new_points = self.transform(window_coordinates, transformation_list)
 
-            self.Wcoord_min = new_points[0]
-            self.Wcoord_max = new_points[2]
+            self.w_coord_min = new_points[0]
+            self.w_coord_max = new_points[2]
 
             self.add_message("window zoomed out by %f" % zoom_factor)
 
@@ -501,6 +501,8 @@ class CGSystem():
                     self.add_rotation(transformation_list, factor, rotation_center)
 
         obj.coordinates = self.transform(obj.coordinates, transformation_list)
+        obj.normalized_coordinates = self.normalize_coordinates(obj.coordinates)
+
         self.update_viewport()
 
 

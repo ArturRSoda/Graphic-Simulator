@@ -37,7 +37,7 @@ class CGSystemInterface():
         self.window_degrees_var    : tk.DoubleVar
         self.object_degrees_var    : tk.DoubleVar
         self.obj_rotation_coord_var: tuple[tk.IntVar, tk.IntVar]
-        self.Wcoord_var            : tuple[tk.IntVar, tk.IntVar]
+        self.w_coord_var           : tuple[tk.IntVar, tk.IntVar]
         self.canvas_width          : float
         self.canvas_height         : float
         self.tab_width             : float
@@ -254,20 +254,20 @@ class CGSystemInterface():
         fm = Frame(app, width=160, height=50)
         fm.place(x=10, y=30)
 
-        self.Wcoord_var = (tk.IntVar(), tk.IntVar())
+        self.w_coord_var = (tk.IntVar(), tk.IntVar())
 
         Label(fm, "X:", 10).place(x=10, y=15)
-        tk.Entry(fm, textvariable=self.Wcoord_var[0], width=4).place(x=30, y=10)
+        tk.Entry(fm, textvariable=self.w_coord_var[0], width=4).place(x=30, y=10)
         Label(fm, "Y:", 10).place(x=80, y=15)
-        tk.Entry(fm, textvariable=self.Wcoord_var[1], width=4).place(x=100, y=10)
+        tk.Entry(fm, textvariable=self.w_coord_var[1], width=4).place(x=100, y=10)
 
-        tk.Button(app, text="Set", command=self.set_Wcoord).place(x=20, y=90)
+        tk.Button(app, text="Set", command=self.set_wcoord).place(x=20, y=90)
         tk.Button(app, text="Cancel", command=app.destroy).place(x=80, y=90)
 
 
-    def set_Wcoord(self):
-        coord_x = self.verify_num_entry(self.Wcoord_var[0])
-        coord_y = self.verify_num_entry(self.Wcoord_var[1])
+    def set_wcoord(self):
+        coord_x = self.verify_num_entry(self.w_coord_var[0])
+        coord_y = self.verify_num_entry(self.w_coord_var[1])
 
         if (coord_x is not None) and (coord_y is not None):
             self.system.set_window_coord((coord_x, coord_y))
