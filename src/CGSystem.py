@@ -47,7 +47,7 @@ class CGSystem():
     def add_message(self, message: str):
         self.interface.messageBox.insert(0, message)
 
-    def transform_coordinates(self, coord: tuple[int, int]) -> tuple[float, float]:
+    def transform_window_to_vp_coordinates(self, coord: tuple[float, float]) -> tuple[float, float]:
         Xw = coord[0]
         Yw = coord[1]
 
@@ -78,22 +78,55 @@ class CGSystem():
             self.draw_object(obj)
 
     def draw_object(self, obj: Object):
-        transformed_coordinates = []
-        for coord in obj.coordinates:
-            transformed_coordinates.append(self.transform_coordinates(coord))
+        # nao utiliza mais
+        # transformed_coordinates = []
+        # for coord in obj.coordinates:
+        #    transformed_coordinates.append(self.transform_coordinates(coord))
 
-        if (len(transformed_coordinates) == 1):
-            coord = transformed_coordinates[0]
+        obj_normalized_coords = self.normalize_coordinates(obj.coordinates)
+        obj_vp_coords = self.norm_coords_to_vp_coords(obj_normalized_coords)
+
+        if (len(obj_vp_coords) == 1):
+            coord = obj_vp_coords[0]
             self.interface.canvas.create_oval(coord[0], coord[1], coord[0], coord[1], fill=obj.color, width=5)
 
         else:
-            for i in range(len(transformed_coordinates)-1):
-                start_coord = transformed_coordinates[i]
-                end_coord = transformed_coordinates[i+1]
+            for i in range(len(obj_vp_coords)-1):
+                start_coord = obj_vp_coords[i]
+                end_coord = obj_vp_coords[i+1]
 
                 self.interface.canvas.create_line(start_coord[0], start_coord[1], end_coord[0], end_coord[1], fill=obj.color, width=2)
 
-    def add_point(self,name: str, color: str, coord: tuple[int, int]):
+    def normalize_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
+        normalized_coords: list[tuple[float, float]] = list()
+
+        x_Wmin, y_Wmin = self.Wcoord_min
+        x_Wmax, y_Wmax = self.Wcoord_max
+
+        width = x_Wmax - x_Wmin
+        height = y_Wmax - y_Wmin
+
+        for coord in coords:
+            x, y = coord
+            normalized_x = (x - x_Wmin) / width
+            normalized_y = (y - y_Wmin) / height
+            normalized_coords.append((normalized_x, normalized_y))
+
+        return normalized_coords
+
+    def norm_coords_to_vp_coords(self, norm_coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
+        vp_coords: list[tuple[float, float]] = list()
+
+        x_VPmax, y_VPmax = self.VPcoord_max
+
+        for norm_coord in norm_coords:
+            x = norm_coord[0] * x_VPmax 
+            y = self.VPcoord_max[1] - (norm_coord[1] * y_VPmax)
+            vp_coords.append((x, y))
+
+        return vp_coords
+
+    def add_point(self,name: str, color: str, coord: tuple[float, float]):
         point = Point(name, color, [coord])
 
         self.display_file.append(point)
@@ -106,7 +139,7 @@ class CGSystem():
 
         self.update_viewport()
 
-    def add_line(self, name: str, color: str, start_coord: tuple[int, int], end_coord: tuple[int, int]):
+    def add_line(self, name: str, color: str, start_coord: tuple[float, float], end_coord: tuple[float, float]):
         line = Line(name, color, [start_coord, end_coord])
 
         self.display_file.append(line)
@@ -119,7 +152,7 @@ class CGSystem():
 
         self.update_viewport()
 
-    def add_wireframe(self, name: str, color: str, coord_list: list[tuple[int, int]]):
+    def add_wireframe(self, name: str, color: str, coord_list: list[tuple[float, float]]):
         if (len(coord_list) == 1):
             self.add_point(name, color, coord_list[0])
             return
@@ -138,7 +171,7 @@ class CGSystem():
 
         self.update_viewport()
 
-    def set_window_coord(self, coord: tuple[int, int]):
+    def set_window_coord(self, coord: tuple[float, float]):
         width = abs(self.Wcoord_max[0] - self.Wcoord_min[0])
         height = abs(self.Wcoord_max[1] - self.Wcoord_min[1])
 
@@ -150,6 +183,7 @@ class CGSystem():
         self.update_viewport()
 
         self.add_message("Window coordinates seted to (%d, %d)" % (coord[0], coord[1]))
+
 
     # if isObject == True then
     #     - move object
@@ -163,6 +197,7 @@ class CGSystem():
             transformation_list = []
             self.add_translation(transformation_list, 0, offset)
             obj.coordinates = self.transform(obj.coordinates, transformation_list)
+
             obj_name = obj.name + "-" + obj.type
             self.add_message("%s moved up by %d" % (obj_name, offset))
 
@@ -290,7 +325,7 @@ class CGSystem():
     #         rotation_point = None
     #
     # rotation_opt can be: "Origin", "Obj Center" and "Other"
-    def rotate(self, isObject: bool, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[int, int]):
+    def rotate(self, isObject: bool, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[float, float]):
         if not antiClockwise:
             degrees = -degrees
 
@@ -320,7 +355,7 @@ class CGSystem():
 
         self.update_viewport()
 
-    def get_center(self, coordinates: list[tuple[int, int]]):
+    def get_center(self, coordinates: list[tuple[float, float]]):
         # if the object is a polygon, the first and the last points are the same
         coordinates = coordinates.copy()
         if (coordinates[0] == coordinates[-1]) and (len(coordinates) > 1):
@@ -370,7 +405,7 @@ class CGSystem():
                                                 [-s, c, 0],
                                                 [0, 0, 1]]))
 
-    def transform(self, coordinates: list[tuple[int, int]], transformation_list: list[list[list]]):
+    def transform(self, coordinates: list[tuple[float, float]], transformation_list: list[list[list]]):
         transformation_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         for matrix in transformation_list:
             transformation_matrix = np.matmul(transformation_matrix, matrix)
@@ -387,12 +422,12 @@ class CGSystem():
 
     # transformation_typle_list = [ tranformation_type : str,
     #                               factor             : float,
-    #                               rotation_center    : (int, int) | None
+    #                               rotation_center    : (float, float) | None
     #                               antiClockwise      : bool | None ]
     # tranformation can be: "move_up", "move_down", "move_left", "move_right",
     #                       "increase_scale", "decrease_scale",
     #                       "rotate_origin", "rotate_obj_center", "rotate_other"
-    def apply_transformations(self, obj: Object, transformation_tuple_list: list[tuple[str, float, tuple[int, int]|None, bool|None]]):
+    def apply_transformations(self, obj: Object, transformation_tuple_list: list[tuple[str, float, tuple[float, float]|None, bool|None]]):
         transformation_list = []
         for transformation_type, factor, rotation_center, antiClockwise in transformation_tuple_list:
             if antiClockwise != None and not antiClockwise:

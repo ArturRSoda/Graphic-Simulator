@@ -22,7 +22,7 @@ class TransformationWindow:
         self.origin_rb                  : tk.Radiobutton
         self.other_rb                   : tk.Radiobutton
         self.transformation_listbox     : tk.Listbox
-        self.transformation_list        : list[tuple[str, float, tuple[int, int] | None, bool | None]]
+        self.transformation_list        : list[tuple[str, float, tuple[float, float] | None, bool | None]]
 
         self.app = tk.Tk()
         self.app.title("Transformation Window")
@@ -44,8 +44,8 @@ class TransformationWindow:
         for c in self.object.coordinates:
             coord_str += "(%.1f, %.1f)" % c
 
-        Label(self.app, "SELECTED OBJECT: %s" % obj_name, 20).place(x=10, y=10)
-        Label(self.app, "CURRENT COORDINATES: %s" % coord_str, 20).place(x=10, y=30)
+        Label(self.app, "SELECTED OBJECT: %s" % obj_name, 10).place(x=10, y=10)
+        Label(self.app, "CURRENT COORDINATES: %s" % coord_str, 10).place(x=10, y=30)
 
     def add_controls(self):
         self.controls_frame = Frame(self.app, 305, 450)
@@ -135,7 +135,7 @@ class TransformationWindow:
 
         Label(self.transformation_list_frame, "Transformation List", 10).place(x=10, y=10)
 
-        self.transformation_listbox = tk.Listbox(self.transformation_list_frame, width=45, height=24)
+        self.transformation_listbox = tk.Listbox(self.transformation_list_frame, width=30, height=19)
         self.transformation_listbox.place(x=10, y=30)
 
         tk.Button(self.transformation_list_frame, text="Delete", command=self.del_transformation).place(x=30, y=390)
@@ -207,7 +207,7 @@ class TransformationWindow:
         if (not v): return
 
         message: str
-        t: tuple[str, float, tuple[int, int], bool]
+        t: tuple[str, float, tuple[float, float], bool]
         if (self.rotation_opt_var.get() == "Origin"):
             t = ("rotate_origin", v, (0, 0), antiClockwise)
             message = "Rotated %d degrees by the Origin %s" % (v, ("anti-clockwise" if (antiClockwise) else "clockwise"))
@@ -219,14 +219,14 @@ class TransformationWindow:
             if (not x): return
             y = self.verify_num_entry(self.rotation_Ypoint_entry)
             if (not y): return
-            t = ("rotate_other", v, (int(x), int(y)), antiClockwise)
+            t = ("rotate_other", v, (x, y), antiClockwise)
             message = "Rotated %d degrees by the point (%d, %d) %s" % (v, x, y, ("anti-clockwise" if (antiClockwise) else "clockwise"))
 
         self.transformation_list.append(t)
         self.transformation_listbox.insert("end", message)
 
 
-    def verify_num_entry(self, entry) -> float|None:
+    def verify_num_entry(self, entry) -> int|float|None:
         try:
             value = float(entry.get())
         except Exception:

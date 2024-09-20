@@ -4,7 +4,7 @@ from tkinter import ttk
 
 
 class Frame(tk.Frame):
-    def __init__(self, parent, width: int, height: int):
+    def __init__(self, parent, width: float, height: float):
         super().__init__(parent, width=width, height=height, borderwidth=3, relief="groove")
 
 
@@ -14,7 +14,7 @@ class Label(tk.Label):
 
 
 class Tab(ttk.Frame):
-    def __init__(self, parent, width: int, height: int):
+    def __init__(self, parent, width: float, height: float):
         super().__init__(parent, width=width, height=height, borderwidth=3, relief="ridge")
 
 
@@ -38,10 +38,10 @@ class CGSystemInterface():
         self.object_degrees_var    : tk.DoubleVar
         self.obj_rotation_coord_var: tuple[tk.IntVar, tk.IntVar]
         self.Wcoord_var            : tuple[tk.IntVar, tk.IntVar]
-        self.canvas_width          : int
-        self.canvas_height         : int
-        self.tab_width             : int
-        self.tab_height            : int
+        self.canvas_width          : float
+        self.canvas_height         : float
+        self.tab_width             : float
+        self.tab_height            : float
         self.rotation_Xpoint_entry : tk.Entry
         self.rotation_Ypoint_entry : tk.Entry
         self.obj_center_rb         : tk.Radiobutton
@@ -67,7 +67,7 @@ class CGSystemInterface():
         self.canvas_frame = Frame(self.app, self.app.winfo_width()-self.menu_frame.winfo_width()-20, 500)
         self.canvas_frame.place(x=self.menu_frame.winfo_width()+20, y=10)
 
-        Label(self.canvas_frame, "Viewport", 15).place(x=10, y=10)
+        Label(self.canvas_frame, "Viewport", 10).place(x=10, y=10)
 
         self.app.update()
         self.canvas_width = self.canvas_frame.winfo_width()-35
@@ -97,7 +97,7 @@ class CGSystemInterface():
         Label(self.object_menu_frame, "Objects", 10).place(x=10, y=10)
 
         self.app.update()
-        self.objects_listbox = tk.Listbox(self.object_menu_frame, width=self.object_menu_frame.winfo_width()-235, height=6)
+        self.objects_listbox = tk.Listbox(self.object_menu_frame, width=self.object_menu_frame.winfo_width()-247, height=5)
         self.objects_listbox.place(x=10, y=30)
 
         tk.Button(self.object_menu_frame, text="Add", command=self.system.add_object).place(x=35, y=135)
@@ -157,8 +157,8 @@ class CGSystemInterface():
         tk.Button(self.controls_menu_frame, text="Right", command=lambda: self.move_right(isObject)).place(x=62, y=70)
         tk.Button(self.controls_menu_frame, text="Down", command=lambda: self.move_down(isObject)).place(x=30, y=100)
 
-        tk.Button(self.controls_menu_frame, text="Increase" if (isObject) else "Zoom In", command=lambda: self.zoom_in(isObject)).place(x=150, y=50)
-        tk.Button(self.controls_menu_frame, text="Decrease" if (isObject) else "Zoom Out", command=lambda: self.zoom_out(isObject)).place(x=150, y=90)
+        tk.Button(self.controls_menu_frame, text="Increase" if (isObject) else "Zoom In", command=lambda: self.zoom_in(isObject)).place(x=145, y=50)
+        tk.Button(self.controls_menu_frame, text="Decrease" if (isObject) else "Zoom Out", command=lambda: self.zoom_out(isObject)).place(x=145, y=90)
 
         tk.Button(self.controls_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=170)
 
@@ -168,15 +168,15 @@ class CGSystemInterface():
         self.obj_offset_var.set(10)
         self.w_offset_var.set(10)
         tv = self.obj_offset_var if (isObject) else self.w_offset_var
-        tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=50, y=140)
+        tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=55, y=140)
 
-        Label(self.controls_menu_frame, "Escal. Factor" if (isObject) else "zoom factor", 10).place(x=115, y=140)
+        Label(self.controls_menu_frame, "Escl. Factor" if (isObject) else "zoom factor", 10).place(x=115, y=140)
         self.obj_zoom_factor_var = tk.DoubleVar()
         self.w_zoom_factor_var = tk.DoubleVar()
         self.obj_zoom_factor_var.set(2.0)
         self.w_zoom_factor_var.set(2.0)
         tv = self.obj_zoom_factor_var if (isObject) else self.w_zoom_factor_var
-        tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=200, y=140)
+        tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=195, y=140)
 
 
     def add_window_rotation_menu(self):
@@ -216,13 +216,12 @@ class CGSystemInterface():
         self.obj_center_rb = tk.Radiobutton(self.rotation_menu_frame, text="Obj Center", variable=self.rotation_opt_var, value="Obj Center", command=self.rotation_point_entry_state)
         self.origin_rb = tk.Radiobutton(self.rotation_menu_frame, text="Origin", variable=self.rotation_opt_var, value="Origin", command=self.rotation_point_entry_state)
         self.other_rb = tk.Radiobutton(self.rotation_menu_frame, text="Other", variable=self.rotation_opt_var, value="Other", command=self.rotation_point_entry_state)
-        self.obj_center_rb.place(x=20, y=65)
+        self.obj_center_rb.place(x=0, y=65)
         self.origin_rb.place(x=100, y=65)
-        self.other_rb.place(x=160, y=65)
+        self.other_rb.place(x=170, y=65)
 
-        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotation(True, True)).place(x=10, y=100)
-        tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotation(True, False)).place(x=150, y=100)
-
+        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotation(True, True)).place(x=5, y=100)
+        tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotation(True, False)).place(x=145, y=100)
 
     def rotation_point_entry_state(self):
         if (self.rotation_opt_var.get() == "Other"):
@@ -280,7 +279,7 @@ class CGSystemInterface():
         self.messageBox_frame.place(x=self.menu_frame.winfo_width()+20, y=self.canvas_frame.winfo_height()+20)
 
         self.app.update()
-        self.messageBox = tk.Listbox(self.messageBox_frame, width=self.messageBox_frame.winfo_width()-575, height=10)
+        self.messageBox = tk.Listbox(self.messageBox_frame, width=72, height=8)
         self.messageBox.place(x=10, y=10)
 
 
@@ -341,7 +340,7 @@ class CGSystemInterface():
         var = self.obj_zoom_factor_var if (isObject) else self.w_zoom_factor_var
         self.verify_move(var, self.system.zoom_out, isObject)
 
-    def verify_num_entry(self, entry) -> int|None:
+    def verify_num_entry(self, entry) -> int|float|None:
         try:
             value = entry.get()
         except Exception:

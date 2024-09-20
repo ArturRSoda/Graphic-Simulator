@@ -10,12 +10,12 @@ class NewObjWindow:
         self.line_tab                : Tab
         self.wireframe_tab           : Tab
         self.color_opt_frame         : Frame
-        self.wireframe_coord_list    : list[tuple[int, int]]
+        self.wireframe_coord_list    : list[tuple[float, float]]
         self.wireframe_coord_listbox : tk.Listbox
         self.color_opt_var           : tk.StringVar
         self.obj_name_var            : tk.StringVar
-        self.tab_width               : int
-        self.tab_height              : int
+        self.tab_width               : float
+        self.tab_height              : float
 
         self.point_coord_tuple       : tuple[tk.IntVar, tk.IntVar]
         self.line_start_coord_tuple  : tuple[tk.IntVar, tk.IntVar]
@@ -62,7 +62,7 @@ class NewObjWindow:
 
         self.tab_menu.place(x=10, y=105)
 
-    def add_coord_frame(self, parent, x: int, y: int, variables: tuple[tk.IntVar, tk.IntVar]):
+    def add_coord_frame(self, parent, x: float, y: float, variables: tuple[tk.IntVar, tk.IntVar]):
         fm = Frame(parent, width=160, height=50)
         fm.place(x=x, y=y)
 
@@ -170,7 +170,7 @@ class NewObjWindow:
     def cancel(self):
         self.app.destroy()
 
-    def verify_num_entry(self, entry) -> int|None:
+    def verify_num_entry(self, entry) -> int|float|None:
         try:
             value = entry.get()
         except Exception as e:
