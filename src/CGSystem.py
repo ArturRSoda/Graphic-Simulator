@@ -32,6 +32,10 @@ class CGSystem():
         self.display_file.append(Line("X", "black", [(-10000, 0), (10000, 0)], norm_coord_x))
         norm_coord_y = self.normalize_coordinates([(0, -10000), (0, 10000)])
         self.display_file.append(Line("Y", "black", [(0, -10000), (0, 10000)], norm_coord_y))
+        norm_coord_x = self.normalize_coordinates([(-10000, 0), (10000, 0)])
+        self.display_file.append(Line("X", "gray", [(-10000, 0), (10000, 0)], norm_coord_x))
+        norm_coord_y = self.normalize_coordinates([(0, -10000), (0, 10000)])
+        self.display_file.append(Line("Y", "gray", [(0, -10000), (0, 10000)], norm_coord_y))
 
         # test objects
         self.add_test()
@@ -118,7 +122,9 @@ class CGSystem():
             normalized_y = (y - y_Wmin) / height
             normalized_coords.append((normalized_x, normalized_y))
 
-        print(normalized_coords)
+        for i, coord in enumerate(normalized_coords):
+            print(f"{i}: {coord}")
+        #print(normalized_coords)
 
         return normalized_coords
 
@@ -254,6 +260,9 @@ class CGSystem():
 
         self.Wcoord_min = (self.Wcoord_min[0]+offset_x_min, self.Wcoord_min[1]+offset_y_min)
         self.Wcoord_max = (self.Wcoord_max[0]+offset_x_max, self.Wcoord_max[1]+offset_y_max)
+
+        self.move_object(offset, direction, 1)
+        self.move_object(offset, direction, 0)
 
         self.update_normalized_coordinates()
         self.update_viewport()
@@ -492,8 +501,8 @@ class CGSystem():
 
 
     def add_test(self):
-        self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
-        self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
+        #self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
+        #self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
         self.add_wireframe("triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
-        self.add_point("point", "green", (50,-50))
+        #self.add_point("point", "green", (50,-50))
  
