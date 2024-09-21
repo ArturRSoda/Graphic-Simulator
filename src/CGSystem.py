@@ -275,20 +275,20 @@ class CGSystem():
 
 
     # inORout can be: "in", "out"
-    def escale_object(self, escale_factor: float, object_id: int, inORout: str):
+    def scale_object(self, scale_factor: float, object_id: int, inORout: str):
             obj = self.display_file[object_id+4]
 
-            escale_factor = 1/escale_factor if (inORout == "out") else escale_factor 
+            scale_factor = 1/scale_factor if (inORout == "out") else scale_factor 
 
             transformation_list = []
-            self.add_scaling(transformation_list, escale_factor, self.get_center(obj.coordinates))
+            self.add_scaling(transformation_list, scale_factor, self.get_center(obj.coordinates))
             obj.coordinates = self.transform(obj.coordinates, transformation_list)
             obj.normalized_coordinates = self.normalize_coordinates(obj.coordinates)
 
             self.update_viewport()
 
             obj_name = obj.name + "-" + obj.type
-            self.add_message("%s escaled %s by %.2f" % (obj_name, inORout, escale_factor))
+            self.add_message("%s scaled %s by %.2f" % (obj_name, inORout, scale_factor))
 
 
     # inORout can be: "in", "out"
