@@ -188,6 +188,7 @@ class CGSystemInterface():
         Label(self.rotation_menu_frame, "Rotation", 10).place(x=10, y=10)
 
         self.window_degrees_var = tk.DoubleVar()
+        self.window_degrees_var.set(10.)
         Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=50)
         tk.Entry(self.rotation_menu_frame, textvariable=self.window_degrees_var, width=4).place(x=60, y=50)
 

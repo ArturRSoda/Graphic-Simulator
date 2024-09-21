@@ -11,10 +11,11 @@ from objects import Object, Point, Line, WireFrame
 class CGSystem():
     def __init__(self):
         self.interface    : CGSystemInterface
-        self.w_coord_min   : tuple[float, float]
-        self.w_coord_max   : tuple[float, float]
-        self.vp_coord_min  : tuple[float, float]
-        self.vp_coord_max  : tuple[float, float]
+        self.w_coord_min  : tuple[float, float]
+        self.w_coord_max  : tuple[float, float]
+        self.vp_coord_min : tuple[float, float]
+        self.vp_coord_max : tuple[float, float]
+        self.up_vector    : tuple[flot, float] #(point, angle)
         self.display_file : list[Object]
 
         self.display_file = list()
@@ -27,6 +28,8 @@ class CGSystem():
 
         self.w_coord_min = (-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2)
         self.w_coord_max = (self.vp_coord_max[0]/2, self.vp_coord_max[1]/2)
+
+        self.up_vector = (self.w_coord_max[1]/2, 90)
 
         norm_coord_x = self.normalize_coordinates([(-10000, 0), (10000, 0)])
         self.display_file.append(Line("X", "black", [(-10000, 0), (10000, 0)], norm_coord_x))
@@ -123,10 +126,6 @@ class CGSystem():
             normalized_x = 2 * (x - x_wmin) / width - 1
             normalized_y = 2 * (y - y_wmin) / height - 1 
             normalized_coords.append((normalized_x, normalized_y))
-
-        for i, coord in enumerate(normalized_coords):
-            print(f"{i}: {coord}")
-        #print(normalized_coords)
 
         return normalized_coords
 
@@ -295,11 +294,7 @@ class CGSystem():
     def zoom_window(self, zoom_factor: float, inORout: str):
         zoom_factor = 1/zoom_factor if (inORout == "in") else zoom_factor
 
-        p0 = self.w_coord_min
-        p2 = self.w_coord_max
-        p1 = (p2[0], p0[1])
-        p3 = (p0[0], p2[1])
-        window_coordinates = [p0, p1, p2, p3]
+        window_coordinates = self.get_window_coordinates()
 
         transformation_list = []
         self.add_scaling(transformation_list, zoom_factor)
@@ -324,11 +319,7 @@ class CGSystem():
 
         else:
             zoom_factor = 1/zoom_factor
-            p0 = self.w_coord_min
-            p2 = self.w_coord_max
-            p1 = (p2[0], p0[1])
-            p3 = (p0[0], p2[1])
-            window_coordinates = [p0, p1, p2, p3]
+            window_coordinates = self.get_window_coordinates()
             transformation_list = []
             self.add_scaling(transformation_list, zoom_factor)
             new_points = self.transform(window_coordinates, transformation_list)
@@ -352,12 +343,7 @@ class CGSystem():
             self.add_message("%s zoomed out by %d" % (obj_name, zoom_factor))
 
         else:
-            p0 = self.w_coord_min
-            p2 = self.w_coord_max
-            p1 = (p2[0], p0[1])
-            p3 = (p0[0], p2[1])
-
-            window_coordinates = [p0, p1, p2, p3]
+            window_coordinates = self.get_window_coordinates()
             transformation_list = []
             self.add_scaling(transformation_list, zoom_factor)
             new_points = self.transform(window_coordinates, transformation_list)
@@ -370,7 +356,7 @@ class CGSystem():
         self.update_viewport()
 
     # rotation_opt can be: "Origin", "Obj Center" and "Other"
-    def rotate_object(self, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[float, float]):
+    def rotate_object(self, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[float, float]=(0, 0)):
         if not antiClockwise:
             degrees = -degrees
 
@@ -396,12 +382,39 @@ class CGSystem():
 
         self.add_message(message)
         
-
     def rotate_window(self, degrees: int, antiClockwise: bool):
-        self.add_message("1.3 TODO")
-        #self.add_message("Window rotated %d degrees %s" % (degrees, ("anti-clockwise" if (antiClockwise) else "clockwise")))
+        if not antiClockwise:
+            degrees = -degrees
+
+        window_coordinates = self.get_window_coordinates()
+        window_center = self.get_center(window_coordinates)
+        transformation_list = []
+        self.add_translation(transformation_list, -window_center[0], -window_center[1])
+        window_coordinates = self.transform(window_coordinates, transformation_list)
+        self.w_coord_min = window_coordinates[0]
+        self.w_coord_max = window_coordinates[2]
+
+        self.up_vector = (self.up_vector[0], (self.up_vector[1] + degrees) % 360)
+        delta_angle = 90 - self.up_vector[1]
+        print(delta_angle)
+        for i in range(-4, len(self.display_file)-4):
+            if i == -2 or i == -1:
+                continue
+            self.rotate_object(antiClockwise, -delta_angle, i, "Obj Center")
+
+        for obj in self.display_file:
+            obj.normalized_coordinates = self.normalize_coordinates(obj.coordinates)
+
+        transformation_list = []
+        self.add_translation(transformation_list, window_center[0], window_center[1])
+        window_coordinates = self.transform(window_coordinates, transformation_list)
+        self.w_coord_min = window_coordinates[0]
+        self.w_coord_max = window_coordinates[2]
 
         self.update_viewport()
+
+        self.add_message("Window rotated %d degrees %s" % (degrees, ("anti-clockwise" if (antiClockwise) else "clockwise")))
+
 
     def get_center(self, coordinates: list[tuple[float, float]]):
         # if the object is a polygon, the first and the last points are the same
@@ -505,10 +518,19 @@ class CGSystem():
 
         self.update_viewport()
 
+    def get_window_coordinates(self):
+        p0 = self.w_coord_min
+        p2 = self.w_coord_max
+        p1 = (p2[0], p0[1])
+        p3 = (p0[0], p2[1])
+        window_coordinates = [p0, p1, p2, p3]
+
+        return window_coordinates
+
 
     def add_test(self):
         #self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
-        #self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
+        self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
         self.add_wireframe("triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
         #self.add_point("point", "green", (50,-50))
  
