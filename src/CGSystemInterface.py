@@ -32,7 +32,7 @@ class CGSystemInterface():
         self.w_offset_var          : tk.IntVar
         self.obj_offset_var        : tk.IntVar
         self.w_zoom_factor_var     : tk.DoubleVar
-        self.obj_escale_factor_var : tk.DoubleVar
+        self.obj_scale_factor_var : tk.DoubleVar
         self.rotation_opt_var      : tk.StringVar
         self.window_degrees_var    : tk.DoubleVar
         self.object_degrees_var    : tk.DoubleVar
@@ -158,9 +158,9 @@ class CGSystemInterface():
         tk.Button(self.controls_menu_frame, text="Right", command=lambda: move_func("right")).place(x=62, y=70)
         tk.Button(self.controls_menu_frame, text="Down", command=lambda: move_func("down")).place(x=30, y=100)
 
-        escale_func = self.escale_object if (isObject) else self.zoom_window
-        tk.Button(self.controls_menu_frame, text="Increase" if (isObject) else "Zoom In", command=lambda: escale_func("in")).place(x=145, y=50)
-        tk.Button(self.controls_menu_frame, text="Decrease" if (isObject) else "Zoom Out", command=lambda: escale_func("out")).place(x=145, y=90)
+        scale_func = self.scale_object if (isObject) else self.zoom_window
+        tk.Button(self.controls_menu_frame, text="Increase" if (isObject) else "Zoom In", command=lambda: scale_func("in")).place(x=145, y=50)
+        tk.Button(self.controls_menu_frame, text="Decrease" if (isObject) else "Zoom Out", command=lambda: scale_func("out")).place(x=145, y=90)
 
         tk.Button(self.controls_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=170)
 
@@ -173,11 +173,11 @@ class CGSystemInterface():
         tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=55, y=140)
 
         Label(self.controls_menu_frame, "Escl. Factor" if (isObject) else "zoom factor", 10).place(x=115, y=140)
-        self.obj_escale_factor_var = tk.DoubleVar()
+        self.obj_scale_factor_var = tk.DoubleVar()
         self.w_zoom_factor_var = tk.DoubleVar()
-        self.obj_escale_factor_var.set(2.0)
+        self.obj_scale_factor_var.set(2.0)
         self.w_zoom_factor_var.set(2.0)
-        tv = self.obj_escale_factor_var if (isObject) else self.w_zoom_factor_var
+        tv = self.obj_scale_factor_var if (isObject) else self.w_zoom_factor_var
         tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=195, y=140)
 
 
@@ -368,8 +368,8 @@ class CGSystemInterface():
         self.system.move_window(offset, direction)
         
 
-    def escale_object(self, inORout: str):
-        factor = self.verify_num_entry(self.obj_escale_factor_var)
+    def scale_object(self, inORout: str):
+        factor = self.verify_num_entry(self.obj_scale_factor_var)
         if (factor is None): return
 
         selected = self.objects_listbox.curselection()
@@ -378,7 +378,7 @@ class CGSystemInterface():
             return
         
         obj_id = selected[0]
-        self.system.escale_object(factor, obj_id, inORout)
+        self.system.scale_object(factor, obj_id, inORout)
 
 
     def zoom_window(self, inORout: str):
