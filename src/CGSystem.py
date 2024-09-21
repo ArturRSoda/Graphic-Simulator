@@ -29,7 +29,7 @@ class CGSystem():
         self.w_coord_min = (-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2)
         self.w_coord_max = (self.vp_coord_max[0]/2, self.vp_coord_max[1]/2)
 
-        self.up_vector = (self.w_coord_max[1]/2, 90)
+        self.up_vector = (1, 0)
 
         norm_coord_x = self.normalize_coordinates([(-10000, 0), (10000, 0)])
         self.display_file.append(Line("X", "black", [(-10000, 0), (10000, 0)], norm_coord_x))
@@ -381,11 +381,13 @@ class CGSystem():
         self.update_viewport()
 
         self.add_message(message)
-        
+
     def rotate_window(self, degrees: int, antiClockwise: bool):
         if not antiClockwise:
             degrees = -degrees
 
+        """
+        # translates window to origin
         window_coordinates = self.get_window_coordinates()
         window_center = self.get_center(window_coordinates)
         transformation_list = []
@@ -393,23 +395,44 @@ class CGSystem():
         window_coordinates = self.transform(window_coordinates, transformation_list)
         self.w_coord_min = window_coordinates[0]
         self.w_coord_max = window_coordinates[2]
+        """
 
-        self.up_vector = (self.up_vector[0], (self.up_vector[1] + degrees) % 360)
-        delta_angle = 90 - self.up_vector[1]
+        # rotates up_vector
+        s = m.sin(m.radians(degrees))
+        c = m.cos(m.radians(degrees))
+        x, y = self.up_vector
+        x_new = c * x - s * y
+        y_new = s * x + c * y
+        self.up_vector = (x_new, y_new)
+        
+        # calculate the angle between up vector and world Y axis
+        up_vector = np.array([x_new, y_new])
+        norm_up = np.linalg.norm(up_vector)
+
+        y_axis = np.array([x, y])
+        norm_y = np.linalg.norm(y_axis)
+
+        dot_product = np.dot(up_vector, y_axis)
+        delta_angle = round(m.degrees(m.acos(dot_product / (norm_up * norm_y))))
         print(delta_angle)
+
+        # rotates world
         for i in range(-4, len(self.display_file)-4):
             if i == -2 or i == -1:
                 continue
-            self.rotate_object(antiClockwise, -delta_angle, i, "Obj Center")
+            self.rotate_object(antiClockwise, -delta_angle, i, "Origin")
 
         for obj in self.display_file:
             obj.normalized_coordinates = self.normalize_coordinates(obj.coordinates)
 
+        # translates window back to original position
+        """
         transformation_list = []
         self.add_translation(transformation_list, window_center[0], window_center[1])
         window_coordinates = self.transform(window_coordinates, transformation_list)
         self.w_coord_min = window_coordinates[0]
         self.w_coord_max = window_coordinates[2]
+        """
 
         self.update_viewport()
 
