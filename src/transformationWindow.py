@@ -156,8 +156,8 @@ class TransformationWindow:
         coord = ""
         for c in self.obj.coordinates:
             coord += "(%.1f, %.1f) " % c
-        self.system.add_message("    - " + coord)
-        self.system.add_message(self.obj.name + " - " + self.obj.type + " was transformed. New coordinates: ")
+        self.system.interface.add_message("    - " + coord)
+        self.system.interface.add_message(self.obj.name + " - " + self.obj.type + " was transformed. New coordinates: ")
         self.app.destroy()
 
     def move_up(self):

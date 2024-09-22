@@ -244,6 +244,8 @@ class CGSystemInterface():
         id = tp[0]
         self.system.del_object(id)
 
+        self.add_message("Object Deleted")
+
 
     def set_window_coord(self):
         app = tk.Toplevel()
@@ -272,6 +274,7 @@ class CGSystemInterface():
 
         if (coord_x is not None) and (coord_y is not None):
             self.system.set_window_coord((coord_x, coord_y))
+            self.add_message("Window coordinates seted to (%d, %d)" % (coord_x, coord_y))
 
 
     def add_messagesBox(self):
@@ -311,12 +314,26 @@ class CGSystemInterface():
 
         self.system.rotate_object(anticlockwise, degrees, obj_id, rotation_opt, (coord_x, coord_y))
 
+        obj = self.system.display_file[obj_id+4]
+        obj_name = obj.name + "-" + obj.type
+
+        message: str
+        if (rotation_opt == "Origin"):
+            message = "%s rotated %d degree by the Origin %s" % (obj_name, degrees, ("anti-clockwise" if (anticlockwise) else "clockwise"))
+        elif(rotation_opt == "Obj Center"):
+            message = "%s rotated %d degree by the Object Center %s" % (obj_name, degrees, ("anti-clockwise" if (anticlockwise) else "clockwise"))
+        else:
+            message = "%s rotated %d degree by the point (%d, %d) %s" % (obj_name, degrees, coord_x, coord_y, ("anti-clockwise" if (anticlockwise) else "clockwise"))
+
+        self.add_message(message)
 
     def rotate_window(self, anticlockwise: bool):
         degrees = self.verify_num_entry(self.window_degrees_var)
         if (degrees is None): return
 
         self.system.rotate_window(degrees, anticlockwise)
+
+        self.add_message("Window rotated %d degrees %s" % (degrees, ("anti-clockwise" if (anticlockwise) else "clockwise")))
 
     def rotation(self, isObject: bool, antiClockwise: bool):
         # if isObject == True then move object else move window
@@ -358,16 +375,22 @@ class CGSystemInterface():
         if (not selected):
             self.send_error("Object not selected", "Please select an object!")
             return
-        
+
         obj_id = selected[0]
         self.system.move_object(offset, direction, obj_id)
+
+        obj = self.system.display_file[obj_id+4]
+        obj_name = obj.name + "-" + obj.type
+        self.add_message("%s moved %s by %d" % (obj_name, direction, offset))
 
     def move_window(self, direction: str):
         offset = self.verify_num_entry(self.w_offset_var)
         if (offset is None): return
-    
+
         self.system.move_window(offset, direction)
-        
+
+        self.add_message("window moved %s by %d" % (direction, offset))
+
 
     def scale_object(self, inORout: str):
         factor = self.verify_num_entry(self.obj_scale_factor_var)
@@ -377,16 +400,21 @@ class CGSystemInterface():
         if (not selected):
             self.send_error("Object not selected", "Please select an object!")
             return
-        
+
         obj_id = selected[0]
         self.system.scale_object(factor, obj_id, inORout)
 
+        obj = self.system.display_file[obj_id+4]
+        obj_name = obj.name + "-" + obj.type
+        self.add_message("%s scaled %s by %.2f" % (obj_name, inORout, factor))
 
     def zoom_window(self, inORout: str):
         factor = self.verify_num_entry(self.w_zoom_factor_var)
         if (factor is None): return
 
         self.system.zoom_window(factor, inORout)
+
+        self.add_message("window zoomed %s by %.2f" % (inORout, factor))
 
 
     def verify_num_entry(self, entry) -> int|float|None:
@@ -397,7 +425,9 @@ class CGSystemInterface():
         else:
             return value
 
-
     def send_error(self, title: str, message: str):
         messagebox.showerror(title, message)
+
+    def add_message(self, message: str):
+        self.messageBox.insert(0, message)
 

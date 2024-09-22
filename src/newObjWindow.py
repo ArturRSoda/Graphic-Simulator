@@ -147,7 +147,15 @@ class NewObjWindow:
         coord_y = self.verify_num_entry(self.point_coord_tuple[1])
 
         if (coord_x is not None) and (coord_y is not None):
-            self.system.add_point(self.obj_name_var.get(), self.color_opt_var.get(), (coord_x, coord_y))
+            name = self.obj_name_var.get()
+            color = self.color_opt_var.get()
+            self.system.add_point(name, color, (coord_x, coord_y))
+
+            self.system.interface.add_message("    - Coord:  (%d, %d)" % (coord_x, coord_y))
+            self.system.interface.add_message("    - Color:  %s" % color)
+            self.system.interface.add_message("    - Name:  %s" % name)
+            self.system.interface.add_message("Point added:")
+
             self.app.destroy()
 
     def add_line(self):
@@ -160,11 +168,31 @@ class NewObjWindow:
         if (start_coord_x is not None) and (start_coord_y is not None) and (end_coord_x is not None):
             start_coord = (start_coord_x, start_coord_y)
             end_coord = (end_coord_x, end_coord_y)
-            self.system.add_line(self.obj_name_var.get(), self.color_opt_var.get(), start_coord, end_coord)
+            name = self.obj_name_var.get()
+            color = self.color_opt_var.get()
+
+            self.system.add_line(name, color, start_coord, end_coord)
+
+            self.system.interface.add_message("    - Coord:  (%d, %d) to (%d, %d)" % (start_coord[0], start_coord[1], end_coord[0], end_coord[1]))
+            self.system.interface.add_message("    - Color:  %s" % color)
+            self.system.interface.add_message("    - Name:  %s" % name)
+            self.system.interface.add_message("Line added:")
+
             self.app.destroy()
 
     def add_wireframe(self):
-        self.system.add_wireframe(self.obj_name_var.get(), self.color_opt_var.get(), self.wireframe_coord_list)
+        name = self.obj_name_var.get()
+        color = self.color_opt_var.get()
+
+        self.system.add_wireframe(name, color, self.wireframe_coord_list)
+
+        coords = ""
+        for v in self.wireframe_coord_list: coords += "(%d, %d) " % v
+        self.system.interface.add_message("    - Coord:  %s" % coords)
+        self.system.interface.add_message("    - Color:  %s" % color)
+        self.system.interface.add_message("    - Name:  %s" % name)
+        self.system.interface.add_message("Wireframe added:")
+
         self.app.destroy()
 
     def cancel(self):
