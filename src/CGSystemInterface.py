@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
 
+from objects import Object
+
 
 class Frame(tk.Frame):
     def __init__(self, parent, width: float, height: float):
@@ -50,11 +52,13 @@ class CGSystemInterface():
         self.controls_menu_tab     : ttk.Notebook
         self.window_controls_tab   : Tab
         self.obj_controls_tab      : Tab
+        self.canvas_elements       : list
 
         self.app = tk.Tk()
         self.app.title("Computer Graphics System")
         self.app.geometry("1000x700")
         self.system = system
+        self.canvas_elements = list()
 
         self.add_menu()
         self.add_canvas()
@@ -75,9 +79,30 @@ class CGSystemInterface():
         self.canvas = tk.Canvas(self.canvas_frame, width=self.canvas_width, height=self.canvas_height, bg="white", borderwidth=5, relief="groove")
         self.canvas.place(x=10, y=30)
 
+        l1 = self.canvas.create_line(0, self.canvas_height/2, self.canvas_width, self.canvas_height/2, fill="gray", width=2)
+        l2 = self.canvas.create_line(self.canvas_width/2, 0, self.canvas_width/2, self.canvas_height, fill="gray", width=2)
+        self.canvas_elements.append(l1)
+        self.canvas_elements.append(l2)
+
 
     def clear_canvas(self):
-        self.canvas.delete("all")
+        for i in range(2, len(self.canvas_elements)):
+            self.canvas.delete(self.canvas_elements[i])
+
+
+    def draw_object(self, obj: Object, obj_vp_coords: list[tuple[float, float]]):
+        if (len(obj_vp_coords) == 1):
+            coord = obj_vp_coords[0]
+            p = self.canvas.create_oval(coord[0], coord[1], coord[0], coord[1], fill=obj.color, width=5)
+            self.canvas_elements.append(p)
+
+        else:
+            for i in range(len(obj_vp_coords)-1):
+                start_coord = obj_vp_coords[i]
+                end_coord = obj_vp_coords[i+1]
+
+                l = self.canvas.create_line(start_coord[0], start_coord[1], end_coord[0], end_coord[1], fill=obj.color, width=2)
+                self.canvas_elements.append(l)
 
 
     def add_menu(self):
@@ -314,7 +339,7 @@ class CGSystemInterface():
 
         self.system.rotate_object(anticlockwise, degrees, obj_id, rotation_opt, (coord_x, coord_y))
 
-        obj = self.system.display_file[obj_id+4]
+        obj = self.system.get_object(obj_id)
         obj_name = obj.name + "-" + obj.type
 
         message: str
@@ -379,7 +404,7 @@ class CGSystemInterface():
         obj_id = selected[0]
         self.system.move_object(offset, direction, obj_id)
 
-        obj = self.system.display_file[obj_id+4]
+        obj = self.system.get_object(obj_id)
         obj_name = obj.name + "-" + obj.type
         self.add_message("%s moved %s by %d" % (obj_name, direction, offset))
 
@@ -404,7 +429,7 @@ class CGSystemInterface():
         obj_id = selected[0]
         self.system.scale_object(factor, obj_id, inORout)
 
-        obj = self.system.display_file[obj_id+4]
+        obj = self.system.get_object(obj_id)
         obj_name = obj.name + "-" + obj.type
         self.add_message("%s scaled %s by %.2f" % (obj_name, inORout, factor))
 
