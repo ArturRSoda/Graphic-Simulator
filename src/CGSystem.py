@@ -25,7 +25,7 @@ class CGSystem():
     def run(self):
         self.interface = CGSystemInterface(self)
 
-        self.up_vector = (0, 1)
+        self.up_vector = (1, 0)
 
         self.vp_coord_max = (self.interface.canvas_width, self.interface.canvas_height)
         self.vp_coord_min = (0, 0)
@@ -96,27 +96,42 @@ class CGSystem():
 
         ap = p - a
         ab = b - a
-        r = a = np.dot(ap, ab) / np.dot(ab, ab) * ab
+        result = a + np.dot(ap, ab) / np.dot(ab, ab) * ab
 
-        result = tuple([float(x) for x in list(r)])
-        print(result)
         return result
+
 
     def normalize_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
         normalized_coords: list[tuple[float, float]] = list()
 
-        x_wmin, y_wmin = self.w_coord_min
-        x_wmax, y_wmax = self.w_coord_max
-        width = x_wmax-x_wmin
-        height = y_wmax-y_wmin
+        p0, p1, p2, p3 = self.get_window_coordinates()
+        width = m.dist(p0, p1)
+        height = m.dist(p1, p2)
 
         for coord in coords:
             x, y = coord
 
-            normalized_x = 2 * (x - x_wmin) / width - 1
-            normalized_y = 2 * (y - y_wmin) / height - 1
+            print("p0", p0)
+            print("p3", p3)
+            print("coord", coord)
+            proj_y = self.get_projection(p0, p3, coord)
+            proj_x = self.get_projection(p0, p1, coord)
+            print("proj_y", proj_y)
+            print("proj_x", proj_x)
+
+            dx = m.dist(proj_y, coord)
+            dx = -dx if (coord[0] < proj_y[0]) else dx
+
+            dy = m.dist(proj_x, coord)
+            dy = -dy if (coord[1] < proj_x[1]) else dy
+
+            #normalized_x = 2 * (x - p0[0]) / width - 1
+            #normalized_y = 2 * (y - p0[1]) / height - 1
+            normalized_x = 2 * dx / width - 1
+            normalized_y = 2 * dy / height - 1
             normalized_coords.append((normalized_x, normalized_y))
 
+        print(normalized_coords)
         return normalized_coords
 
 
@@ -218,7 +233,6 @@ class CGSystem():
         self.w_coord_min = (self.w_coord_min[0]+offset_x_min, self.w_coord_min[1]+offset_y_min)
         self.w_coord_max = (self.w_coord_max[0]+offset_x_max, self.w_coord_max[1]+offset_y_max)
 
-
         self.update_normalized_coordinates()
         self.update_viewport()
 
@@ -313,10 +327,9 @@ class CGSystem():
         #--------------------------
 
         #apply transformation
-        x_wmin, y_wmin = self.w_coord_min
-        x_wmax, y_wmax = self.w_coord_max
-        width = x_wmax-x_wmin
-        height = y_wmax-y_wmin
+        p0, p1, p2, p3 = self.get_window_coordinates()
+        width = m.dist(p0, p1)
+        height = m.dist(p1, p2)
         for obj in self.display_file:
             coords = obj.coordinates
             transformed_coords = self.transform(coords, transformation_list)
@@ -324,8 +337,20 @@ class CGSystem():
             normalized_coords = list()
             for coord in transformed_coords:
                 x, y = coord
-                normalized_x = 2 * (x - x_wmin) / width - 1
-                normalized_y = 2 * (y - y_wmin) / height - 1
+
+                proj_y = self.get_projection(p0, p3, coord)
+                proj_x = self.get_projection(p0, p1, coord)
+
+                dx = m.dist(proj_y, coord)
+                dx = -dx if (coord[0] < proj_y[0]) else dx
+
+                dy = m.dist(proj_x, coord)
+                dy = -dy if (coord[1] < proj_x[1]) else dy
+
+                #normalized_x = 2 * (x - p0[0]) / width - 1
+                #normalized_y = 2 * (y - p0[1]) / height - 1
+                normalized_x = 2 * dx / width - 1
+                normalized_y = 2 * dy / height - 1
                 normalized_coords.append((normalized_x, normalized_y))
 
             obj.normalized_coordinates = normalized_coords
