@@ -13,8 +13,6 @@ class CGSystem():
     def __init__(self):
         self.interface    : CGSystemInterface
         self.w_coordinates : list[tuple[float, float]] #p0, p1, p2, p3 | p0 -> w_min, p2 -> w_max
-        #self.w_coord_min  : tuple[float, float]
-        #self.w_coord_max  : tuple[float, float]
         self.vp_coord_min : tuple[float, float]
         self.vp_coord_max : tuple[float, float]
         self.up_vector   : tuple[float, float]
@@ -31,8 +29,6 @@ class CGSystem():
         self.vp_coord_max = (self.interface.canvas_width, self.interface.canvas_height)
         self.vp_coord_min = (0, 0)
 
-        #self.w_coord_min = (-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2)
-        #self.w_coord_max = (self.vp_coord_max[0]/2, self.vp_coord_max[1]/2)
         self.w_coordinates = [(-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2),
                               (self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2),
                               (self.vp_coord_max[0]/2, self.vp_coord_max[1]/2),
