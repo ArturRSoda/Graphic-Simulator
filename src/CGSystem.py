@@ -312,10 +312,6 @@ class CGSystem():
         window_coordinates = self.get_window_coordinates()
         w_center = self.get_center(window_coordinates)
 
-        width = m.dist(window_coordinates[0], window_coordinates[1])
-        height = m.dist(window_coordinates[1], window_coordinates[2])
-        print(width, height)
-
         transformation_list = []
         self.add_rotation(transformation_list, degrees, w_center)
         self.w_coordinates = self.transform(window_coordinates, transformation_list)
@@ -324,7 +320,6 @@ class CGSystem():
 
         # add translation transformation
         transformation_list = []
-        print(w_center)
         self.add_translation(transformation_list, -w_center[0], -w_center[1])
         #-------------------------
 
@@ -347,17 +342,22 @@ class CGSystem():
 
         dot_product = np.dot(up_vector, y_axis)
         delta_angle = round(m.degrees(m.acos(dot_product / (norm_up * norm_y))))
+        print(delta_angle)
         self.add_rotation(transformation_list, -delta_angle, (0, 0))
         #--------------------------
 
+        # move window to center
+
         #apply transformation
-        self.set_window_coord((0, 0))
-        p0, p1, p2, p3 = self.get_window_coordinates()
+        w_coordinates = self.get_window_coordinates()
+        p0, p1, p2, p3 = self.transform(w_coordinates, transformation_list)
         width = m.dist(p0, p1)
         height = m.dist(p1, p2)
         for obj in self.display_file:
             coords = obj.coordinates
             transformed_coords = self.transform(coords, transformation_list)
+
+            print("transformed_coords", transformed_coords)
 
             normalized_coords = list()
             for coord in transformed_coords:
@@ -371,6 +371,9 @@ class CGSystem():
                 normalized_coords.append((normalized_x, normalized_y))
 
             obj.normalized_coordinates = normalized_coords
+            print("normalized", obj.normalized_coordinates)
+            print()
+        
 
         self.update_viewport()
 
