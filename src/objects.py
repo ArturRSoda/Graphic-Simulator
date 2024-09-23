@@ -9,7 +9,10 @@ class Object(ABC):
 
         self.name = name
         self.color = color
+
+        # change this
         self.type = type
+
         self.coordinates = coordinates
         self.normalized_coordinates = normalized_coordinates
 
