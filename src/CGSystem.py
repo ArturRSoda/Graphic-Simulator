@@ -12,15 +12,13 @@ import transformationWindow
 class CGSystem():
     def __init__(self):
         self.interface    : CGSystemInterface
-        self.w_coord_min  : tuple[float, float]
-        self.w_coord_max  : tuple[float, float]
+        self.w_coordinates : list[tuple[float, float]] #p0, p1, p2, p3 | p0 -> w_min, p2 -> w_max
+        #self.w_coord_min  : tuple[float, float]
+        #self.w_coord_max  : tuple[float, float]
         self.vp_coord_min : tuple[float, float]
         self.vp_coord_max : tuple[float, float]
         self.up_vector   : tuple[float, float]
         self.display_file : list[Object]
-
-        self.width : float
-        self.height : float
 
         self.display_file = list()
 
@@ -33,11 +31,12 @@ class CGSystem():
         self.vp_coord_max = (self.interface.canvas_width, self.interface.canvas_height)
         self.vp_coord_min = (0, 0)
 
-        self.w_coord_min = (-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2)
-        self.w_coord_max = (self.vp_coord_max[0]/2, self.vp_coord_max[1]/2)
-
-        self.width = self.w_coord_max[0] - self.w_coord_min[0]
-        self.height = self.w_coord_max[1] - self.w_coord_min[1]
+        #self.w_coord_min = (-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2)
+        #self.w_coord_max = (self.vp_coord_max[0]/2, self.vp_coord_max[1]/2)
+        self.w_coordinates = [(-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2),
+                              (self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2),
+                              (self.vp_coord_max[0]/2, self.vp_coord_max[1]/2),
+                              (-self.vp_coord_max[0]/2, self.vp_coord_max[1]/2)]
 
         # world center lines
         norm_coord_x = self.normalize_coordinates([(-10000, 0), (10000, 0)])
@@ -65,8 +64,8 @@ class CGSystem():
         x_w = coord[0]
         y_w = coord[1]
 
-        x_wmin, y_wmin  = self.w_coord_min
-        x_wmax, y_wmax = self.w_coord_max
+        x_wmin, y_wmin  = self.w_coordinates[0]
+        x_wmax, y_wmax = self.w_coordinates[2]
 
         x_vpmin, y_vpmin = self.vp_coord_min
         x_vpmax, y_vpmax = self.vp_coord_max
@@ -140,7 +139,6 @@ class CGSystem():
             # normalized_y = 2 * dy / height - 1
             normalized_coords.append((normalized_x, normalized_y))
 
-        #print(normalized_coords)
         return normalized_coords
 
 
@@ -193,14 +191,16 @@ class CGSystem():
 
 
     def set_window_coord(self, coord: tuple[float, float]):
-        width = abs(self.w_coord_max[0] - self.w_coord_min[0])
-        height = abs(self.w_coord_max[1] - self.w_coord_min[1])
+        window_coords = self.get_window_coordinates()
+        w_center = self.get_center(window_coords)
 
-        offset_X = width / 2
-        offset_Y = height / 2
 
-        self.w_coord_min = (coord[0]-offset_X, coord[1]-offset_Y)
-        self.w_coord_max = (coord[0]+offset_X, coord[1]+offset_Y)
+        offset_x = coord[0] - w_center[0]
+        offset_y = coord[1] - w_center[1]
+
+        tranformation_list = list()
+        self.add_translation(tranformation_list, offset_x, offset_y)
+        self.w_coordinates = self.transform(window_coords, tranformation_list)
 
         self.update_normalized_coordinates()
         self.update_viewport()
@@ -228,19 +228,31 @@ class CGSystem():
 
     # direction can be: "up", "down", "left", "right"
     def move_window(self, offset: int, direction: str):
-        offset_x_min : int = 0 
-        offset_y_min : int = 0
-        offset_x_max : int = 0
-        offset_y_max : int = 0
+        p0, p1, p2, p3 = self.w_coordinates
 
         match direction:
-            case    "up" : offset_y_min, offset_y_max =  offset,  offset
-            case  "down" : offset_y_min, offset_y_max = -offset, -offset
-            case "right" : offset_x_min, offset_x_max =  offset,  offset
-            case  "left" : offset_x_min, offset_x_max = -offset, -offset
+            case "up":
+                p0 = (p0[0], p0[1]+offset)
+                p1 = (p1[0], p1[1]+offset)
+                p2 = (p2[0], p2[1]+offset)
+                p3 = (p3[0], p3[1]+offset)
+            case "down":
+                p0 = (p0[0], p0[1]-offset)
+                p1 = (p1[0], p1[1]-offset)
+                p2 = (p2[0], p2[1]-offset)
+                p3 = (p3[0], p3[1]-offset)
+            case "right":
+                p0 = (p0[0]+offset, p0[1])
+                p1 = (p1[0]+offset, p1[1])
+                p2 = (p2[0]+offset, p2[1])
+                p3 = (p3[0]+offset, p3[1])
+            case "right":
+                p0 = (p0[0]-offset, p0[1])
+                p1 = (p1[0]-offset, p1[1])
+                p2 = (p2[0]-offset, p2[1])
+                p3 = (p3[0]-offset, p3[1])
 
-        self.w_coord_min = (self.w_coord_min[0]+offset_x_min, self.w_coord_min[1]+offset_y_min)
-        self.w_coord_max = (self.w_coord_max[0]+offset_x_max, self.w_coord_max[1]+offset_y_max)
+        self.w_coordinates = [p0, p1, p2, p3]
 
         self.update_normalized_coordinates()
         self.update_viewport()
@@ -268,10 +280,7 @@ class CGSystem():
 
         transformation_list = []
         self.add_scaling(transformation_list, zoom_factor)
-        new_points = self.transform(window_coordinates, transformation_list)
-
-        self.w_coord_min = new_points[0]
-        self.w_coord_max = new_points[2]
+        self.w_coordinates = self.transform(window_coordinates, transformation_list)
 
         self.update_normalized_coordinates()
         self.update_viewport()
@@ -304,16 +313,16 @@ class CGSystem():
 
         # Move window
         window_coordinates = self.get_window_coordinates()
-        transformation_list = []
-        self.add_rotation(transformation_list, degrees, self.get_center(window_coordinates))
-        new_coords = self.transform(window_coordinates, transformation_list)
-        print(new_coords)
-        self.w_coord_min, self.w_coord_max = new_coords[0], new_coords[2]
+        w_center = self.get_center(window_coordinates)
 
+        transformation_list = []
+        self.add_rotation(transformation_list, degrees, w_center)
+        self.w_coordinates = self.transform(window_coordinates, transformation_list)
+
+        window_coordinates = self.get_window_coordinates()
 
 
         # add translation transformation
-        w_center = self.get_center(self.get_window_coordinates())
         transformation_list = []
         self.add_translation(transformation_list, -w_center[0], -w_center[1])
         #-------------------------
@@ -337,17 +346,14 @@ class CGSystem():
 
         dot_product = np.dot(up_vector, y_axis)
         delta_angle = round(m.degrees(m.acos(dot_product / (norm_up * norm_y))))
-        print(delta_angle)
         self.add_rotation(transformation_list, -delta_angle, (0, 0))
         #--------------------------
 
         #apply transformation
-        p0, p1, p2, p3 = self.get_window_coordinates()
-        #width = m.dist(p0, p1)
-        print(w_center)
-        print(self.width)
         self.set_window_coord((0, 0))
-        #height = m.dist(p1, p2)
+        p0, p1, p2, p3 = self.get_window_coordinates()
+        width = m.dist(p0, p1)
+        height = m.dist(p1, p2)
         for obj in self.display_file:
             coords = obj.coordinates
             transformed_coords = self.transform(coords, transformation_list)
@@ -356,8 +362,8 @@ class CGSystem():
             for coord in transformed_coords:
                 x, y = coord
 
-                normalized_x = 2 * (x - p0[0]) / self.width - 1
-                normalized_y = 2 * (y - p0[1]) / self.height - 1
+                normalized_x = 2 * (x - p0[0]) / width - 1
+                normalized_y = 2 * (y - p0[1]) / height - 1
 
                 #normalized_x = 2 * dx / width - 1
                 #normalized_y = 2 * dy / height - 1
@@ -536,19 +542,14 @@ class CGSystem():
         self.update_viewport()
 
     def get_window_coordinates(self):
-        p0 = self.w_coord_min
-        p2 = self.w_coord_max
-        p1 = (p2[0], p0[1])
-        p3 = (p0[0], p2[1])
-        window_coordinates = [p0, p1, p2, p3]
-
-        return window_coordinates
+        return self.w_coordinates
 
 
     def add_test(self):
         #self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
         self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
         self.add_wireframe("triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
+        self.add_wireframe("rectangle", "blue", [(-100, -50), (100, -50), (100, 50), (-100, 50)])
         #self.add_point("point", "green", (50,-50))
  
 
