@@ -356,7 +356,6 @@ class CGSystem():
 
         #apply transformation
         self.set_window_coord((0, 0))
-        """
         p0, p1, p2, p3 = self.get_window_coordinates()
         width = m.dist(p0, p1)
         height = m.dist(p1, p2)
@@ -376,7 +375,6 @@ class CGSystem():
                 normalized_coords.append((normalized_x, normalized_y))
 
             obj.normalized_coordinates = normalized_coords
-        """
 
         self.update_viewport()
 
