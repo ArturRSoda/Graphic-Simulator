@@ -150,7 +150,7 @@ class CGSystem():
         for norm_coord in norm_coords:
             norm_coord = (((norm_coord[0] + 1) / 2), ((norm_coord[1] +1) / 2))
             x = norm_coord[0] * x_vp_max 
-            y = self.vp_coord_max[1] - (norm_coord[1] * y_vp_max)
+            y = y_vp_max - (norm_coord[1] * y_vp_max)
             vp_coords.append((x, y))
 
         return vp_coords
@@ -246,7 +246,7 @@ class CGSystem():
                 p1 = (p1[0]+offset, p1[1])
                 p2 = (p2[0]+offset, p2[1])
                 p3 = (p3[0]+offset, p3[1])
-            case "right":
+            case "left":
                 p0 = (p0[0]-offset, p0[1])
                 p1 = (p1[0]-offset, p1[1])
                 p2 = (p2[0]-offset, p2[1])
@@ -311,9 +311,14 @@ class CGSystem():
         if not antiClockwise:
             degrees = -degrees
 
+
         # Move window
         window_coordinates = self.get_window_coordinates()
         w_center = self.get_center(window_coordinates)
+
+        width = m.dist(window_coordinates[0], window_coordinates[1])
+        height = m.dist(window_coordinates[1], window_coordinates[2])
+        print(width, height)
 
         transformation_list = []
         self.add_rotation(transformation_list, degrees, w_center)
@@ -321,9 +326,9 @@ class CGSystem():
 
         window_coordinates = self.get_window_coordinates()
 
-
         # add translation transformation
         transformation_list = []
+        print(w_center)
         self.add_translation(transformation_list, -w_center[0], -w_center[1])
         #-------------------------
 
@@ -351,6 +356,7 @@ class CGSystem():
 
         #apply transformation
         self.set_window_coord((0, 0))
+        """
         p0, p1, p2, p3 = self.get_window_coordinates()
         width = m.dist(p0, p1)
         height = m.dist(p1, p2)
@@ -370,6 +376,7 @@ class CGSystem():
                 normalized_coords.append((normalized_x, normalized_y))
 
             obj.normalized_coordinates = normalized_coords
+        """
 
         self.update_viewport()
 
