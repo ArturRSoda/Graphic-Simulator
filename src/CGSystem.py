@@ -5,8 +5,7 @@ from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
 
-from objects import Object, Point, Line, WireFrame
-import transformationWindow
+from objects import Object, Point, Line, Polygon, WireFrame
 
 
 class CGSystem():
@@ -106,11 +105,27 @@ class CGSystem():
         self.update_viewport()
 
 
+    def add_polygon(self, name: str, color: str, coord_list: list[tuple[float, float]]):
+        if (len(coord_list) == 1):
+            self.add_point(name, color, coord_list[0])
+            return
+
+        norm_coord = self.normalize_object_coordinates(coord_list)
+        plg = Polygon(name, color, coord_list, norm_coord)
+
+        self.display_file.append(plg)
+        self.interface.objects_listbox.insert("end", "%s [%s - Polygon]" % (name, color))
+
+        self.generate_normal_coordinates()
+        self.update_viewport()
+
+
     def add_test(self):
         #self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
         self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
         self.add_wireframe("triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
-        self.add_wireframe("rectangle", "blue", [(-100, -50), (100, -50), (100, 50), (-100, 50)])
+        self.add_polygon("triangle", "green", [(10, 10), (100, 10), (100, 100)])
+        self.add_point("", "blue", (10, 10))
         #self.add_point("point", "green", (50,-50))
  
 

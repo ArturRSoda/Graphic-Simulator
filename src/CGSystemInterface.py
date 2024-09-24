@@ -42,6 +42,8 @@ class CGSystemInterface():
         self.w_coord_var           : tuple[tk.IntVar, tk.IntVar]
         self.canvas_width          : float
         self.canvas_height         : float
+        self.subcanvas_height      : float
+        self.subcanvas_width       : float
         self.tab_width             : float
         self.tab_height            : float
         self.rotation_Xpoint_entry : tk.Entry
@@ -79,24 +81,32 @@ class CGSystemInterface():
         self.canvas = tk.Canvas(self.canvas_frame, width=self.canvas_width, height=self.canvas_height, bg="white", borderwidth=5, relief="groove")
         self.canvas.place(x=10, y=30)
 
-        l1 = self.canvas.create_line(0, self.canvas_height/2, self.canvas_width, self.canvas_height/2, fill="gray", width=2)
-        l2 = self.canvas.create_line(self.canvas_width/2, 0, self.canvas_width/2, self.canvas_height, fill="gray", width=2)
+        self.subcanvas_width = self.canvas_width*0.98
+        self.subcanvas_height = self.canvas_height*0.98
+        # gray lines
+        l1 = self.canvas.create_line(20, self.canvas_height/2, self.subcanvas_width, self.canvas_height/2, fill="gray", width=2)
+        l2 = self.canvas.create_line(self.canvas_width/2, 20, self.canvas_width/2, self.subcanvas_height, fill="gray", width=2)
+        l3 = self.canvas.create_line(20, 20, 20, self.subcanvas_height, self.subcanvas_width, self.subcanvas_height, self.subcanvas_width, 20, 20, 20, fill="gray", width=2)
         self.canvas_elements.append(l1)
         self.canvas_elements.append(l2)
+        self.canvas_elements.append(l3)
 
 
     def clear_canvas(self):
-        for i in range(2, len(self.canvas_elements)):
+        for i in range(3, len(self.canvas_elements)):
             self.canvas.delete(self.canvas_elements[i])
 
 
     def draw_object(self, obj: Object, obj_vp_coords: list[tuple[float, float]]):
-        if (len(obj_vp_coords) == 1):
+        if (obj.type == "point"):
             coord = obj_vp_coords[0]
-            p = self.canvas.create_oval(coord[0], coord[1], coord[0], coord[1], fill=obj.color, width=5)
+            p = self.canvas.create_oval(coord[0], coord[1], coord[0], coord[1], outline=obj.color, width=5)
             self.canvas_elements.append(p)
-
-        else:
+        elif (obj.type == "polygon"):
+            flatten_coords = [c for coord in obj_vp_coords for c in coord]
+            plg = self.canvas.create_polygon(flatten_coords, fill=obj.color)
+            self.canvas_elements.append(plg)
+        elif (obj.type in ("line", "wireframe")):
             for i in range(len(obj_vp_coords)-1):
                 start_coord = obj_vp_coords[i]
                 end_coord = obj_vp_coords[i+1]

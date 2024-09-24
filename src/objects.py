@@ -31,3 +31,6 @@ class WireFrame(Object):
         super().__init__(name, color, "wireframe", coordinates, normalized_coordinates)
 
 
+class Polygon(Object):
+    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
+        super().__init__(name, color, "polygon", coordinates, normalized_coordinates)
