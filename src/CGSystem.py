@@ -1,6 +1,8 @@
 import numpy as np
 import math as m
 
+from numpy.linalg import norm
+
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
@@ -14,6 +16,8 @@ class CGSystem():
 
         self.vp_coord_min  : tuple[float, float]
         self.vp_coord_max  : tuple[float, float]
+        self.subvp_coord_min  : tuple[float, float]
+        self.subvp_coord_max  : tuple[float, float]
 
         # add aspect ratio
 
@@ -27,13 +31,19 @@ class CGSystem():
     def run(self):
         self.interface = CGSystemInterface(self)
 
-        self.vp_coord_max = (self.interface.canvas_width, self.interface.canvas_height)
+        #self.vp_coord_max = (self.interface.canvas_width, self.interface.canvas_height)
+        #self.vp_coord_min = (0, 0)
+
+        self.vp_coord_max = (self.interface.subcanvas_width, self.interface.subcanvas_height)
         self.vp_coord_min = (0, 0)
 
-        self.w_coordinates = [(-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2),
-                              (self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2),
-                              (self.vp_coord_max[0]/2, self.vp_coord_max[1]/2),
-                              (-self.vp_coord_max[0]/2, self.vp_coord_max[1]/2)]
+        self.w_coordinates = [
+            (-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2),
+            ( self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2),
+            ( self.vp_coord_max[0]/2,  self.vp_coord_max[1]/2),
+            (-self.vp_coord_max[0]/2,  self.vp_coord_max[1]/2)
+        ]
+
 
         self.up_vector = (0, 1)
         self.right_vector = (1, 0)
@@ -127,20 +137,45 @@ class CGSystem():
         self.add_polygon("triangle", "green", [(10, 10), (100, 10), (100, 100)])
         self.add_point("", "blue", (10, 10))
         #self.add_point("point", "green", (50,-50))
+
+
+    def clip_point_coordinates(self, coords: tuple[float, float]) -> tuple[float, float]|None:
+        x, y = coords
+
+        return None if ((x < -1) or (x > 1) or (y < -1) or (y > 1)) else coords
  
 
     def update_viewport(self):
         self.interface.clear_canvas()
 
         for obj in self.display_file:
-            obj_vp_coords = self.normalized_coords_to_vp_coords(obj.normalized_coordinates)
-            self.interface.draw_object(obj, obj_vp_coords)
+
+            norm_coords = None
+            match obj.type:
+                case "point":
+                    norm_coords = self.clip_point_coordinates(obj.normalized_coordinates[0])
+                    print(norm_coords)
+                case "line":
+                    #TODO
+                    norm_coords = obj.normalized_coordinates
+                case "wireframe":
+                    #TODO
+                    norm_coords = obj.normalized_coordinates
+                case "polygon":
+                    #TODO
+                    norm_coords = obj.normalized_coordinates
+
+            if (norm_coords is not None):
+                obj_vp_coords = self.normalized_coords_to_vp_coords(obj.normalized_coordinates)
+                self.interface.draw_object(obj, obj_vp_coords)
 
 
     def normalized_coords_to_vp_coords(self, norm_coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
         vp_coords: list[tuple[float, float]] = list()
 
-        x_vp_max, y_vp_max = self.vp_coord_max
+        #ratio = 1/self.interface.subcanvas_ratio
+        ratio = 1
+        x_vp_max, y_vp_max = (self.vp_coord_max[0]*ratio, self.vp_coord_max[1]*ratio)
 
         for norm_coord in norm_coords:
             norm_coord = (((norm_coord[0] + 1) / 2), ((norm_coord[1] +1) / 2))

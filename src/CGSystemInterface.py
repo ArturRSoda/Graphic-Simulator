@@ -46,6 +46,7 @@ class CGSystemInterface():
         self.subcanvas_width       : float
         self.tab_width             : float
         self.tab_height            : float
+        self.subcanvas_ratio       : float
         self.rotation_Xpoint_entry : tk.Entry
         self.rotation_Ypoint_entry : tk.Entry
         self.obj_center_rb         : tk.Radiobutton
@@ -81,8 +82,10 @@ class CGSystemInterface():
         self.canvas = tk.Canvas(self.canvas_frame, width=self.canvas_width, height=self.canvas_height, bg="white", borderwidth=5, relief="groove")
         self.canvas.place(x=10, y=30)
 
-        self.subcanvas_width = self.canvas_width*0.98
-        self.subcanvas_height = self.canvas_height*0.98
+        self.subcanvas_ratio = 0.98
+        self.subcanvas_width = self.canvas_width*self.subcanvas_ratio
+        self.subcanvas_height = self.canvas_height*self.subcanvas_ratio
+
         # gray lines
         l1 = self.canvas.create_line(20, self.canvas_height/2, self.subcanvas_width, self.canvas_height/2, fill="gray", width=2)
         l2 = self.canvas.create_line(self.canvas_width/2, 20, self.canvas_width/2, self.subcanvas_height, fill="gray", width=2)
