@@ -1,11 +1,12 @@
 import numpy as np
 import math as m
 
-from numpy.linalg import norm
+from numpy._core import function_base
 
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
+from clipping import cohen_sutherland, liang_barsky
 
 from objects import Object, Point, Line, Polygon, WireFrame
 
@@ -43,7 +44,6 @@ class CGSystem():
             ( self.vp_coord_max[0]/2,  self.vp_coord_max[1]/2),
             (-self.vp_coord_max[0]/2,  self.vp_coord_max[1]/2)
         ]
-
 
         self.up_vector = (0, 1)
         self.right_vector = (1, 0)
@@ -139,34 +139,47 @@ class CGSystem():
         #self.add_point("point", "green", (50,-50))
 
 
-    def clip_point_coordinates(self, coords: tuple[float, float]) -> tuple[float, float]|None:
-        x, y = coords
-
+    def clip_point_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
+        x, y = coords[0]
         return None if ((x < -1) or (x > 1) or (y < -1) or (y > 1)) else coords
- 
+
+
+    def clip_wireframe_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
+        clip_func = self.get_line_clipping_func()
+        wf_clip_coords = list()
+        for i in range(len(coords)-1):
+            line_coords = [coords[i], coords[i+1]]
+            clip_coords = clip_func(line_coords)
+            if (clip_coords is not None):
+                wf_clip_coords.append(clip_coords[0])
+                wf_clip_coords.append(clip_coords[1])
+
+        return wf_clip_coords if (wf_clip_coords) else None
+
+
+    def get_line_clipping_func(self):
+        func_str = self.interface.line_clip_opt_var.get()
+        return cohen_sutherland if (func_str == "cohen_sutherland") else liang_barsky
 
     def update_viewport(self):
         self.interface.clear_canvas()
 
         for obj in self.display_file:
 
-            norm_coords = None
+            clip_coords = None
             match obj.type:
                 case "point":
-                    norm_coords = self.clip_point_coordinates(obj.normalized_coordinates[0])
-                    print(norm_coords)
+                    clip_coords = self.clip_point_coordinates(obj.normalized_coordinates)
                 case "line":
-                    #TODO
-                    norm_coords = obj.normalized_coordinates
+                    clip_coords = self.get_line_clipping_func()(obj.normalized_coordinates)
                 case "wireframe":
-                    #TODO
-                    norm_coords = obj.normalized_coordinates
+                    clip_coords = self.clip_wireframe_coordinates(obj.normalized_coordinates)
                 case "polygon":
                     #TODO
-                    norm_coords = obj.normalized_coordinates
+                    clip_coords = obj.normalized_coordinates
 
-            if (norm_coords is not None):
-                obj_vp_coords = self.normalized_coords_to_vp_coords(obj.normalized_coordinates)
+            if (clip_coords is not None):
+                obj_vp_coords = self.normalized_coords_to_vp_coords(clip_coords)
                 self.interface.draw_object(obj, obj_vp_coords)
 
 

@@ -26,16 +26,18 @@ class CGSystemInterface():
         self.object_menu_frame     : Frame
         self.controls_menu_frame   : Frame
         self.rotation_menu_frame   : Frame
+        self.line_clip_frame       : Frame
         self.canvas_frame          : Frame
         self.messageBox_frame      : Frame
         self.messageBox            : tk.Listbox
         self.objects_listbox       : tk.Listbox
         self.canvas                : tk.Canvas
-        self.w_offset_var          : tk.IntVar
+        self.window_offset_var     : tk.IntVar
         self.obj_offset_var        : tk.IntVar
         self.w_zoom_factor_var     : tk.DoubleVar
-        self.obj_scale_factor_var : tk.DoubleVar
+        self.obj_scale_factor_var  : tk.DoubleVar
         self.rotation_opt_var      : tk.StringVar
+        self.line_clip_opt_var     : tk.StringVar
         self.window_degrees_var    : tk.DoubleVar
         self.object_degrees_var    : tk.DoubleVar
         self.obj_rotation_coord_var: tuple[tk.IntVar, tk.IntVar]
@@ -46,15 +48,16 @@ class CGSystemInterface():
         self.subcanvas_width       : float
         self.tab_width             : float
         self.tab_height            : float
-        self.subcanvas_shift     : float
+        self.subcanvas_shift       : float
         self.rotation_Xpoint_entry : tk.Entry
         self.rotation_Ypoint_entry : tk.Entry
         self.obj_center_rb         : tk.Radiobutton
         self.origin_rb             : tk.Radiobutton
         self.other_rb              : tk.Radiobutton
-        self.controls_menu_tab     : ttk.Notebook
+        self.menu_tab     : ttk.Notebook
         self.window_controls_tab   : Tab
         self.obj_controls_tab      : Tab
+        self.clipping_tab          : Tab
         self.canvas_elements       : list
 
         self.app = tk.Tk()
@@ -139,7 +142,7 @@ class CGSystemInterface():
 
         self.app.update()
         self.add_object_menu()
-        self.add_controls_tab()
+        self.add_tab()
 
 
     def add_object_menu(self):
@@ -165,34 +168,59 @@ class CGSystemInterface():
         obj_id = selected[0]
         self.system.init_transformation_window(obj_id)
 
-    def add_controls_tab(self):
+
+    def add_tab(self):
         self.app.update()
-        self.controls_menu_tab = ttk.Notebook(self.menu_frame)
+        self.menu_tab = ttk.Notebook(self.menu_frame)
 
         self.tab_width = self.menu_frame.winfo_width()-26
         self.tab_height = self.menu_frame.winfo_height()-self.object_menu_frame.winfo_height()-50
 
         self.add_window_tab_elements()
         self.add_object_tab_elements()
+        self.add_clipping_tab()
 
-        self.controls_menu_tab.place(x=10, y=self.object_menu_frame.winfo_height()+15)
+        self.menu_tab.place(x=10, y=self.object_menu_frame.winfo_height()+15)
+
+
+    def add_clipping_tab(self):
+        self.clipping_tab = Tab(self.menu_tab, width=self.tab_width, height=self.tab_height)
+
+        self.line_clip_frame = Frame(self.clipping_tab, self.tab_width-26, 100)
+        self.line_clip_frame.place(x=10, y=10)
+
+        Label(self.line_clip_frame, "Line", 10).place(x=10, y=10)
+
+        self.line_clip_opt_var = tk.StringVar(self.line_clip_frame, "liang_barsky")
+        l2 = tk.Radiobutton(self.line_clip_frame, text="Liang Barsky", variable=self.line_clip_opt_var, value="liang_barsky", highlightthickness=0, command=self.line_clip_message)
+        l1 = tk.Radiobutton(self.line_clip_frame, text="Cohen Sutherland", variable=self.line_clip_opt_var, value="cohen_sutherland", highlightthickness=0, command=self.line_clip_message)
+        l1.place(x=0, y=60)
+        l2.place(x=0, y=30)
+        self.menu_tab.add(self.clipping_tab, text="Clipping")
+
+
+    def line_clip_message(self):
+        ln_func = self.line_clip_opt_var.get()
+        self.add_message("Line clipping function changed to %s" % ln_func)
 
 
     def add_window_tab_elements(self):
-        self.window_controls_tab = Tab(self.controls_menu_tab, width=self.tab_width, height=self.tab_height)
+        self.window_controls_tab = Tab(self.menu_tab, width=self.tab_width, height=self.tab_height)
 
         self.add_controls_menu(isObject=False)
         self.add_window_rotation_menu()
 
-        self.controls_menu_tab.add(self.window_controls_tab, text="Window")
+        self.menu_tab.add(self.window_controls_tab, text="Window")
+
 
     def add_object_tab_elements(self):
-        self.obj_controls_tab = Tab(self.controls_menu_tab, width=self.tab_width, height=self.tab_height)
+        self.obj_controls_tab = Tab(self.menu_tab, width=self.tab_width, height=self.tab_height)
 
         self.add_controls_menu(isObject=True)
         self.add_obj_rotation_menu()
 
-        self.controls_menu_tab.add(self.obj_controls_tab, text="Object")
+        self.menu_tab.add(self.obj_controls_tab, text="Object")
+
 
     def add_controls_menu(self, isObject: bool):
         # if isObject == True then "object controls" else "window controls"
@@ -218,10 +246,10 @@ class CGSystemInterface():
 
         Label(self.controls_menu_frame, "Offset", 10).place(x=10, y=140)
         self.obj_offset_var = tk.IntVar()
-        self.w_offset_var = tk.IntVar()
+        self.window_offset_var = tk.IntVar()
         self.obj_offset_var.set(10)
-        self.w_offset_var.set(10)
-        tv = self.obj_offset_var if (isObject) else self.w_offset_var
+        self.window_offset_var.set(10)
+        tv = self.obj_offset_var if (isObject) else self.window_offset_var
         tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=55, y=140)
 
         Label(self.controls_menu_frame, "Escl. Factor" if (isObject) else "zoom factor", 10).place(x=115, y=140)
@@ -277,6 +305,7 @@ class CGSystemInterface():
 
         tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotate_object(True)).place(x=5, y=100)
         tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotate_object(False)).place(x=145, y=100)
+
 
     def rotation_point_entry_state(self):
         if (self.rotation_opt_var.get() == "Other"):
@@ -387,6 +416,7 @@ class CGSystemInterface():
 
         self.add_message("Window rotated %d degrees %s" % (degrees, ("anti-clockwise" if (anticlockwise) else "clockwise")))
 
+
     def rotation(self, isObject: bool, antiClockwise: bool):
         # if isObject == True then move object else move window
 
@@ -419,35 +449,33 @@ class CGSystemInterface():
 
         self.system.rotate(True, antiClockwise, degrees, obj_id, rotation_opt, (coord_x, coord_y))
 
+
     def move_object(self, direction: str):
         offset = self.verify_num_entry(self.obj_offset_var)
         if (offset is None): return
-
         selected = self.objects_listbox.curselection()
+
         if (not selected):
             self.send_error("Object not selected", "Please select an object!")
             return
 
         obj_id = selected[0]
         self.system.move_object(offset, direction, obj_id)
-
         obj = self.system.get_object(obj_id)
         obj_name = obj.name + "-" + obj.type
         self.add_message("%s moved %s by %d" % (obj_name, direction, offset))
 
+
     def move_window(self, direction: str):
-        offset = self.verify_num_entry(self.w_offset_var)
+        offset = self.verify_num_entry(self.window_offset_var)
         if (offset is None): return
-
         self.system.move_window(offset, direction)
-
         self.add_message("window moved %s by %d" % (direction, offset))
 
 
     def scale_object(self, inORout: str):
         factor = self.verify_num_entry(self.obj_scale_factor_var)
         if (factor is None): return
-
         selected = self.objects_listbox.curselection()
         if (not selected):
             self.send_error("Object not selected", "Please select an object!")
@@ -455,17 +483,15 @@ class CGSystemInterface():
 
         obj_id = selected[0]
         self.system.scale_object(factor, obj_id, inORout)
-
         obj = self.system.get_object(obj_id)
         obj_name = obj.name + "-" + obj.type
         self.add_message("%s scaled %s by %.2f" % (obj_name, inORout, factor))
 
+
     def zoom_window(self, inORout: str):
         factor = self.verify_num_entry(self.w_zoom_factor_var)
         if (factor is None): return
-
         self.system.zoom_window(factor, inORout)
-
         self.add_message("window zoomed %s by %.2f" % (inORout, factor))
 
 
