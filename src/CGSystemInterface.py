@@ -46,7 +46,7 @@ class CGSystemInterface():
         self.subcanvas_width       : float
         self.tab_width             : float
         self.tab_height            : float
-        self.subcanvas_ratio       : float
+        self.subcanvas_shift     : float
         self.rotation_Xpoint_entry : tk.Entry
         self.rotation_Ypoint_entry : tk.Entry
         self.obj_center_rb         : tk.Radiobutton
@@ -79,17 +79,31 @@ class CGSystemInterface():
         self.app.update()
         self.canvas_width = self.canvas_frame.winfo_width()-35
         self.canvas_height = self.canvas_frame.winfo_height()-70
-        self.canvas = tk.Canvas(self.canvas_frame, width=self.canvas_width, height=self.canvas_height, bg="white", borderwidth=5, relief="groove")
+        self.canvas = tk.Canvas(self.canvas_frame, width=self.canvas_width, height=self.canvas_height, bg="white")
         self.canvas.place(x=10, y=30)
 
-        self.subcanvas_ratio = 0.98
-        self.subcanvas_width = self.canvas_width*self.subcanvas_ratio
-        self.subcanvas_height = self.canvas_height*self.subcanvas_ratio
+
+        self.subcanvas_shift = 20
+        self.subcanvas_width = self.canvas_width-(2*self.subcanvas_shift)
+        self.subcanvas_height = self.canvas_height-(2*self.subcanvas_shift)
 
         # gray lines
-        l1 = self.canvas.create_line(20, self.canvas_height/2, self.subcanvas_width, self.canvas_height/2, fill="gray", width=2)
-        l2 = self.canvas.create_line(self.canvas_width/2, 20, self.canvas_width/2, self.subcanvas_height, fill="gray", width=2)
-        l3 = self.canvas.create_line(20, 20, 20, self.subcanvas_height, self.subcanvas_width, self.subcanvas_height, self.subcanvas_width, 20, 20, 20, fill="gray", width=2)
+        shift = self.subcanvas_shift
+        l1 = self.canvas.create_line(shift, (self.subcanvas_height/2)+shift,
+                                     self.subcanvas_width+shift, (self.subcanvas_height/2)+shift,
+                                     fill="gray", width=2)
+
+        l2 = self.canvas.create_line((self.subcanvas_width/2)+shift, shift,
+                                     (self.subcanvas_width/2)+shift, self.subcanvas_height+shift,
+                                     fill="gray", width=2)
+
+        l3 = self.canvas.create_line(shift, shift,
+                                     shift, self.subcanvas_height+shift,
+                                     self.subcanvas_width+shift, self.subcanvas_height+shift,
+                                     self.subcanvas_width+shift, shift,
+                                     shift, shift,
+                                     fill="gray", width=2)
+
         self.canvas_elements.append(l1)
         self.canvas_elements.append(l2)
         self.canvas_elements.append(l3)

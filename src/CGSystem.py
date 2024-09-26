@@ -173,14 +173,14 @@ class CGSystem():
     def normalized_coords_to_vp_coords(self, norm_coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
         vp_coords: list[tuple[float, float]] = list()
 
-        #ratio = 1/self.interface.subcanvas_ratio
-        ratio = 1
-        x_vp_max, y_vp_max = (self.vp_coord_max[0]*ratio, self.vp_coord_max[1]*ratio)
+        x_vp_max, y_vp_max = self.vp_coord_max
 
         for norm_coord in norm_coords:
             norm_coord = (((norm_coord[0] + 1) / 2), ((norm_coord[1] +1) / 2))
             x = norm_coord[0] * x_vp_max 
             y = y_vp_max - (norm_coord[1] * y_vp_max)
+            x += self.interface.subcanvas_shift
+            y += self.interface.subcanvas_shift
             vp_coords.append((x, y))
 
         return vp_coords
