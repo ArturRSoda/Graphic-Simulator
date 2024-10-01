@@ -120,6 +120,14 @@ class CGSystem():
             self.add_point(name, color, coord_list[0])
             return
 
+        """
+        if (self.is_concave(coord_list)):
+            convexes = self.split_polygon(coord_list)
+            for i, convex in enumerate(convexes):
+                self.add_polygon(f"convex {i}", "cyan", convex)
+
+        """
+
         norm_coord = self.normalize_object_coordinates(coord_list)
         plg = Polygon(name, color, coord_list, norm_coord)
 
@@ -133,10 +141,12 @@ class CGSystem():
     def add_test(self):
         #self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
         self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
-        self.add_wireframe("triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
+        self.add_wireframe("wireframe triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
         self.add_polygon("triangle", "green", [(10, 10), (100, 10), (100, 100)])
-        self.add_point("", "blue", (10, 10))
-        #self.add_point("point", "green", (50,-50))
+        self.add_point("point", "blue", (10, 10))
+        self.add_polygon("concave hexagon", "red", [(100, 100), (150, 100), (200, 130), (160, 170), (200, 200), (100, 200)])
+        self.add_wireframe("concave wireframe hexagon", "red", [(-100, -100), (-150, -100), (-200, -130), (-160, -170), (-200, -200), (-100, -200), (-100, -100)])
+        self.add_polygon("concave smt", "purple", [(0, 0), (2, 1), (1, 3), (-1, 1), (-0.5, -0.5)])
 
 
     def clip_point_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
@@ -161,11 +171,105 @@ class CGSystem():
         func_str = self.interface.line_clip_opt_var.get()
         return cohen_sutherland if (func_str == "cohen_sutherland") else liang_barsky
 
+
+    def is_concave(self, coords: list[tuple[float, float]]):
+        sign = None
+        n = len(coords)
+        for i in range(n):
+            o = coords[i]
+            a = coords[(i + 1) % n]
+            b = coords[(i + 2) % n]
+
+            cross_product = (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+            if cross_product != 0:
+                if sign is None:
+                    sign = m.copysign(1, cross_product)
+                elif m.copysign(1, cross_product) != sign:
+                    return True
+
+        return False
+
+
+    def find_concave_vertices(self, coords: list[tuple[float, float]]):
+        concave_vertices = []
+        n = len(coords)
+        for i in range(n):
+            o = coords[i]
+            a = coords[(i + 1) % n]
+            b = coords[(i + 2) % n]
+
+            cross_product = (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+            if cross_product < 0:
+                concave_vertices.append(i+1)
+
+        return concave_vertices
+
+
+    def split_polygon(self, coords: list[tuple[float, float]]):
+        concave_vertices = self.find_concave_vertices(coords)
+        for concave_idx in concave_vertices:
+            print(coords[concave_idx])
+            prev_idx = (concave_idx - 1) % len(coords)
+            next_idx = (concave_idx + 1) % len(coords)
+
+            poly1 = coords[prev_idx:concave_idx + 1] + [coords[next_idx]]
+            poly2 = coords[concave_idx:] + coords[:next_idx + 1]
+
+            return [poly1, poly2]
+        return None
+
+
+    # computes the intersection point of the line segment between p1, p2 and cp1, cp2
+    def compute_intersection(self, p1, p2, cp1, cp2):
+        dc = [cp1[0] - cp2[0], cp1[1] - cp2[1]]
+        dp = [p1[0] - p2[0], p1[1] - p2[1]]
+        n1 = cp1[0] * cp2[1] - cp1[1] * cp2[0]
+        n2 = p1[0] * p2[1] - p1[1] * p2[0]
+        denom = dc[0] * dp[1] - dc[1] * dp[0]
+        
+        if denom == 0:
+            return None  # lines are parallel or collinear
+
+        x = (n1 * dp[0] - n2 * dc[0]) / denom
+        y = (n1 * dp[1] - n2 * dc[1]) / denom
+        return (x, y)
+
+
+    def is_inside(self, point, cp1, cp2):
+        return (cp2[0] - cp1[0]) * (point[1] - cp1[1]) > (cp2[1] - cp1[1]) * (point[0] - cp1[0])
+
+
+    def sutherland_hodgman_clip(self, coords: list[tuple[float, float]]):
+        output_list = coords
+        window = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+
+        for i in range(4):
+            input_list = output_list
+            output_list = []
+
+            cp1 = window[i]
+            cp2 = window[(i + 1) % 4]
+
+            if not input_list:
+                break
+
+            s = input_list[-1]
+            for e in input_list:
+                if self.is_inside(e, cp1, cp2):
+                    if not self.is_inside(s, cp1, cp2):
+                        output_list.append(self.compute_intersection(s, e, cp1, cp2))
+                    output_list.append(e)
+                elif self.is_inside(s, cp1, cp2):
+                    output_list.append(self.compute_intersection(s, e, cp1, cp2))
+                s = e
+
+        return output_list
+
+
     def update_viewport(self):
         self.interface.clear_canvas()
 
         for obj in self.display_file:
-
             clip_coords = None
             match obj.type:
                 case "point":
@@ -175,10 +279,9 @@ class CGSystem():
                 case "wireframe":
                     clip_coords = self.clip_wireframe_coordinates(obj.normalized_coordinates)
                 case "polygon":
-                    #TODO
-                    clip_coords = obj.normalized_coordinates
+                    clip_coords = self.sutherland_hodgman_clip(obj.normalized_coordinates)
 
-            if (clip_coords is not None):
+            if (clip_coords is not None and clip_coords != []):
                 obj_vp_coords = self.normalized_coords_to_vp_coords(clip_coords)
                 self.interface.draw_object(obj, obj_vp_coords)
 
@@ -484,13 +587,17 @@ class CGSystem():
                 factor = -factor
             match transformation_type:
                 case "move_up":
-                    self.add_translation(transformation_list, 0, factor)
+                    self.add_translation(transformation_list, self.up_vector[0]*factor,
+                                                              self.up_vector[1]*factor)
                 case "move_down":
-                    self.add_translation(transformation_list, 0, -factor)
+                    self.add_translation(transformation_list, -self.up_vector[0]*factor,
+                                                              -self.up_vector[1]*factor)
                 case "move_left":
-                    self.add_translation(transformation_list, -factor, 0)
+                    self.add_translation(transformation_list, -self.right_vector[0]*factor,
+                                                              -self.right_vector[1]*factor)
                 case "move_right":
-                    self.add_translation(transformation_list, factor, 0)
+                    self.add_translation(transformation_list, self.right_vector[0]*factor,
+                                                              self.right_vector[1]*factor)
                 case "increase_scale":
                     self.add_scaling(transformation_list, factor, self.get_center(obj.coordinates))
                 case "decrease_scale":
