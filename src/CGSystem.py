@@ -1,13 +1,10 @@
 import numpy as np
 import math as m
 
-from numpy._core import function_base
-
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
 from clipping import cohen_sutherland, liang_barsky
-
 from objects import Object, Point, Line, Polygon, WireFrame
 
 
@@ -139,14 +136,12 @@ class CGSystem():
 
 
     def add_test(self):
-        #self.add_wireframe("square", "blue", [(60, 60), (60, 10), (10, 10), (10, 60), (60, 60)])
         self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
         self.add_wireframe("wireframe triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
         self.add_polygon("triangle", "green", [(10, 10), (100, 10), (100, 100)])
         self.add_point("point", "blue", (10, 10))
         self.add_polygon("concave hexagon", "red", [(100, 100), (150, 100), (200, 130), (160, 170), (200, 200), (100, 200)])
         self.add_wireframe("concave wireframe hexagon", "red", [(-100, -100), (-150, -100), (-200, -130), (-160, -170), (-200, -200), (-100, -200), (-100, -100)])
-        self.add_polygon("concave smt", "purple", [(0, 0), (2, 1), (1, 3), (-1, 1), (-0.5, -0.5)])
 
 
     def clip_point_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
@@ -155,16 +150,17 @@ class CGSystem():
 
 
     def clip_wireframe_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
-        clip_func = self.get_line_clipping_func()
-        wf_clip_coords = list()
-        for i in range(len(coords)-1):
-            line_coords = [coords[i], coords[i+1]]
-            clip_coords = clip_func(line_coords)
-            if (clip_coords is not None):
-                wf_clip_coords.append(clip_coords[0])
-                wf_clip_coords.append(clip_coords[1])
+        pop = None
+        if coords[0] == coords[-1]:
+            pop = coords[-1]
 
-        return wf_clip_coords if (wf_clip_coords) else None
+        clip_coords = self.sutherland_hodgman_clip(coords)
+
+        if pop is not None and clip_coords != []:
+            coords.append(pop)
+            clip_coords.append(clip_coords[0])
+
+        return clip_coords
 
 
     def get_line_clipping_func(self):
@@ -188,35 +184,6 @@ class CGSystem():
                     return True
 
         return False
-
-
-    def find_concave_vertices(self, coords: list[tuple[float, float]]):
-        concave_vertices = []
-        n = len(coords)
-        for i in range(n):
-            o = coords[i]
-            a = coords[(i + 1) % n]
-            b = coords[(i + 2) % n]
-
-            cross_product = (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-            if cross_product < 0:
-                concave_vertices.append(i+1)
-
-        return concave_vertices
-
-
-    def split_polygon(self, coords: list[tuple[float, float]]):
-        concave_vertices = self.find_concave_vertices(coords)
-        for concave_idx in concave_vertices:
-            print(coords[concave_idx])
-            prev_idx = (concave_idx - 1) % len(coords)
-            next_idx = (concave_idx + 1) % len(coords)
-
-            poly1 = coords[prev_idx:concave_idx + 1] + [coords[next_idx]]
-            poly2 = coords[concave_idx:] + coords[:next_idx + 1]
-
-            return [poly1, poly2]
-        return None
 
 
     # computes the intersection point of the line segment between p1, p2 and cp1, cp2
