@@ -32,14 +32,14 @@ class CGSystemInterface():
         self.messageBox            : tk.Listbox
         self.objects_listbox       : tk.Listbox
         self.canvas                : tk.Canvas
-        self.window_offset_var     : tk.IntVar
-        self.obj_offset_var        : tk.IntVar
-        self.w_zoom_factor_var     : tk.DoubleVar
-        self.obj_scale_factor_var  : tk.DoubleVar
         self.rotation_opt_var      : tk.StringVar
         self.line_clip_opt_var     : tk.StringVar
         self.window_degrees_var    : tk.DoubleVar
         self.object_degrees_var    : tk.DoubleVar
+        self.window_offset_entr    : tk.Entry
+        self.obj_offset_entry      : tk.Entry
+        self.w_zoom_factor_entry   : tk.Entry
+        self.obj_scale_factor_entry: tk.Entry
         self.obj_rotation_coord_var: tuple[tk.IntVar, tk.IntVar]
         self.w_coord_var           : tuple[tk.IntVar, tk.IntVar]
         self.canvas_width          : float
@@ -245,20 +245,22 @@ class CGSystemInterface():
         tk.Button(self.controls_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=170)
 
         Label(self.controls_menu_frame, "Offset", 10).place(x=10, y=140)
-        self.obj_offset_var = tk.IntVar()
-        self.window_offset_var = tk.IntVar()
-        self.obj_offset_var.set(10)
-        self.window_offset_var.set(10)
-        tv = self.obj_offset_var if (isObject) else self.window_offset_var
-        tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=55, y=140)
-
         Label(self.controls_menu_frame, "Escl. Factor" if (isObject) else "zoom factor", 10).place(x=115, y=140)
-        self.obj_scale_factor_var = tk.DoubleVar()
-        self.w_zoom_factor_var = tk.DoubleVar()
-        self.obj_scale_factor_var.set(2.0)
-        self.w_zoom_factor_var.set(2.0)
-        tv = self.obj_scale_factor_var if (isObject) else self.w_zoom_factor_var
-        tk.Entry(self.controls_menu_frame, textvariable=tv, width=4).place(x=195, y=140)
+
+        if (isObject):
+            self.obj_scale_factor_entry = tk.Entry(self.controls_menu_frame, width=4)
+            self.obj_offset_entry = tk.Entry(self.controls_menu_frame, width=4)
+            self.obj_offset_entry.insert(0, "10")
+            self.obj_scale_factor_entry.insert(0, "2.0")
+            self.obj_offset_entry.place(x=55, y=140)
+            self.obj_scale_factor_entry.place(x=195, y=140)
+        else:
+            self.window_offset_entry = tk.Entry(self.controls_menu_frame, width=4)
+            self.w_zoom_factor_entry = tk.Entry(self.controls_menu_frame, width=4)
+            self.window_offset_entry.insert(0, "10")
+            self.w_zoom_factor_entry.insert(0, "2.0")
+            self.window_offset_entry.place(x=55, y=140)
+            self.w_zoom_factor_entry.place(x=195, y=140)
 
 
     def add_window_rotation_menu(self):
@@ -451,7 +453,7 @@ class CGSystemInterface():
 
 
     def move_object(self, direction: str):
-        offset = self.verify_num_entry(self.obj_offset_var)
+        offset = self.verify_num_entry(self.obj_offset_entry)
         if (offset is None): return
         selected = self.objects_listbox.curselection()
 
@@ -467,14 +469,14 @@ class CGSystemInterface():
 
 
     def move_window(self, direction: str):
-        offset = self.verify_num_entry(self.window_offset_var)
+        offset = self.verify_num_entry(self.window_offset_entry)
         if (offset is None): return
         self.system.move_window(offset, direction)
         self.add_message("window moved %s by %d" % (direction, offset))
 
 
     def scale_object(self, inORout: str):
-        factor = self.verify_num_entry(self.obj_scale_factor_var)
+        factor = self.verify_num_entry(self.obj_scale_factor_entry)
         if (factor is None): return
         selected = self.objects_listbox.curselection()
         if (not selected):
@@ -489,7 +491,7 @@ class CGSystemInterface():
 
 
     def zoom_window(self, inORout: str):
-        factor = self.verify_num_entry(self.w_zoom_factor_var)
+        factor = self.verify_num_entry(self.w_zoom_factor_entry)
         if (factor is None): return
         self.system.zoom_window(factor, inORout)
         self.add_message("window zoomed %s by %.2f" % (inORout, factor))
@@ -497,7 +499,7 @@ class CGSystemInterface():
 
     def verify_num_entry(self, entry) -> int|float|None:
         try:
-            value = entry.get()
+            value = float(entry.get())
         except Exception:
             self.send_error("Value Error", "Please enter a numeric value on entry")
         else:
