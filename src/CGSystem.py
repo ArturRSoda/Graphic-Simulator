@@ -5,7 +5,7 @@ from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
 from clipping import cohen_sutherland, liang_barsky
-from objects import Object, Point, Line, Polygon, WireFrame
+from objects import Object, Point, Line, Polygon, WireFrame, Curve
 
 
 class CGSystem():
@@ -117,19 +117,26 @@ class CGSystem():
             self.add_point(name, color, coord_list[0])
             return
 
-        """
-        if (self.is_concave(coord_list)):
-            convexes = self.split_polygon(coord_list)
-            for i, convex in enumerate(convexes):
-                self.add_polygon(f"convex {i}", "cyan", convex)
-
-        """
-
         norm_coord = self.normalize_object_coordinates(coord_list)
         plg = Polygon(name, color, coord_list, norm_coord)
 
         self.display_file.append(plg)
         self.interface.objects_listbox.insert("end", "%s [%s - Polygon]" % (name, color))
+
+        self.generate_normal_coordinates()
+        self.update_viewport()
+
+
+    def add_curve(self, name: str, color: str, coord_list: list[tuple[float, float]]):
+        if (len(coord_list) == 1):
+            self.add_point(name, color, coord_list[0])
+            return
+
+        norm_coord = self.normalize_object_coordinates(coord_list)
+        plg = Curve(name, color, coord_list, norm_coord)
+
+        self.display_file.append(plg)
+        self.interface.objects_listbox.insert("end", "%s [%s - Curve]" % (name, color))
 
         self.generate_normal_coordinates()
         self.update_viewport()

@@ -10,11 +10,14 @@ class NewObjWindow:
         self.line_tab                : Tab
         self.wireframe_tab           : Tab
         self.polygon_tab             : Tab
+        self.curve_tab               : Tab
         self.color_opt_frame         : Frame
         self.wireframe_coord_list    : list[tuple[float, float]]
-        self.wireframe_coord_listbox : tk.Listbox
         self.polygon_coord_list      : list[tuple[float, float]]
+        self.curve_coord_list        : list[tuple[float, float]]
+        self.wireframe_coord_listbox : tk.Listbox
         self.polygon_coord_listbox   : tk.Listbox
+        self.curve_coord_listbox     : tk.Listbox
         self.color_opt_var           : tk.StringVar
         self.obj_name_var            : tk.StringVar
         self.tab_width               : float
@@ -25,6 +28,7 @@ class NewObjWindow:
         self.line_end_coord_tuple    : tuple[tk.IntVar, tk.IntVar]
         self.wireframe_coord_tuple   : tuple[tk.IntVar, tk.IntVar]
         self.polygon_coord_tuple     : tuple[tk.IntVar, tk.IntVar]
+        self.curve_coord_tuple       : tuple[tk.IntVar, tk.IntVar]
 
         self.system = system
         self.app = tk.Toplevel()
@@ -64,6 +68,7 @@ class NewObjWindow:
         self.add_line_tab()
         self.add_wireframe_tab()
         self.add_polygon_tab()
+        self.add_curve_tab()
 
         self.tab_menu.place(x=10, y=105)
 
@@ -73,7 +78,7 @@ class NewObjWindow:
 
         Label(fm, "X:", 10).place(x=10, y=10)
         tk.Entry(fm, textvariable=variables[0], width=4).place(x=30, y=10)
-        
+
         Label(fm, "Y:", 10).place(x=80, y=10)
         tk.Entry(fm, textvariable=variables[1], width=4).place(x=100, y=10)
 
@@ -149,6 +154,26 @@ class NewObjWindow:
 
         self.tab_menu.add(self.polygon_tab, text="Polygon")
 
+    def add_curve_tab(self):
+        self.curve_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
+
+        self.curve_coord_list = list()
+        self.curve_coord_tuple = (tk.IntVar(), tk.IntVar())
+
+        ttk.Label(self.curve_tab, text="Control coordinates").place(x=10, y=10)
+        self.add_coord_frame(self.curve_tab, 10, 30, self.curve_coord_tuple)
+
+        ttk.Label(self.curve_tab, text="Added Coordinates").place(x=200, y=10)
+        self.curve_coord_listbox = tk.Listbox(self.curve_tab, width=10, height=7)
+        self.curve_coord_listbox.place(x=200, y=30)
+
+        tk.Button(self.curve_tab, text="Add Coord", command=self.add_curve_coord).place(x=10, y=90)
+        tk.Button(self.curve_tab, text="Del Coord", command=self.del_curve_coord).place(x=10, y=130)
+        tk.Button(self.curve_tab, text="Add", command=self.add_curve).place(x=80, y=self.tab_height-45)
+        tk.Button(self.curve_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
+
+        self.tab_menu.add(self.curve_tab, text="Curve")
+
     def add_wireframe_coord(self):
         coord_x = self.verify_num_entry(self.wireframe_coord_tuple[0])
         coord_y = self.verify_num_entry(self.wireframe_coord_tuple[1])
@@ -184,6 +209,24 @@ class NewObjWindow:
         id = tp[0]
         self.polygon_coord_listbox.delete(id)
         self.polygon_coord_list.pop(id)
+
+    def add_curve_coord(self):
+        coord_x = self.verify_num_entry(self.curve_coord_tuple[0])
+        coord_y = self.verify_num_entry(self.curve_coord_tuple[1])
+
+        if (coord_x is not None) and (coord_y is not None):
+            self.curve_coord_list.append((coord_x, coord_y))
+            self.curve_coord_listbox.insert(tk.END, "(%d , %d)" % (coord_x, coord_y))
+
+    def del_curve_coord(self):
+        tp = self.curve_coord_listbox.curselection()
+        if (not tp):
+            self.send_error("Select an item", "Please select an item to delete!")
+            return
+
+        id = tp[0]
+        self.curve_coord_listbox.delete(id)
+        self.curve_coord_list.pop(id)
 
     def add_point(self):
         coord_x = self.verify_num_entry(self.point_coord_tuple[0])
@@ -250,6 +293,21 @@ class NewObjWindow:
         self.system.interface.add_message("    - Color:  %s" % color)
         self.system.interface.add_message("    - Name:  %s" % name)
         self.system.interface.add_message("Polygon added:")
+
+        self.app.destroy()
+
+    def add_curve(self):
+        name = self.obj_name_var.get()
+        color = self.color_opt_var.get()
+
+        self.system.add_curve(name, color, self.curve_coord_list)
+
+        coords = ""
+        for v in self.curve_coord_list: coords += "(%d, %d) " % v
+        self.system.interface.add_message("    - Coord:  %s" % coords)
+        self.system.interface.add_message("    - Color:  %s" % color)
+        self.system.interface.add_message("    - Name:  %s" % name)
+        self.system.interface.add_message("Curve added:")
 
         self.app.destroy()
 
