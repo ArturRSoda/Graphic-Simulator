@@ -4,23 +4,24 @@ import math as m
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
-from clipping import cohen_sutherland, liang_barsky
 from objects import Object, Point, Line, Polygon, WireFrame, BezierCurve
+from window import Window
+from transformator import Transformator
+from clipper import Clipper
 
 
 class CGSystem():
     def __init__(self):
         self.interface     : CGSystemInterface
+        self.window        : Window
+        self.transformator : Transformator
+        self.clipper       : Clipper
 
         self.vp_coord_min  : tuple[float, float]
         self.vp_coord_max  : tuple[float, float]
-        self.subvp_coord_min  : tuple[float, float]
-        self.subvp_coord_max  : tuple[float, float]
 
         # add aspect ratio
 
-        # p0, p1, p2, p3 | p0 -> w_min, p2 -> w_max
-        self.w_coordinates : list[tuple[float, float]]
         self.up_vector     : tuple[float, float]
         self.right_vector  : tuple[float, float]
 
@@ -28,16 +29,18 @@ class CGSystem():
 
     def run(self):
         self.interface = CGSystemInterface(self)
+        self.transformator = Transformator(self)
+        self.clipper = Clipper()
 
         self.vp_coord_max = (self.interface.subcanvas_width, self.interface.subcanvas_height)
         self.vp_coord_min = (0, 0)
 
-        self.w_coordinates = [
+        self.window = Window([
             (-self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2),
             ( self.vp_coord_max[0]/2, -self.vp_coord_max[1]/2),
             ( self.vp_coord_max[0]/2,  self.vp_coord_max[1]/2),
             (-self.vp_coord_max[0]/2,  self.vp_coord_max[1]/2)
-        ]
+        ])
 
         self.up_vector = (0, 1)
         self.right_vector = (1, 0)
@@ -149,107 +152,6 @@ class CGSystem():
         self.add_curve("curva", "pink", [(25, 25), (40, 75), (70, 75), (90, 30), (100, 100), (150, 50)])
 
 
-    def clip_point_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
-        x, y = coords[0]
-        return None if ((x < -1) or (x > 1) or (y < -1) or (y > 1)) else coords
-
-
-    def is_concave(self, coords: list[tuple[float, float]]):
-        sign = None
-        n = len(coords)
-        for i in range(n):
-            o = coords[i]
-            a = coords[(i + 1) % n]
-            b = coords[(i + 2) % n]
-
-            cross_product = (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-            if cross_product != 0:
-                if sign is None:
-                    sign = m.copysign(1, cross_product)
-                elif m.copysign(1, cross_product) != sign:
-                    return True
-
-        return False
-
-
-    # computes the intersection point of the line segment between p1, p2 and cp1, cp2
-    def compute_intersection(self, p1, p2, cp1, cp2):
-        dc = [cp1[0] - cp2[0], cp1[1] - cp2[1]]
-        dp = [p1[0] - p2[0], p1[1] - p2[1]]
-        n1 = cp1[0] * cp2[1] - cp1[1] * cp2[0]
-        n2 = p1[0] * p2[1] - p1[1] * p2[0]
-        denom = dc[0] * dp[1] - dc[1] * dp[0]
-        
-        if denom == 0:
-            return None  # lines are parallel or collinear
-
-        x = (n1 * dp[0] - n2 * dc[0]) / denom
-        y = (n1 * dp[1] - n2 * dc[1]) / denom
-        return (x, y)
-
-
-    def is_inside(self, point, cp1, cp2):
-        return (cp2[0] - cp1[0]) * (point[1] - cp1[1]) > (cp2[1] - cp1[1]) * (point[0] - cp1[0])
-
-
-    def sutherland_hodgman_clip(self, coords: list[tuple[float, float]]):
-        output_list = coords
-        window = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
-
-        for i in range(4):
-            input_list = output_list
-            output_list = []
-
-            cp1 = window[i]
-            cp2 = window[(i + 1) % 4]
-
-            if not input_list:
-                break
-
-            s = input_list[-1]
-            for e in input_list:
-                if self.is_inside(e, cp1, cp2):
-                    if not self.is_inside(s, cp1, cp2):
-                        output_list.append(self.compute_intersection(s, e, cp1, cp2))
-                    output_list.append(e)
-                elif self.is_inside(s, cp1, cp2):
-                    output_list.append(self.compute_intersection(s, e, cp1, cp2))
-                s = e
-
-        return output_list
-
-
-    def clip_wireframe_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
-        pop = None
-        wf_clip_coords = list()
-        if coords[0] == coords[-1]:
-            pop = coords[-1]
-
-            wf_clip_coords = self.sutherland_hodgman_clip(coords)
-
-            if (wf_clip_coords):
-                coords.append(pop)
-                wf_clip_coords.append(wf_clip_coords[0])
-
-        else:
-            clip_func = self.get_line_clipping_func()
-            for i in range(len(coords)-1):
-                line_coords = [coords[i], coords[i+1]]
-                clip_coords = clip_func(line_coords)
-                if (clip_coords is not None):
-                    wf_clip_coords.append(clip_coords[0])
-                    wf_clip_coords.append(clip_coords[1])
-
-
-        return wf_clip_coords if (wf_clip_coords) else None
-
-
-
-    def get_line_clipping_func(self):
-        func_str = self.interface.line_clip_opt_var.get()
-        return cohen_sutherland if (func_str == "cohen_sutherland") else liang_barsky
-
-
     def update_viewport(self):
         self.interface.clear_canvas()
 
@@ -257,15 +159,17 @@ class CGSystem():
             clip_coords = None
             match obj.type:
                 case "point":
-                    clip_coords = self.clip_point_coordinates(obj.normalized_coordinates)
+                    clip_coords = self.clipper.clip_point(obj.normalized_coordinates)
                 case "line":
-                    clip_coords = self.get_line_clipping_func()(obj.normalized_coordinates)
+                    func_opt = self.interface.line_clip_opt_var.get()
+                    clip_coords = self.clipper.clip_line(obj.normalized_coordinates, func_opt)
                 case "wireframe":
-                    clip_coords = self.clip_wireframe_coordinates(obj.normalized_coordinates)
+                    func_opt = self.interface.line_clip_opt_var.get()
+                    clip_coords = self.clipper.clip_wireframe(obj.normalized_coordinates, func_opt)
                 case "polygon":
-                    clip_coords = self.sutherland_hodgman_clip(obj.normalized_coordinates)
+                    clip_coords = self.clipper.clip_polygon(obj.normalized_coordinates)
                 case "bezier":
-                    clip_coords = self.clip_wireframe_coordinates(obj.normalized_coordinates)
+                    clip_coords = self.clipper.clip_curve(obj.normalized_coordinates)
 
             if (clip_coords is not None):
                 obj_vp_coords = self.normalized_coords_to_vp_coords(clip_coords)
@@ -286,8 +190,8 @@ class CGSystem():
             vp_coords.append((x, y))
 
         return vp_coords
-    
-    
+
+
     def normalize_coordinates(self, coordinates: list[tuple[float, float]], window_coordinates: list[tuple[float, float]]):
         p0, p1, p2, p3 = window_coordinates
         normalized_coords = list()
@@ -304,15 +208,15 @@ class CGSystem():
 
 
     def normalize_object_coordinates(self, coordinates: list[tuple[float, float]]):
-        w_center = self.get_center(self.w_coordinates)
+        w_center = self.window.get_center()
         delta_angle = self.get_delta_angle()
 
         transformation_list = []
-        self.add_translation(transformation_list, -w_center[0], -w_center[1])
-        self.add_rotation(transformation_list, -delta_angle, (0, 0))
+        self.transformator.add_translation(transformation_list, -w_center[0], -w_center[1])
+        self.transformator.add_rotation(transformation_list, -delta_angle, (0, 0))
 
-        window_coordinates = self.transform(self.w_coordinates, transformation_list)
-        transformed_coords = self.transform(coordinates, transformation_list)
+        window_coordinates = self.transformator.transform(self.window.coordinates, transformation_list)
+        transformed_coords = self.transformator.transform(coordinates, transformation_list)
 
         normalized_coordinates = self.normalize_coordinates(transformed_coords, window_coordinates)
 
@@ -340,16 +244,17 @@ class CGSystem():
 
         # aligns the window and the up vector with the y-axis, move the objects
         # and calculates the normalized coordinates
-        w_center = self.get_center(self.w_coordinates)
+        w_center = self.window.get_center()
         delta_angle = self.get_delta_angle()
 
         transformation_list = []
-        self.add_translation(transformation_list, -w_center[0], -w_center[1])
-        self.add_rotation(transformation_list, -delta_angle, (0, 0))
+        self.transformator.add_translation(transformation_list, -w_center[0], -w_center[1])
+        self.transformator.add_rotation(transformation_list, -delta_angle, (0, 0))
 
-        window_coordinates = self.transform(self.w_coordinates, transformation_list)
+        window_coordinates = self.transformator.transform(self.window.coordinates, transformation_list)
+
         for obj in self.display_file:
-            transformed_coords = self.transform(obj.coordinates, transformation_list)
+            transformed_coords = self.transformator.transform(obj.coordinates, transformation_list)
             obj.normalized_coordinates = self.normalize_coordinates(transformed_coords, window_coordinates)
 
 
@@ -370,38 +275,30 @@ class CGSystem():
 
 
     def set_window_coord(self, coord: tuple[float, float]):
-        w_center = self.get_center(self.w_coordinates)
+        w_center = self.window.get_center()
 
         offset_x = coord[0] - w_center[0]
         offset_y = coord[1] - w_center[1]
 
-        tranformation_list = list()
-        self.add_translation(tranformation_list, offset_x, offset_y)
-        self.w_coordinates = self.transform(self.w_coordinates, tranformation_list)
-
+        self.window.move(self.transformator, offset_x, offset_y)
         self.generate_normal_coordinates();
         self.update_viewport()
 
 
     # direction can be: "up", "down", "left", "right"
     def move_window(self, offset: int, direction: str):
-        transformation_list = []
+        offset_x, offset_y = 0, 0
         match direction:
             case "up":
-                self.add_translation(transformation_list, self.up_vector[0]*offset,
-                                                          self.up_vector[1]*offset)
+                offset_x, offset_y = [up_v*offset for up_v in self.up_vector]
             case "down":
-                self.add_translation(transformation_list, -self.up_vector[0]*offset,
-                                                          -self.up_vector[1]*offset)
+                offset_x, offset_y = [-up_v*offset for up_v in self.up_vector]
             case "right":
-                self.add_translation(transformation_list, self.right_vector[0]*offset,
-                                                          self.right_vector[1]*offset)
+                offset_x, offset_y = [rg_v*offset for rg_v in self.right_vector]
             case "left":
-                self.add_translation(transformation_list, -self.right_vector[0]*offset,
-                                                          -self.right_vector[1]*offset)
+                offset_x, offset_y = [-rg_v*offset for rg_v in self.right_vector]
 
-        self.w_coordinates = self.transform(self.w_coordinates, transformation_list)
-
+        self.window.move(self.transformator, offset_x, offset_y)
         self.generate_normal_coordinates()
         self.update_viewport()
 
@@ -409,23 +306,14 @@ class CGSystem():
     # inORout can be: "in", "out"
     def zoom_window(self, zoom_factor: float, inORout: str):
         zoom_factor = 1/zoom_factor if (inORout == "in") else zoom_factor
-
-        transformation_list = []
-        self.add_scaling(transformation_list, zoom_factor)
-        self.w_coordinates = self.transform(self.w_coordinates, transformation_list)
-    
+        self.window.zoom(self.transformator, zoom_factor)
         self.generate_normal_coordinates()
         self.update_viewport()
 
 
     def rotate_window(self, degrees: int, antiClockwise: bool):
         degrees = degrees if (antiClockwise) else -degrees
-
-        w_center = self.get_center(self.w_coordinates)
-        transformation_list = []
-        self.add_rotation(transformation_list, degrees, w_center)
-        self.w_coordinates = self.transform(self.w_coordinates, transformation_list)
-
+        self.window.rotate(self.transformator, degrees)
         self.generate_normal_coordinates(degrees)
         self.update_viewport()
 
@@ -433,170 +321,44 @@ class CGSystem():
     # direction can be: "up", "down", "left", "right"
     def move_object(self, offset: int, direction: str, obj_id: int):
         obj = self.get_object(obj_id)
-        transformation_list = []
+
+        offset_x, offset_y = 0, 0
         match direction:
             case "up":
-                self.add_translation(transformation_list, self.up_vector[0]*offset,
-                                                          self.up_vector[1]*offset)
+                offset_x, offset_y = [up_v*offset for up_v in self.up_vector]
             case "down":
-                self.add_translation(transformation_list, -self.up_vector[0]*offset,
-                                                          -self.up_vector[1]*offset)
+                offset_x, offset_y = [-up_v*offset for up_v in self.up_vector]
             case "right":
-                self.add_translation(transformation_list, self.right_vector[0]*offset,
-                                                          self.right_vector[1]*offset)
+                offset_x, offset_y = [rg_v*offset for rg_v in self.right_vector]
             case "left":
-                self.add_translation(transformation_list, -self.right_vector[0]*offset,
-                                                          -self.right_vector[1]*offset)
+                offset_x, offset_y = [-rg_v*offset for rg_v in self.right_vector]
 
-        obj.coordinates = self.transform(obj.coordinates, transformation_list)
+        obj.move(self.transformator, offset_x, offset_y)
         obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)
-
         self.update_viewport()
 
 
-    # change inORout to zoom_direction or just direction
-
     # inORout can be: "in", "out"
     def scale_object(self, scale_factor: float, object_id: int, inORout: str):
-            scale_factor = 1/scale_factor if (inORout == "out") else scale_factor 
-            obj = self.get_object(object_id)
+        scale_factor = 1/scale_factor if (inORout == "out") else scale_factor 
+        obj = self.get_object(object_id)
+        obj.scale(self.transformator, scale_factor)
+        obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)
+        self.update_viewport()
 
-            transformation_list = []
-            self.add_scaling(transformation_list, scale_factor, self.get_center(obj.coordinates))
-            obj.coordinates = self.transform(obj.coordinates, transformation_list)
-            obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)
-
-            self.update_viewport()
-
-
-    # change some parameters 
 
     # rotation_opt can be: "Origin", "Obj Center" and "Other"
     def rotate_object(self, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[float, float]=(0, 0)):
         degrees = degrees if (antiClockwise) else -degrees
         obj = self.get_object(object_id)
-
-        transformation_list = []
-        if (rotation_opt == "Origin"):
-            self.add_rotation(transformation_list, degrees, (0, 0))
-        elif(rotation_opt == "Obj Center"):
-            self.add_rotation(transformation_list, degrees, self.get_center(obj.coordinates))
-        else:
-            self.add_rotation(transformation_list, degrees, rotation_point)
-
-        obj.coordinates = self.transform(obj.coordinates, transformation_list)
+        rp = obj.get_center() if (rotation_opt == "Obj Center") else (0, 0) if (rotation_opt == "Origin") else rotation_point
+        obj.rotate(self.transformator, degrees, rp)
         obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)
-
         self.update_viewport()
 
 
-    def get_center(self, coordinates: list[tuple[float, float]]):
-        # if the object is a polygon, the first and the last points are the same
-        coords = [tuple(t) for t in coordinates]
-        if (coords[0] == coords[-1]) and (len(coords) > 1):
-            coords.pop()
-
-        average_x, average_y = 0, 0
-        for x, y in coords:
-            average_x += x
-            average_y += y
-        points_num = len(coords)
-        average_x /= points_num
-        average_y /= points_num
-
-        return (average_x, average_y)
-
-
-    def add_translation(self, transformation_list: list[list[list]], offset_x: float, offset_y: float):
-        transformation_list.insert(1, np.array([[1, 0, 0],
-                                                [0, 1, 0],
-                                                [offset_x, offset_y, 1]]))
-
-
-    def add_scaling(self, transformation_list: list[list[list]], scale_factor: float, transformation_point: tuple[float, float]=(0, 0)):
-        if transformation_point != (0, 0):
-            transformation_list.append(np.array([[1, 0, 0],
-                                                 [0, 1, 0],
-                                                 [-transformation_point[0], -transformation_point[1], 1]]))
-            transformation_list.append(np.array([[1, 0, 0],
-                                                 [0, 1, 0],
-                                                 [transformation_point[0], transformation_point[1], 1]]))
-
-        transformation_list.insert(1, np.array([[scale_factor, 0, 0],
-                                                [0, scale_factor, 0],
-                                                [0, 0, 1]]))
-
-
-    def add_rotation(self, transformation_list: list[list[list]], rotation_degrees: float, transformation_point: tuple[float, float]=(0, 0)):
-        if transformation_point != (0, 0):
-            transformation_list.append(np.array([[1, 0, 0],
-                                                 [0, 1, 0],
-                                                 [-transformation_point[0], -transformation_point[1], 1]]))
-            transformation_list.append(np.array([[1, 0, 0],
-                                                 [0, 1, 0],
-                                                 [transformation_point[0], transformation_point[1], 1]]))
-
-        s = m.sin(m.radians(rotation_degrees))
-        c = m.cos(m.radians(rotation_degrees))
-        transformation_list.insert(1, np.array([[c, s, 0],
-                                                [-s, c, 0],
-                                                [0, 0, 1]]))
-
-
-    def transform(self, coordinates: list[tuple[float, float]], transformation_list: list[list[list]]):
-        transformation_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        for matrix in transformation_list:
-            transformation_matrix = np.matmul(transformation_matrix, matrix)
-
-        new_coordinates = []
-        for i in range(len(coordinates)):
-            x = coordinates[i][0]
-            y = coordinates[i][1]
-            coord_matrix = np.array([x, y, 1])
-            new_coord_matrix = np.matmul(coord_matrix, transformation_matrix)
-            new_coordinates.append((new_coord_matrix[0].item(), new_coord_matrix[1].item()))
-
-        return new_coordinates
-
-
-    # transformation_typle_list = [ tranformation_type : str,
-    #                               factor             : float,
-    #                               rotation_center    : (float, float) | None
-    #                               antiClockwise      : bool | None ]
-    # tranformation can be: "move_up", "move_down", "move_left", "move_right",
-    #                       "increase_scale", "decrease_scale",
-    #                       "rotate_origin", "rotate_obj_center", "rotate_other"
     def apply_transformations(self, obj: Object, transformation_tuple_list: list[tuple[str, float, tuple[float, float]|None, bool|None]]):
-        transformation_list = []
-        for transformation_type, factor, rotation_center, antiClockwise in transformation_tuple_list:
-            if antiClockwise != None and not antiClockwise:
-                factor = -factor
-            match transformation_type:
-                case "move_up":
-                    self.add_translation(transformation_list, self.up_vector[0]*factor,
-                                                              self.up_vector[1]*factor)
-                case "move_down":
-                    self.add_translation(transformation_list, -self.up_vector[0]*factor,
-                                                              -self.up_vector[1]*factor)
-                case "move_left":
-                    self.add_translation(transformation_list, -self.right_vector[0]*factor,
-                                                              -self.right_vector[1]*factor)
-                case "move_right":
-                    self.add_translation(transformation_list, self.right_vector[0]*factor,
-                                                              self.right_vector[1]*factor)
-                case "increase_scale":
-                    self.add_scaling(transformation_list, factor, self.get_center(obj.coordinates))
-                case "decrease_scale":
-                    self.add_scaling(transformation_list, 1/factor, self.get_center(obj.coordinates))
-                case "rotate_origin":
-                    self.add_rotation(transformation_list, factor)
-                case "rotate_obj_center":
-                    self.add_rotation(transformation_list, factor, self.get_center(obj.coordinates))
-                case "rotate_other":
-                    self.add_rotation(transformation_list, factor, rotation_center)
-
-        obj.coordinates = self.transform(obj.coordinates, transformation_list)
-
+        obj.coordinates = self.transformator.apply_transformations(obj.coordinates, transformation_tuple_list)
         self.generate_normal_coordinates()
         self.update_viewport()
 

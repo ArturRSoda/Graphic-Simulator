@@ -1,8 +1,8 @@
 import numpy as np
 
-from abc import ABC
+from transformator import Transformator
 
-class Object(ABC):
+class Object:
     def __init__(self, name: str, 
                        color: str,
                        type: str,
@@ -11,12 +11,44 @@ class Object(ABC):
 
         self.name = name
         self.color = color
-
-        # change this
         self.type = type
-
         self.coordinates = coordinates
         self.normalized_coordinates = normalized_coordinates
+
+    def get_center(self):
+        coordinates = self.coordinates
+        coords = [tuple(t) for t in coordinates]
+        if (coords[0] == coords[-1]) and (len(coords) > 1):
+            coords.pop()
+
+        average_x, average_y = 0, 0
+        for x, y in coords:
+            average_x += x
+            average_y += y
+        points_num = len(coords)
+        average_x /= points_num
+        average_y /= points_num
+
+        return (average_x, average_y)
+
+
+    def rotate(self, transformator: Transformator, degrees: int, rotation_point: tuple[float, float]):
+        transformation_list = []
+        transformator.add_rotation(transformation_list, degrees, rotation_point)
+        self.coordinates = transformator.transform(self.coordinates, transformation_list)
+
+
+    def scale(self, transformator: Transformator, factor: float):
+        transformation_list = []
+        transformator.add_scaling(transformation_list, factor, self.get_center())
+        self.coordinates = transformator.transform(self.coordinates, transformation_list)
+
+
+    def move(self, transformator: Transformator, offset_x: float, offset_y: float):
+        transformation_list = []
+        transformator.add_translation(transformation_list, offset_x, offset_y)
+        self.coordinates = transformator.transform(self.coordinates, transformation_list)
+
 
 class Point(Object):
     def __init__(self, name: str, color: str, coordinates: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
