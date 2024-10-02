@@ -29,9 +29,6 @@ class CGSystem():
     def run(self):
         self.interface = CGSystemInterface(self)
 
-        #self.vp_coord_max = (self.interface.canvas_width, self.interface.canvas_height)
-        #self.vp_coord_min = (0, 0)
-
         self.vp_coord_max = (self.interface.subcanvas_width, self.interface.subcanvas_height)
         self.vp_coord_min = (0, 0)
 
@@ -48,8 +45,8 @@ class CGSystem():
         self.display_file = list()
 
         # world center lines
-        self.display_file.append(Line("X", "black", [(-10000, 0), (10000, 0)], []))
-        self.display_file.append(Line("Y", "black", [(0, -10000), (0, 10000)], []))
+        self.display_file.append(Line("X", "black", [(-1000, 0), (1000, 0)], []))
+        self.display_file.append(Line("Y", "black", [(0, -1000), (0, 1000)], []))
 
         # test objects
         self.add_test()
@@ -157,25 +154,6 @@ class CGSystem():
         return None if ((x < -1) or (x > 1) or (y < -1) or (y > 1)) else coords
 
 
-    def clip_wireframe_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
-        pop = None
-        if coords[0] == coords[-1]:
-            pop = coords[-1]
-
-        clip_coords = self.sutherland_hodgman_clip(coords)
-
-        if pop is not None and clip_coords != []:
-            coords.append(pop)
-            clip_coords.append(clip_coords[0])
-
-        return clip_coords
-
-
-    def get_line_clipping_func(self):
-        func_str = self.interface.line_clip_opt_var.get()
-        return cohen_sutherland if (func_str == "cohen_sutherland") else liang_barsky
-
-
     def is_concave(self, coords: list[tuple[float, float]]):
         sign = None
         n = len(coords)
@@ -241,6 +219,37 @@ class CGSystem():
         return output_list
 
 
+    def clip_wireframe_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
+        pop = None
+        wf_clip_coords = list()
+        if coords[0] == coords[-1]:
+            pop = coords[-1]
+
+            wf_clip_coords = self.sutherland_hodgman_clip(coords)
+
+            if (wf_clip_coords):
+                coords.append(pop)
+                wf_clip_coords.append(wf_clip_coords[0])
+
+        else:
+            clip_func = self.get_line_clipping_func()
+            for i in range(len(coords)-1):
+                line_coords = [coords[i], coords[i+1]]
+                clip_coords = clip_func(line_coords)
+                if (clip_coords is not None):
+                    wf_clip_coords.append(clip_coords[0])
+                    wf_clip_coords.append(clip_coords[1])
+
+
+        return wf_clip_coords if (wf_clip_coords) else None
+
+
+
+    def get_line_clipping_func(self):
+        func_str = self.interface.line_clip_opt_var.get()
+        return cohen_sutherland if (func_str == "cohen_sutherland") else liang_barsky
+
+
     def update_viewport(self):
         self.interface.clear_canvas()
 
@@ -258,7 +267,7 @@ class CGSystem():
                 case "bezier":
                     clip_coords = self.clip_wireframe_coordinates(obj.normalized_coordinates)
 
-            if (clip_coords is not None and clip_coords != []):
+            if (clip_coords is not None):
                 obj_vp_coords = self.normalized_coords_to_vp_coords(clip_coords)
                 self.interface.draw_object(obj, obj_vp_coords)
 
@@ -483,15 +492,15 @@ class CGSystem():
 
     def get_center(self, coordinates: list[tuple[float, float]]):
         # if the object is a polygon, the first and the last points are the same
-        coordinates = coordinates.copy()
-        if (coordinates[0] == coordinates[-1]) and (len(coordinates) > 1):
-            coordinates.pop()
+        coords = [tuple(t) for t in coordinates]
+        if (coords[0] == coords[-1]) and (len(coords) > 1):
+            coords.pop()
 
         average_x, average_y = 0, 0
-        for x, y in coordinates:
+        for x, y in coords:
             average_x += x
             average_y += y
-        points_num = len(coordinates)
+        points_num = len(coords)
         average_x /= points_num
         average_y /= points_num
 

@@ -25,87 +25,60 @@ def get_region_code(coord: tuple[float, float]) -> int:
 
     return code
 
-def calculate_intersection_point(coord1: tuple[float, float], coord2: tuple[float, float], intersections, id):
-    x1, y1 = coord1
-    x2, y2 = coord2
-
-    m = (y2 - y1) / (x2 - x1) if (x2 - x1) else 0
-    x = y = 0
-    if ("top" in intersections):
-            x = (x1 + (1/m) * (W_MAX - y1)) if (m) else x1
-            y = W_MAX
-            if (id == 1):
-                x1, y1 = x, y
-            else:
-                x2, y2 = x, y
-
-    if ("bottom" in intersections):
-            x = (x1 + (1/m) * (W_MIN - y1)) if (m) else x1
-            y = W_MIN
-            if (id == 1):
-                x1, y1 = x, y
-            else:
-                x2, y2 = x, y
-
-    if ("left" in intersections):
-            x = W_MIN
-            y = y1 + m * (W_MIN - x1)
-            if (id == 1):
-                x1, y1 = x, y
-            else:
-                x2, y2 = x, y
-
-    if ("right" in intersections):
-            x = W_MAX
-            y = y1 + m * (W_MAX - x1)
-            if (id == 1):
-                x1, y1 = x, y
-            else:
-                x2, y2 = x, y
-
-    return (x1, y1) if (id == 1) else (x2, y2)
-
-
-def detect_intersection(code):
-    intersections = list()
-    if (code & TOP):
-        intersections.append("top")
-    if (code & BOTTOM):
-        intersections.append("bottom")
-    if (code & LEFT):
-        intersections.append("left")
-    if (code & RIGHT):
-        intersections.append("right")
-    return intersections
-
 
 def cohen_sutherland(line: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
-    coord1 = line[0]
-    coord2 = line[1]
+    x1, y1 = line[0]
+    x2, y2 = line[1]
 
-    code1 = get_region_code(coord1)
-    code2 = get_region_code(coord2)
+    code1 = get_region_code((x1, y1))
+    code2 = get_region_code((x2, y2))
 
-    if (code1 & code2) != 0: # line is parallel and outside the window, so reject
-        return None
+    flag = False
+    while True:
+        # Line is completely inside the window, so accept
+        if (not code1) and (not code2): 
+            flag = True
+            break
 
-    if (code1 | code2) == 0: # line is completely inside the window, so dont need clipping
-        return line
+        # Line is parallel and outside the window, so reject
+        elif (code1 & code2): 
+            break
 
-    intersections = detect_intersection(code1)
-    if (intersections):
-        coord1  = calculate_intersection_point(coord1, coord2, intersections, 1)
+        else:
+            x, y = 1, 1
 
-    x, y = coord1
-    if (x < -1) or (x > 1) or (y < -1) or (y > 1): # if some coords is outside the boundary, after the calculation of intersections
-        return None                                # than the line dont pass through the window, so reject
+            # At least one of the point is outside the window, choose one
+            code_out = code1 if (code1 != 0) else code2
 
-    intersections = detect_intersection(code2)
-    if (intersections):
-        coord2  = calculate_intersection_point(coord1, coord2, intersections, 2)
+            # Find and calculate intersection point
+            m = (y2 - y1) / (x2 - x1)
+            if (code_out & TOP):
+                x = x1 + (1/m) * (W_MAX - y1)
+                y = W_MAX
 
-    return [coord1, coord2]
+            elif (code_out & BOTTOM):
+                x = x1 + (1/m) * (W_MIN - y1)
+                y = W_MIN
 
+            elif (code_out & RIGHT):
+                y = y1 + m * (W_MAX - x1)
+                x = W_MAX
+
+            elif (code_out & LEFT):
+                y = y1 + m * (W_MIN - x1)
+                x = W_MIN
+
+
+            # Replace the outside point by the calculated intersection point
+            if (code_out == code1): 
+                x1, y1 = x, y
+                code1 = get_region_code((x1, y1))
+
+            else:
+                x2, y2 = x, y
+                code2 = get_region_code((x2, y2)) 
+  
+    return [(x1, y1), (x2, y2)] if (flag) else None
 
 # FUNCTION LIANG-BARSKY LINE CLIPPING
 def liang_barsky(line: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
@@ -121,9 +94,9 @@ def liang_barsky(line: list[tuple[float, float]]) -> list[tuple[float, float]]|N
     # if (pi == 0) and (qi == 0) then
     #   line is parallel and outside the window, so reject
     if ( (p[0] == 0 and q[0] < 0) or
-         (p[1] == 0 and q[1] < 0) or
-         (p[2] == 0 and q[2] < 0) or
-         (p[3] == 0 and q[3] < 0) ):
+        (p[1] == 0 and q[1] < 0) or
+        (p[2] == 0 and q[2] < 0) or
+        (p[3] == 0 and q[3] < 0) ):
         return None
 
     u1 = max([0] + [q[i]/p[i] for i in range(4) if p[i] < 0])
