@@ -1,4 +1,4 @@
-from transformator import Transformator
+from transformer import Transformer
 
 class Window:
     def __init__(self, coordinates: list[tuple[float, float]]):
@@ -29,20 +29,20 @@ class Window:
         self.coordinates = new_coord
 
 
-    def rotate(self, transformator: Transformator, degrees: int):
+    def rotate(self, transformer: Transformer, degrees: int):
         transformation_list = []
-        transformator.add_rotation(transformation_list, degrees, self.get_center())
-        self.coordinates = transformator.transform(self.coordinates, transformation_list)
+        transformer.add_rotation(transformation_list, degrees, self.get_center())
+        self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
 
-    def zoom(self, transformator: Transformator, factor: float):
+    def zoom(self, transformer: Transformer, factor: float):
         transformation_list = []
-        transformator.add_scaling(transformation_list, factor)
-        self.coordinates = transformator.transform(self.coordinates, transformation_list)
+        transformer.add_scaling(transformation_list, factor)
+        self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
 
-    def move(self, transformator: Transformator, offset_x: float, offset_y: float):
+    def move(self, transformer: Transformer, offset_x: float, offset_y: float):
         transformation_list = []
-        transformator.add_translation(transformation_list, offset_x, offset_y)
-        self.coordinates = transformator.transform(self.coordinates, transformation_list)
+        transformer.add_translation(transformation_list, offset_x, offset_y)
+        self.coordinates = transformer.transform(self.coordinates, transformation_list)
 

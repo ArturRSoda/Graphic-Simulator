@@ -224,7 +224,8 @@ class Clipper:
                     output_list.append(self.compute_intersection(s, e, cp1, cp2))
                 s = e
 
-        return output_list
-
-
+        if output_list:
+            return output_list
+        else: 
+            return None
 

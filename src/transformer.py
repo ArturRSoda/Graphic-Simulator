@@ -1,7 +1,7 @@
 import numpy as np
 import math as m
 
-class Transformator:
+class Transformer:
     def __init__(self, system):
         self.system = system
 
@@ -63,7 +63,7 @@ class Transformator:
     # tranformation can be: "move_up", "move_down", "move_left", "move_right",
     #                       "increase_scale", "decrease_scale",
     #                       "rotate_origin", "rotate_obj_center", "rotate_other"
-    def apply_transformations(self, obj_coordinates: list[tuple[float, float]], transformation_tuple_list: list[tuple[str, float, tuple[float, float]|None, bool|None]]):
+    def apply_transformations(self, obj_coordinates: list[tuple[float, float]], transformation_tuple_list: list[tuple[str, float, tuple[float, float]|None, bool|None]], obj_center: float):
         transformation_list = []
 
         for transformation_type, factor, rotation_center, antiClockwise in transformation_tuple_list:
@@ -84,13 +84,13 @@ class Transformator:
                     self.add_translation(transformation_list, self.system.right_vector[0]*factor,
                                                               self.system.right_vector[1]*factor)
                 case "increase_scale":
-                    self.add_scaling(transformation_list, factor, self.system.get_center(obj_coordinates))
+                    self.add_scaling(transformation_list, factor, obj_center)
                 case "decrease_scale":
-                    self.add_scaling(transformation_list, 1/factor, self.system.get_center(obj_coordinates))
+                    self.add_scaling(transformation_list, 1/factor, obj_center)
                 case "rotate_origin":
                     self.add_rotation(transformation_list, factor)
                 case "rotate_obj_center":
-                    self.add_rotation(transformation_list, factor, self.system.get_center(obj_coordinates))
+                    self.add_rotation(transformation_list, factor, obj_center)
                 case "rotate_other":
                     self.add_rotation(transformation_list, factor, rotation_center)
 

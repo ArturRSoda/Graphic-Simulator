@@ -1,6 +1,6 @@
 import numpy as np
 
-from transformator import Transformator
+from transformer import Transformer
 
 class Object:
     def __init__(self, name: str, 
@@ -32,22 +32,22 @@ class Object:
         return (average_x, average_y)
 
 
-    def rotate(self, transformator: Transformator, degrees: int, rotation_point: tuple[float, float]):
+    def rotate(self, transformer: Transformer, degrees: int, rotation_point: tuple[float, float]):
         transformation_list = []
-        transformator.add_rotation(transformation_list, degrees, rotation_point)
-        self.coordinates = transformator.transform(self.coordinates, transformation_list)
+        transformer.add_rotation(transformation_list, degrees, rotation_point)
+        self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
 
-    def scale(self, transformator: Transformator, factor: float):
+    def scale(self, transformer: Transformer, factor: float):
         transformation_list = []
-        transformator.add_scaling(transformation_list, factor, self.get_center())
-        self.coordinates = transformator.transform(self.coordinates, transformation_list)
+        transformer.add_scaling(transformation_list, factor, self.get_center())
+        self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
 
-    def move(self, transformator: Transformator, offset_x: float, offset_y: float):
+    def move(self, transformer: Transformer, offset_x: float, offset_y: float):
         transformation_list = []
-        transformator.add_translation(transformation_list, offset_x, offset_y)
-        self.coordinates = transformator.transform(self.coordinates, transformation_list)
+        transformer.add_translation(transformation_list, offset_x, offset_y)
+        self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
 
 class Point(Object):
