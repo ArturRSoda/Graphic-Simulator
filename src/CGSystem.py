@@ -5,7 +5,7 @@ from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
 from clipping import cohen_sutherland, liang_barsky
-from objects import Object, Point, Line, Polygon, WireFrame, Curve
+from objects import Object, Point, Line, Polygon, WireFrame, BezierCurve
 
 
 class CGSystem():
@@ -133,7 +133,7 @@ class CGSystem():
             return
 
         norm_coord = self.normalize_object_coordinates(coord_list)
-        plg = Curve(name, color, coord_list, norm_coord)
+        plg = BezierCurve(name, color, coord_list, norm_coord)
 
         self.display_file.append(plg)
         self.interface.objects_listbox.insert("end", "%s [%s - Curve]" % (name, color))
@@ -149,6 +149,7 @@ class CGSystem():
         self.add_point("point", "blue", (10, 10))
         self.add_polygon("concave hexagon", "red", [(100, 100), (150, 100), (200, 130), (160, 170), (200, 200), (100, 200)])
         self.add_wireframe("concave wireframe hexagon", "red", [(-100, -100), (-150, -100), (-200, -130), (-160, -170), (-200, -200), (-100, -200), (-100, -100)])
+        self.add_curve("curva", "pink", [(25, 25), (40, 75), (70, 75), (90, 30), (100, 100), (150, 50)])
 
 
     def clip_point_coordinates(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
@@ -254,6 +255,8 @@ class CGSystem():
                     clip_coords = self.clip_wireframe_coordinates(obj.normalized_coordinates)
                 case "polygon":
                     clip_coords = self.sutherland_hodgman_clip(obj.normalized_coordinates)
+                case "bezier":
+                    clip_coords = self.clip_wireframe_coordinates(obj.normalized_coordinates)
 
             if (clip_coords is not None and clip_coords != []):
                 obj_vp_coords = self.normalized_coords_to_vp_coords(clip_coords)
