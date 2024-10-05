@@ -89,18 +89,20 @@ class BezierCurve(Object):
     def generate(self):
         t_values = np.linspace(0, 1, self.step)
         cp_num = len(self.control_points)
-        for i in range(0, cp_num - 1, 3):
-            # ensures all the points are used
-            if i + 3 < cp_num:
-                p0, p1, p2, p3 = self.control_points[i:i+4]
-            else:
-                p0, p1, p2 = self.control_points[i:i+3]
-                p3 = p2 
+        for i in range(0, cp_num - 3, 3):
+            p0, p1, p2, p3 = self.control_points[i:i+4]
 
             # g1 continuity
             if i + 4 < cp_num:
                 self.control_points[i+4] = 2 * np.array(p3) - np.array(p2)
 
+            segment = [self.cubic_bezier(p0, p1, p2, p3, t) for t in t_values]
+            self.coordinates.extend(segment)
+
+        # ensures all the points are used
+        if cp_num % 3 != 1:
+            p0, p1, p2 = self.control_points[-3:]
+            p3 = p2
             segment = [self.cubic_bezier(p0, p1, p2, p3, t) for t in t_values]
             self.coordinates.extend(segment)
 

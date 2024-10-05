@@ -149,7 +149,8 @@ class CGSystem():
         self.add_point("point", "blue", (10, 10))
         self.add_polygon("concave hexagon", "red", [(100, 100), (150, 100), (200, 130), (160, 170), (200, 200), (100, 200)])
         self.add_wireframe("concave wireframe hexagon", "red", [(-100, -100), (-150, -100), (-200, -130), (-160, -170), (-200, -200), (-100, -200), (-100, -100)])
-        self.add_curve("curva", "pink", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50)])
+        self.add_curve("curva", "pink", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100)])
+        self.add_curve("curva", "purple", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)])
 
 
     def update_viewport(self):
