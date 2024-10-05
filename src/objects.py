@@ -71,61 +71,36 @@ class Polygon(Object):
 
 
 class BezierCurve(Object):
-    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]], n: int=100):
-        super().__init__(name, color, "bezier", coordinates, normalized_coordinates)
+    def __init__(self, name: str, color: str, control_points: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]], n: int=100):
+        super().__init__(name, color, "bezier", [], normalized_coordinates)
 
-        self.control_points = []
-        self.curve_points = np.empty((0, 2), dtype=np.float64)
-        self.d = 0
-        self.t = 0
-        self.step = np.float64(1.0/n)
-        self.run = False
-
-        for coordinate in coordinates:
-            x, y = coordinate
-            self.add_point(x, y)
-
+        self.control_points = control_points
+        self.step = n
         self.generate()
-        self.coordinates = self.curve_points
 
-    def add_point(self, x, y):
-        if self.d == 0:
-            self.control_points.append([[x, y]])
-        else:
-            self.control_points[0].append([x, y])
-            self.control_points.append([])
-        self.d += 1
 
-    def bezier(self):
-        for d in range(1, self.d):
-            self.control_points[d] = []
-            for i in range(self.d - d):
-                self.control_points[d].append([
-                    self.control_points[d - 1][i][0] + self.t * (self.control_points[d - 1][i + 1][0] - self.control_points[d - 1][i][0]),
-                    self.control_points[d - 1][i][1] + self.t * (self.control_points[d - 1][i + 1][1] - self.control_points[d - 1][i][1])
-                ])
-        xy = np.array(self.control_points[-1])
-        self.curve_points = np.append(self.curve_points, xy, axis=0)
+    def cubic_bezier(self, p0, p1, p2, p3, t):
+        return (1 - t)**3 * np.array(p0) + \
+               3 * (1 - t)**2 * t * np.array(p1) + \
+               3 * (1 - t) * t**2 * np.array(p2) + \
+               t**3 * np.array(p3)
 
-    def generate(self, t=None):
-        if t:
-            if type(t) is not list:
-                t = [t]
-            for x in t:
-                self.t = x
-                self.bezier()
-        else:
-            while True:
-                self.bezier()
-                if self.t == 1:
-                    break
-                self.t = min(self.t + self.step, 1)
-        self.run = True
 
-    def curve(self, t=None):
-        if not self.run:
-            self.generate(t)
-        return self.curve_points
+    def generate(self):
+        t_values = np.linspace(0, 1, self.step)
+        cp_num = len(self.control_points)
+        for i in range(0, cp_num - 1, 3):
+            # ensures all the points are used
+            if i + 3 < cp_num:
+                p0, p1, p2, p3 = self.control_points[i:i+4]
+            else:
+                p0, p1, p2 = self.control_points[i:i+3]
+                p3 = p2 
 
-    def points(self):
-        return np.array(self.control_points[0])
+            # g1 continuity
+            if i + 4 < cp_num:
+                self.control_points[i+4] = 2 * np.array(p3) - np.array(p2)
+
+            segment = [self.cubic_bezier(p0, p1, p2, p3, t) for t in t_values]
+            self.coordinates.extend(segment)
+
