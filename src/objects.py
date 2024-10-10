@@ -97,18 +97,74 @@ class BezierCurve(Object):
                 self.control_points[i+4] = 2 * np.array(p3) - np.array(p2)
 
             segment = [self.cubic_bezier(p0, p1, p2, p3, t) for t in t_values]
-            self.coordinates.extend(segment)
+            coords = [(float(x), float(y)) for (x, y) in segment]
+            self.coordinates.extend(coords)
 
         # ensures all the points are used
         if cp_num % 3 != 1:
             p0, p1, p2 = self.control_points[-3:]
             p3 = p2
             segment = [self.cubic_bezier(p0, p1, p2, p3, t) for t in t_values]
-            self.coordinates.extend(segment)
+            coords = [(float(x), float(y)) for (x, y) in segment]
+            self.coordinates.extend(coords)
+
 
 class BSplineCurve(Object):
     def __init__(self, name: str, color: str, control_points: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]], n: int=100):
         super().__init__(name, color, "bezier", [], normalized_coordinates)
 
         self.control_points = control_points
-        self.step = n
+        self.delta = 0.001
+
+        self.e_delta = np.array([
+            [              0,               0,          0, 1],
+            [  self.delta**3,   self.delta**2, self.delta, 0],
+            [6*self.delta**3, 2*self.delta**2,          0, 0],
+            [6*self.delta**3,               0,          0, 0]
+        ])
+
+        self.matriz_bs_base = (1/6) * np.array([
+                                          [-1,  3, -3,  1],
+                                          [ 3, -6,  3,  0],
+                                          [-3,  0,  3,  0],
+                                          [ 1,  4,  1,  0]
+                                      ])
+
+        self.generate()
+
+
+    def get_geometry_vector(self, vetor):
+        g_x = np.array([x for (x, _) in vetor])
+        g_y = np.array([y for (_, y) in vetor])
+        return g_x, g_y
+
+    def get_m_bs(self, t):
+        return np.matmul(t, self.matriz_bs_base)
+
+    def generate(self):
+        n = int(1/self.delta)
+        i = 0
+        while (i+4 <= len(self.control_points)):
+            points = self.control_points[i:i+4]
+            i += 1
+
+            g_x, g_y = self.get_geometry_vector(points)
+            m_bs = self.matriz_bs_base
+
+            c_x = np.matmul(m_bs, g_x)
+            c_y = np.matmul(m_bs, g_y)
+
+            fx, d_fx, d2_fx, d3_fx = np.matmul(self.e_delta, c_x)
+            fy, d_fy, d2_fy, d3_fy = np.matmul(self.e_delta, c_y)
+
+            self.fwd_diff(n, fx, d_fx, d2_fx, d3_fx, fy, d_fy, d2_fy, d3_fy)
+
+
+    def fwd_diff(self, n, x, dx, d2x, d3x, y, dy, d2y, d3y):
+        i = 1
+        self.coordinates.append((float(x), float(y)))
+        while (i < n):
+            i += 1
+            x, dx, d2x = x+dx, dx+d2x, d2x+d3x
+            y, dy, d2y = y+dy, dy+d2y, d2y+d3y
+            self.coordinates.append((float(x), float(y)))
