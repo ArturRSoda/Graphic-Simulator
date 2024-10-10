@@ -138,9 +138,6 @@ class BSplineCurve(Object):
         g_y = np.array([y for (_, y) in vetor])
         return g_x, g_y
 
-    def get_m_bs(self, t):
-        return np.matmul(t, self.matriz_bs_base)
-
     def generate(self):
         n = int(1/self.delta)
         i = 0
