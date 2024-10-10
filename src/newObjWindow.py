@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import CURRENT, ttk, messagebox
 
 from CGSystemInterface import Label, Frame, Tab
 
@@ -20,6 +20,7 @@ class NewObjWindow:
         self.curve_coord_listbox     : tk.Listbox
         self.color_opt_var           : tk.StringVar
         self.obj_name_var            : tk.StringVar
+        self.curve_opt               : tk.StringVar
         self.tab_width               : float
         self.tab_height              : float
 
@@ -167,6 +168,10 @@ class NewObjWindow:
         self.curve_coord_listbox = tk.Listbox(self.curve_tab, width=10, height=7)
         self.curve_coord_listbox.place(x=200, y=30)
 
+        self.curve_opt = tk.StringVar(self.curve_tab, "bspline")
+        tk.Radiobutton(self.curve_tab, text="B-Spline", variable=self.curve_opt, value="bspline").place(x=10, y=170)
+        tk.Radiobutton(self.curve_tab, text="Bezier", variable=self.curve_opt, value="bezier").place(x=100, y=170)
+
         tk.Button(self.curve_tab, text="Add Coord", command=self.add_curve_coord).place(x=10, y=90)
         tk.Button(self.curve_tab, text="Del Coord", command=self.del_curve_coord).place(x=10, y=130)
         tk.Button(self.curve_tab, text="Add", command=self.add_curve).place(x=80, y=self.tab_height-45)
@@ -300,7 +305,13 @@ class NewObjWindow:
         name = self.obj_name_var.get()
         color = self.color_opt_var.get()
 
-        self.system.add_curve(name, color, self.curve_coord_list)
+        minimum_num_coord = 3 if (self.curve_opt.get() == "bezier") else 4
+        message = "Pleas insert at least %d coordinates to create a %s curve" % (minimum_num_coord, self.curve_opt.get())
+        if (len(self.curve_coord_list) < minimum_num_coord):
+            self.send_error("Minimum coordinates", message)
+            return
+
+        self.system.add_curve(name, color, self.curve_coord_list, self.curve_opt.get())
 
         coords = ""
         for v in self.curve_coord_list: coords += "(%d, %d) " % v

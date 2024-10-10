@@ -4,7 +4,7 @@ import math as m
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
-from objects import Object, Point, Line, Polygon, WireFrame, BezierCurve
+from objects import BSplineCurve, Object, Point, Line, Polygon, WireFrame, BezierCurve, BSplineCurve
 from window import Window
 from transformer import Transformer
 from clipper import Clipper
@@ -127,13 +127,12 @@ class CGSystem():
         self.update_viewport()
 
 
-    def add_curve(self, name: str, color: str, coord_list: list[tuple[float, float]]):
-        if (len(coord_list) == 1):
-            self.add_point(name, color, coord_list[0])
-            return
+    # type can be "bspline" or "bezier"
+    def add_curve(self, name: str, color: str, coord_list: list[tuple[float, float]], type: str):
+        curve_class = BezierCurve if (type == "bezier") else BSplineCurve
 
-        norm_coord = self.normalize_object_coordinates(coord_list)
-        plg = BezierCurve(name, color, coord_list, norm_coord)
+        plg = curve_class(name, color, coord_list, [])
+        plg.normalized_coordinates = self.normalize_object_coordinates(plg.coordinates)
 
         self.display_file.append(plg)
         self.interface.objects_listbox.insert("end", "%s [%s - Curve]" % (name, color))
@@ -143,14 +142,14 @@ class CGSystem():
 
 
     def add_test(self):
-        self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
-        self.add_wireframe("wireframe triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
-        self.add_polygon("triangle", "green", [(10, 10), (100, 10), (100, 100)])
-        self.add_point("point", "blue", (10, 10))
-        self.add_polygon("concave hexagon", "red", [(100, 100), (150, 100), (200, 130), (160, 170), (200, 200), (100, 200)])
-        self.add_wireframe("concave wireframe hexagon", "red", [(-100, -100), (-150, -100), (-200, -130), (-160, -170), (-200, -200), (-100, -200), (-100, -100)])
-        self.add_curve("curva", "pink", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100)])
-        self.add_curve("curva", "purple", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)])
+        #self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
+        #self.add_wireframe("wireframe triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
+        #self.add_polygon("triangle", "green", [(10, 10), (100, 10), (100, 100)])
+        #self.add_point("point", "blue", (10, 10))
+        #self.add_polygon("concave hexagon", "red", [(100, 100), (150, 100), (200, 130), (160, 170), (200, 200), (100, 200)])
+        #self.add_wireframe("concave wireframe hexagon", "red", [(-100, -100), (-150, -100), (-200, -130), (-160, -170), (-200, -200), (-100, -200), (-100, -100)])
+        self.add_curve("curva", "pink", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100)], "bezier")
+        self.add_curve("curva", "purple", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)], "bezier")
 
 
     def update_viewport(self):

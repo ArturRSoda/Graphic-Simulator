@@ -97,21 +97,21 @@ class Clipper:
                 code_out = code1 if (code1 != 0) else code2
 
                 # Find and calculate intersection point
-                m = (y2 - y1) / (x2 - x1) if (x2 - x1) else 0
+                m = (y2 - y1) / (x2 - x1) if (x2 - x1) else 1
                 if (code_out & self.top):
-                    x = x1 + (1/m) * (self.w_max - y1)
+                    x = x1 + (1/m) * (self.w_max - y1) if (m) else x1
                     y = self.w_max
 
                 elif (code_out & self.bottom):
-                    x = x1 + (1/m) * (self.w_min - y1)
+                    x = x1 + (1/m) * (self.w_min - y1) if (m) else x1
                     y = self.w_min
 
                 elif (code_out & self.right):
-                    y = y1 + m * (self.w_max - x1)
+                    y = y1 + m * (self.w_max - x1) if (m) else y1
                     x = self.w_max
 
                 elif (code_out & self.left):
-                    y = y1 + m * (self.w_min - x1)
+                    y = y1 + m * (self.w_min - x1) if (m) else y1
                     x = self.w_min
 
 

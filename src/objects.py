@@ -106,3 +106,9 @@ class BezierCurve(Object):
             segment = [self.cubic_bezier(p0, p1, p2, p3, t) for t in t_values]
             self.coordinates.extend(segment)
 
+class BSplineCurve(Object):
+    def __init__(self, name: str, color: str, control_points: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]], n: int=100):
+        super().__init__(name, color, "bezier", [], normalized_coordinates)
+
+        self.control_points = control_points
+        self.step = n
