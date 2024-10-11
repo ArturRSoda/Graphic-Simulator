@@ -153,6 +153,7 @@ class CGSystem():
         self.add_curve("curva", "purple", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)], "bezier")
         self.add_curve("curva BSPLINE", "red", [(-100, -100), (-100, 100), (100, 100), (100, -100)], "bspline")
         self.add_curve("curva", "green", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)], "bspline")
+        self.add_curve("circle", "purple", [(0, -100), (-100, -100), (-100, 0), (-100, 100), (0, 100), (100, 100), (100, 0), (100, -100), (0, -100), (-100, -100)], "bspline")
 
 
     def update_viewport(self):
@@ -171,7 +172,7 @@ class CGSystem():
                     clip_coords = self.clipper.clip_wireframe(obj.normalized_coordinates, func_opt)
                 case "polygon":
                     clip_coords = self.clipper.clip_polygon(obj.normalized_coordinates)
-                case "bezier":
+                case "curve":
                     clip_coords = self.clipper.clip_curve(obj.normalized_coordinates)
 
             if (clip_coords is not None):

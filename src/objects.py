@@ -72,7 +72,7 @@ class Polygon(Object):
 
 class BezierCurve(Object):
     def __init__(self, name: str, color: str, control_points: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]], n: int=100):
-        super().__init__(name, color, "bezier", [], normalized_coordinates)
+        super().__init__(name, color, "curve", [], normalized_coordinates)
 
         self.control_points = control_points
         self.step = n
@@ -110,11 +110,11 @@ class BezierCurve(Object):
 
 
 class BSplineCurve(Object):
-    def __init__(self, name: str, color: str, control_points: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]], n: int=100):
-        super().__init__(name, color, "bezier", [], normalized_coordinates)
+    def __init__(self, name: str, color: str, control_points: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
+        super().__init__(name, color, "curve", [], normalized_coordinates)
 
         self.control_points = control_points
-        self.delta = 0.001
+        self.delta = 0.01
 
         self.e_delta = np.array([
             [              0,               0,          0, 1],
