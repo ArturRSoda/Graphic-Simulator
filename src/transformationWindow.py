@@ -40,10 +40,11 @@ class TransformationWindow:
 
     def add_header(self):
         obj_name = self.obj.name + " - " + self.obj.type
+
         coord_str = ""
-        for c in self.obj.coordinates:
-            a, b = [float(x) for x in c]
-            coord_str += "(%.1f, %.1f)" % (a, b)
+        if (self.obj.type != "curve"):
+            for (a, b) in self.obj.coordinates:
+                coord_str += "(%.1f, %.1f)" % (a, b)
 
         Label(self.app, "SELECTED OBJECT: %s" % obj_name, 10).place(x=10, y=10)
         Label(self.app, "CURRENT COORDINATES: %s" % coord_str, 10).place(x=10, y=30)
