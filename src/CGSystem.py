@@ -1,10 +1,13 @@
 import numpy as np
 import math as m
 
+from numpy.linalg import norm
+
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
 from objects import BSplineCurve, Object, Point, Line, Polygon, WireFrame, BezierCurve, BSplineCurve
+from objects import Object3D, Point3D, Line3D, Polygon3D, WireFrame3D
 from window import Window
 from transformer import Transformer
 from clipper import Clipper
@@ -25,7 +28,7 @@ class CGSystem():
         self.up_vector     : tuple[float, float]
         self.right_vector  : tuple[float, float]
 
-        self.display_file  : list[Object]
+        self.display_file  : list[Object|Object3D]
 
     def run(self):
         self.interface = CGSystemInterface(self)
@@ -76,55 +79,59 @@ class CGSystem():
         self.update_viewport()
 
 
-    def add_point(self,name: str, color: str, coord: tuple[float, float]):
-        norm_coord = self.normalize_object_coordinates([coord])
-        point = Point(name, color, [coord], norm_coord)
+    def add_point(self,name: str, color: str, coord: tuple[float, float, float]):
+        #norm_coord = self.normalize_object_coordinates([coord])
+        norm_coord = []
+        point = Point3D(name, color, [coord], norm_coord)
 
         self.display_file.append(point)
         self.interface.objects_listbox.insert("end", "%s [%s - Point]" % (name, color))
 
-        self.update_viewport()
+        #self.update_viewport()
 
 
-    def add_line(self, name: str, color: str, start_coord: tuple[float, float], end_coord: tuple[float, float]):
-        norm_coord = self.normalize_object_coordinates([start_coord, end_coord])
-        line = Line(name, color, [start_coord, end_coord], norm_coord)
+    def add_line(self, name: str, color: str, start_coord: tuple[float, float, float], end_coord: tuple[float, float, float]):
+        #norm_coord = self.normalize_object_coordinates([start_coord, end_coord])
+        norm_coord = []
+        line = Line3D(name, color, [start_coord, end_coord], norm_coord)
 
         self.display_file.append(line)
         self.interface.objects_listbox.insert("end", "%s [%s - Line]" % (name, color))
 
-        self.generate_normal_coordinates()
-        self.update_viewport()
+        #self.generate_normal_coordinates()
+        #self.update_viewport()
 
 
-    def add_wireframe(self, name: str, color: str, coord_list: list[tuple[float, float]]):
+    def add_wireframe(self, name: str, color: str, coord_list: list[tuple[float, float, float]], edges: list[tuple[float, float]]):
         if (len(coord_list) == 1):
             self.add_point(name, color, coord_list[0])
             return
 
-        norm_coord = self.normalize_object_coordinates(coord_list)
-        wf = WireFrame(name, color, coord_list, norm_coord)
+        #norm_coord = self.normalize_object_coordinates(coord_list)
+        norm_coord = []
+        wf = WireFrame3D(name, color, coord_list, edges, norm_coord)
 
         self.display_file.append(wf)
         self.interface.objects_listbox.insert("end", "%s [%s - Wireframe]" % (name, color))
 
-        self.generate_normal_coordinates()
-        self.update_viewport()
+        #self.generate_normal_coordinates()
+        #self.update_viewport()
 
 
-    def add_polygon(self, name: str, color: str, coord_list: list[tuple[float, float]]):
+    def add_polygon(self, name: str, color: str, coord_list: list[tuple[float, float, float]], edges: list[tuple[float, float]]):
         if (len(coord_list) == 1):
             self.add_point(name, color, coord_list[0])
             return
 
-        norm_coord = self.normalize_object_coordinates(coord_list)
-        plg = Polygon(name, color, coord_list, norm_coord)
+        #norm_coord = self.normalize_object_coordinates(coord_list)
+        norm_coord = []
+        plg = Polygon3D(name, color, coord_list, edges, norm_coord)
 
         self.display_file.append(plg)
         self.interface.objects_listbox.insert("end", "%s [%s - Polygon]" % (name, color))
 
-        self.generate_normal_coordinates()
-        self.update_viewport()
+        #self.generate_normal_coordinates()
+        #self.update_viewport()
 
 
     # type can be "bspline" or "bezier"
@@ -148,12 +155,13 @@ class CGSystem():
         #self.add_point("point", "blue", (10, 10))
         #self.add_polygon("concave hexagon", "red", [(100, 100), (150, 100), (200, 130), (160, 170), (200, 200), (100, 200)])
         #self.add_wireframe("concave wireframe hexagon", "red", [(-100, -100), (-150, -100), (-200, -130), (-160, -170), (-200, -200), (-100, -200), (-100, -100)])
-        self.add_curve("curva", "pink", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100)], "bezier")
-        self.add_curve("curva", "black", [(25, 25), (40, 75), (70, 75)], "bezier")
-        self.add_curve("curva", "purple", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)], "bezier")
-        self.add_curve("curva BSPLINE", "red", [(-100, -100), (-100, 100), (100, 100), (100, -100)], "bspline")
-        self.add_curve("curva", "green", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)], "bspline")
-        self.add_curve("circle", "purple", [(0, -100), (-100, -100), (-100, 0), (-100, 100), (0, 100), (100, 100), (100, 0), (100, -100), (0, -100), (-100, -100)], "bspline")
+        #self.add_curve("curva", "pink", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100)], "bezier")
+        #self.add_curve("curva", "black", [(25, 25), (40, 75), (70, 75)], "bezier")
+        #self.add_curve("curva", "purple", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)], "bezier")
+        #self.add_curve("curva BSPLINE", "red", [(-100, -100), (-100, 100), (100, 100), (100, -100)], "bspline")
+        #self.add_curve("curva", "green", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)], "bspline")
+        #self.add_curve("circle", "purple", [(0, -100), (-100, -100), (-100, 0), (-100, 100), (0, 100), (100, 100), (100, 0), (100, -100), (0, -100), (-100, -100)], "bspline")
+        pass
 
 
     def update_viewport(self):

@@ -2,6 +2,42 @@ import numpy as np
 
 from transformer import Transformer
 
+class Object3D:
+    def __init__(self, name: str, 
+                       color: str,
+                       type: str,
+                       coordinates: list[tuple[float, float, float]],
+                       normalized_coordinates: list[tuple[float, float, float]]):
+
+        self.name = name
+        self.color = color
+        self.type = type
+        self.coordinates = coordinates
+        self.normalized_coordinates = normalized_coordinates
+
+
+class Point3D(Object3D):
+    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float, float]]):
+        super().__init__(name, color, "point", coordinates, normalized_coordinates)
+
+
+class Line3D(Object3D):
+    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float, float]]):
+        super().__init__(name, color, "line", coordinates, normalized_coordinates)
+
+
+class WireFrame3D(Object3D):
+    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float, float]]):
+        super().__init__(name, color, "wireframe", coordinates, normalized_coordinates)
+        self.edges = edges
+
+
+class Polygon3D(Object3D):
+    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float, float]]):
+        super().__init__(name, color, "polygon", coordinates, normalized_coordinates)
+        self.edges = edges
+
+
 class Object:
     def __init__(self, name: str, 
                        color: str,
