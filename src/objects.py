@@ -15,6 +15,38 @@ class Object3D:
         self.coordinates = coordinates
         self.normalized_coordinates = normalized_coordinates
 
+    def get_center(self):
+        coordinates = self.coordinates
+        coords = [tuple(t) for t in coordinates]
+        if (coords[0] == coords[-1]) and (len(coords) > 1):
+            coords.pop()
+
+        average_x, average_y, average_z = 0, 0, 0
+        for x, y, z in coords:
+            average_x += x
+            average_y += y
+            average_z += z
+        points_num = len(coords)
+        average_x /= points_num
+        average_y /= points_num
+        average_z /= points_num
+
+        return (average_x, average_y, average_z)
+
+    def move(self, transformer: Transformer, offset_x: float, offset_y: float, offset_z: float):
+        transformation_list = []
+        transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
+        self.coordinates = transformer.transform(self.coordinates, transformation_list)
+
+    def scale(self, transformer: Transformer, factor: float):
+        transformation_list = []
+        transformer.add_scaling(transformation_list, factor, self.get_center())
+        self.coordinates = transformer.transform(self.coordinates, transformation_list)
+
+    def rotate(self, transformer: Transformer, degrees: int, rotation_point: tuple[float, float, float], axis: str):
+        transformation_list = []
+        transformer.add_rotation(transformation_list, degrees, rotation_point, axis)
+        self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
 class Point3D(Object3D):
     def __init__(self, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float, float]]):

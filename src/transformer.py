@@ -5,43 +5,82 @@ class Transformer:
     def __init__(self, system):
         self.system = system
 
-    def add_translation(self, transformation_list: list[list[list]], offset_x: float, offset_y: float):
-        transformation_list.insert(1, np.array([[1, 0, 0],
-                                                [0, 1, 0],
-                                                [offset_x, offset_y, 1]]))
+    def add_translation(self, transformation_list: list[list[list]], offset_x: float, offset_y: float, offset_z: float):
+        transformation_list.insert(1, np.array(
+            [[       1,        0,        0, 0],
+             [       0,        1,        0, 0],
+             [       0,        0,        1, 0],
+             [offset_x, offset_y, offset_z, 1]]
+        ))
 
 
-    def add_scaling(self, transformation_list: list[list[list]], scale_factor: float, transformation_point: tuple[float, float]=(0, 0)):
+    def add_scaling(self, transformation_list: list[list[list]], scale_factor: float, transformation_point: tuple[float, float, float]=(0, 0, 0)):
         if transformation_point != (0, 0):
-            transformation_list.append(np.array([[1, 0, 0],
-                                                 [0, 1, 0],
-                                                 [-transformation_point[0], -transformation_point[1], 1]]))
-            transformation_list.append(np.array([[1, 0, 0],
-                                                 [0, 1, 0],
-                                                 [transformation_point[0], transformation_point[1], 1]]))
+            transformation_list.append(np.array(
+                [[                       1,                        0,                        0, 0],
+                 [                       0,                        1,                        0, 0],
+                 [                       0,                        0,                        1, 0],
+                 [-transformation_point[0], -transformation_point[1], -transformation_point[2], 1]]
+            ))
+            transformation_list.append(np.array(
+                [[                      1,                      0,                        0, 0],
+                 [                      0,                      1,                        0, 0],
+                 [                      0,                      0,                        1, 0],
+                 [transformation_point[0], transformation_point[1], transformation_point[2], 1]]
+            ))
 
-        transformation_list.insert(1, np.array([[scale_factor, 0, 0],
-                                                [0, scale_factor, 0],
-                                                [0, 0, 1]]))
+        transformation_list.insert(1, np.array(
+            [[scale_factor,            0,            0, 0],
+             [           0, scale_factor,            0, 0],
+             [           0,            0, scale_factor, 0],
+             [           0,            0,            0, 1]]
+        ))
 
 
-    def add_rotation(self, transformation_list: list[list[list]], rotation_degrees: float, transformation_point: tuple[float, float]=(0, 0)):
+    def add_rotation(self, transformation_list: list[list[list]], rotation_degrees: float, transformation_point: tuple[float, float, float]=(0, 0, 0), axis: str):
         if transformation_point != (0, 0):
-            transformation_list.append(np.array([[1, 0, 0],
-                                                 [0, 1, 0],
-                                                 [-transformation_point[0], -transformation_point[1], 1]]))
-            transformation_list.append(np.array([[1, 0, 0],
-                                                 [0, 1, 0],
-                                                 [transformation_point[0], transformation_point[1], 1]]))
+            transformation_list.append(np.array(
+                [[                       1,                        0,                        0, 0],
+                 [                       0,                        1,                        0, 0],
+                 [                       0,                        0,                        1, 0],
+                 [-transformation_point[0], -transformation_point[1], -transformation_point[2], 1]]
+            ))
+            transformation_list.append(np.array(
+                [[                      1,                      0,                        0, 0],
+                 [                      0,                      1,                        0, 0],
+                 [                      0,                      0,                        1, 0],
+                 [transformation_point[0], transformation_point[1], transformation_point[2], 1]]
+            ))
 
         s = m.sin(m.radians(rotation_degrees))
         c = m.cos(m.radians(rotation_degrees))
-        transformation_list.insert(1, np.array([[c, s, 0],
-                                                [-s, c, 0],
-                                                [0, 0, 1]]))
 
-    def transform(self, coordinates: list[tuple[float, float]], transformation_list: list[list[list]]):
-        transformation_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        if (axis == "x"):
+            m = [
+                [ 1,  0,  0,  0],
+                [ 0,  c,  s,  0],
+                [ 0, -s,  c,  0],
+                [ 0,  0,  0,  1]
+            ]
+        elif (axis == "y"):
+            m = [
+                [ c,  0, -s,  0],
+                [ 0,  1,  0,  0],
+                [ s,  0,  c,  0],
+                [ 0,  0,  0,  1]
+            ]
+        else:
+            m = [
+                [  c,  s, 0, 0],
+                [ -s,  c, 0, 0],
+                [  0,  0, 1, 0],
+                [  0,  0, 0, 1]
+            ]
+
+        transformation_list.insert(1, np.array(m))
+
+    def transform(self, coordinates: list[tuple[float, float, float]], transformation_list: list[list[list]]):
+        transformation_matrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
         for matrix in transformation_list:
             transformation_matrix = np.matmul(transformation_matrix, matrix)
 
@@ -49,7 +88,8 @@ class Transformer:
         for i in range(len(coordinates)):
             x = coordinates[i][0]
             y = coordinates[i][1]
-            coord_matrix = np.array([x, y, 1])
+            z = coordinates[i][2]
+            coord_matrix = np.array([x, y, z, 1])
             new_coord_matrix = np.matmul(coord_matrix, transformation_matrix)
             new_coordinates.append((new_coord_matrix[0].item(), new_coord_matrix[1].item()))
 
