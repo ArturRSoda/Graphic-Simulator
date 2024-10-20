@@ -11,6 +11,7 @@ from objects import Object3D, Point3D, Line3D, Polygon3D, WireFrame3D
 from window import Window
 from transformer import Transformer
 from clipper import Clipper
+import window
 
 
 class CGSystem():
@@ -138,8 +139,9 @@ class CGSystem():
 
     def add_test(self):
         self.add_wireframe("cube", "green", [(100, 100, 100), (100, 100, -100), (100, 100, 100), (-100, 100, 100), (-100, 100, -100), (-100, 100, 100), (-100, -100, 100), (-100, -100, -100), (-100, -100, 100), (100, -100, 100), (100, -100, -100), (100, -100, 100), (100, 100, 100), (100, 100, -100), (-100, 100, -100), (-100, -100, -100), (100, -100, -100), (100, 100, -100)], [(0, 1), (0, 2), (0, 4), (3, 1), (3, 7), (3, 2), (6, 4), (6, 7), (6, 2), (5, 4), (5, 1), (5, 7)])
+        self.add_wireframe("w", "red", [(100, 100, -100), (-100, 100, -100), (-100, -100, -100), (100, -100, -100)], [])
         self.add_line("l", "red", (0, 0, 0), (0, 0, 1))
-        self.add_point("vpn", "red", (0, 0, 1))
+        self.add_wireframe("vpn", "red", [(0, 0, 0), (0, 0, 50)], [])
         self.add_point("p", "red", (100, 100, 100))
         self.add_point("x", "blue", (100, 0, 0))
         self.add_point("y", "purple", (0, 100, 0))
@@ -171,6 +173,39 @@ class CGSystem():
     def get_rotation_matrix(self, i_v, unit=None):
         if unit is None:
             unit = [0.0, 0.0, 1.0]
+
+        v1 = np.array(i_v)
+        v2 = np.array(unit)
+
+        # unit vectors
+        u = v1 / np.linalg.norm(v1)
+        Ru = v2 / np.linalg.norm(v2)
+        # dimension of the space and identity
+        dim = u.size
+        I = np.identity(dim)
+        # the cos angle between the vectors
+        c = np.dot(u, Ru)
+        # a small number
+        eps = 1.0e-10
+        if np.abs(c - 1.0) < eps:
+            # same direction
+            result = I
+        elif np.abs(c + 1.0) < eps:
+            # opposite direction
+            result = -I
+        else:
+            # the cross product matrix of a vector to rotate around
+            K = np.outer(Ru, u) - np.outer(u, Ru)
+            # Rodrigues' formula
+            result = I + K + (K @ K) / (1 + c)
+
+        mr = [[float(a), float(b), float(c), 0] for (a, b, c) in result]
+        mr.append([0, 0, 0, 1])
+        return mr
+
+    """
+        if unit is None:
+            unit = [0.0, 0.0, 1.0]
         # Normalize vector length
         i_v /= np.linalg.norm(i_v)
 
@@ -200,6 +235,7 @@ class CGSystem():
         mr = [[float(a), float(b), float(c), 0] for (a, b, c) in m]
         mr.append([0, 0, 0, 1])
         return mr
+    """
 
     def update_viewport(self):
         self.interface.clear_canvas()
@@ -284,20 +320,27 @@ class CGSystem():
 
         # translate world to center
         w_center = self.window.get_center()
+        print(w_center)
         self.transformer.add_translation(transformation_list, -w_center[0], -w_center[1], -w_center[2])
 
         # align world with z axis
-        m = self.get_rotation_matrix(self.window.vpn)
+        m = self.get_rotation_matrix(self.window.vpn, [0, 0, 1])
+        print(m)
         transformation_list.append(m)
 
         # aligns the window and the up vector with the y-axis, move the objects
         # and calculates the normalized coordinates
         delta_angle = self.get_delta_angle()
 
-        self.transformer.add_translation(transformation_list, -w_center[0], -w_center[1], 0)
-        self.transformer.add_rotation(transformation_list, -delta_angle, "z", (0, 0, 0))
+        self.transformer.add_rotation(transformation_list, -delta_angle, "z")
 
         window_coordinates = self.transformer.transform(self.window.coordinates, transformation_list)
+        print(self.window.coordinates)
+        print(window_coordinates)
+        print(self.window.up_vector)
+        print(self.window.right_vector)
+        print(self.window.vpn)
+        print()
 
         for obj in self.display_file:
             transformed_coords = self.transformer.transform(obj.coordinates, transformation_list)
@@ -363,7 +406,7 @@ class CGSystem():
 
 
     def rotate_window(self, degrees: int, antiClockwise: bool, axis: str):
-        degrees = degrees if (antiClockwise) else -degrees
+        if (antiClockwise): degrees = -degrees
         self.window.rotate(self.transformer, degrees, axis)
         self.generate_normal_coordinates()
         self.update_viewport()
@@ -406,7 +449,7 @@ class CGSystem():
 
     # rotation_opt can be: "Origin", "Obj Center" and "Other"
     def rotate_object(self, antiClockwise: bool, degrees: int, object_id: int, axis: str):
-        degrees = degrees if (antiClockwise) else -degrees
+        if (antiClockwise): degrees = -degrees
         obj = self.get_object(object_id)
         obj.rotate(self.transformer, degrees, axis)
         #obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)

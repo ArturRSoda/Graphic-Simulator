@@ -98,40 +98,50 @@ class Transformer:
 
     # transformation_typle_list = [ tranformation_type : str,
     #                               factor             : float,
-    #                               rotation_center    : (float, float) | None
+    #                               rotation_axis      : str | None
     #                               antiClockwise      : bool | None ]
-    # tranformation can be: "move_up", "move_down", "move_left", "move_right",
+    # tranformation can be: "move_up", "move_down", "move_left", "move_right", "move_out", "move_in"
     #                       "increase_scale", "decrease_scale",
-    #                       "rotate_origin", "rotate_obj_center", "rotate_other"
-    def apply_transformations(self, obj_coordinates: list[tuple[float, float]], transformation_tuple_list: list[tuple[str, float, tuple[float, float]|None, bool|None]], obj_center: float):
+    #                       "rotate"
+    # rotation_axis can be: "obj_axis", "x", "y", "z"
+    #
+    def apply_transformations(self, obj_coordinates: list[tuple[float, float, float]], transformation_tuple_list: list[tuple[str, float, str|None, bool|None]], obj_center: tuple[float, float, float]):
         transformation_list = []
 
-        for transformation_type, factor, rotation_center, antiClockwise in transformation_tuple_list:
+        for transformation_type, factor, axis, antiClockwise in transformation_tuple_list:
             if (antiClockwise is not None) and (not antiClockwise):
                 factor = -factor
 
             match transformation_type:
                 case "move_up":
-                    self.add_translation(transformation_list, self.system.up_vector[0]*factor,
-                                                              self.system.up_vector[1]*factor)
+                    self.add_translation(transformation_list, self.system.window.up_vector[0]*factor,
+                                                              self.system.window.up_vector[1]*factor,
+                                                              self.system.window.up_vector[2]*factor)
                 case "move_down":
-                    self.add_translation(transformation_list, -self.system.up_vector[0]*factor,
-                                                              -self.system.up_vector[1]*factor)
+                    self.add_translation(transformation_list, -self.system.window.up_vector[0]*factor,
+                                                              -self.system.window.up_vector[1]*factor,
+                                                              -self.system.window.up_vector[2]*factor)
                 case "move_left":
-                    self.add_translation(transformation_list, -self.system.right_vector[0]*factor,
-                                                              -self.system.right_vector[1]*factor)
+                    self.add_translation(transformation_list, -self.system.window.right_vector[0]*factor,
+                                                              -self.system.window.right_vector[1]*factor,
+                                                              -self.system.window.right_vector[2]*factor)
                 case "move_right":
-                    self.add_translation(transformation_list, self.system.right_vector[0]*factor,
-                                                              self.system.right_vector[1]*factor)
+                    self.add_translation(transformation_list, self.system.window.right_vector[0]*factor,
+                                                              self.system.window.right_vector[1]*factor,
+                                                              self.system.window.right_vector[2]*factor)
+                case "move_in":
+                    self.add_translation(transformation_list, self.system.window.vpn[0]*factor,
+                                                              self.system.window.vpn[1]*factor,
+                                                              self.system.window.vpn[2]*factor)
+                case "move_out":
+                    self.add_translation(transformation_list, -self.system.window.vpn[0]*factor,
+                                                              -self.system.window.vpn[1]*factor,
+                                                              -self.system.window.vpn[2]*factor)
                 case "increase_scale":
                     self.add_scaling(transformation_list, factor, obj_center)
                 case "decrease_scale":
                     self.add_scaling(transformation_list, 1/factor, obj_center)
-                case "rotate_origin":
-                    self.add_rotation(transformation_list, factor)
-                case "rotate_obj_center":
-                    self.add_rotation(transformation_list, factor, obj_center)
-                case "rotate_other":
-                    self.add_rotation(transformation_list, factor, rotation_center)
+                case "rotate":
+                    self.add_rotation(transformation_list, factor, axis)
 
         return self.transform(obj_coordinates, transformation_list)

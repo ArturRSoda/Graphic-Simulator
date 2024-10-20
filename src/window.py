@@ -50,7 +50,7 @@ class Window:
             offset_x, offset_y, offset_z = self.get_center()
             transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
 
-            m = self.system.get_rotation_matrix(self.vpn, [0, 1, 0])
+            m = self.system.get_rotation_matrix(self.system.window.vpn, [0, 1, 0])
             transformation_list.append(m)
 
             transformer.add_rotation(transformation_list, degrees, "y")
@@ -65,11 +65,9 @@ class Window:
 
             transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
 
-        self.up_vector = self.system.normalize_vector(transformer.transform([self.up_vector], transformation_list)[0])
-        self.right_vector = self.system.normalize_vector(transformer.transform([self.right_vector], transformation_list)[0])
-        print(self.vpn)
-        self.vpn = self.system.normalize_vector(transformer.transform([self.vpn], transformation_list)[0])
-        print(self.vpn)
+        self.up_vector = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.up_vector], transformation_list)[0])])
+        self.right_vector = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.right_vector], transformation_list)[0])])
+        self.vpn = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.vpn], transformation_list)[0])])
         self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
     def zoom(self, transformer: Transformer, factor: float):

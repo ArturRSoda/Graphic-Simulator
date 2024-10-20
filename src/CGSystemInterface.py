@@ -412,7 +412,6 @@ class CGSystemInterface():
             self.send_error("Object not selected", "Please select an object!")
             return
 
-        rotation_opt = self.rotation_opt_var.get()
         obj_id = selected[0]
 
         axis = self.rotation_opt_var.get()
@@ -422,6 +421,7 @@ class CGSystemInterface():
         obj_name = obj.name + "-" + obj.type
 
         self.add_message("%s rotated %d degrees %s by %s" % (obj_name, degrees, ("anti-clockwise" if (anticlockwise) else "clockwise"), axis))
+
 
     def rotate_window(self, anticlockwise: bool):
         degrees = self.verify_num_entry(self.window_degrees_var)
