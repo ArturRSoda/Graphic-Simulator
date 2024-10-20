@@ -6,7 +6,7 @@ class Transformer:
         self.system = system
 
     def add_translation(self, transformation_list: list[list[list]], offset_x: float, offset_y: float, offset_z: float):
-        transformation_list.insert(1, np.array(
+        transformation_list.append(np.array(
             [[       1,        0,        0, 0],
              [       0,        1,        0, 0],
              [       0,        0,        1, 0],
@@ -29,7 +29,7 @@ class Transformer:
                  [transformation_point[0], transformation_point[1], transformation_point[2], 1]]
             ))
 
-        transformation_list.insert(1, np.array(
+        transformation_list.append(np.array(
             [[scale_factor,            0,            0, 0],
              [           0, scale_factor,            0, 0],
              [           0,            0, scale_factor, 0],
@@ -77,7 +77,7 @@ class Transformer:
                 [  0,  0, 0, 1]
             ]
 
-        transformation_list.insert(1, np.array(m))
+        transformation_list.append(np.array(m))
 
     def transform(self, coordinates: list[tuple[float, float, float]], transformation_list: list[list[list]]):
         transformation_matrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])

@@ -50,22 +50,26 @@ class Window:
             offset_x, offset_y, offset_z = self.get_center()
             transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
 
-            x_angle = self.system.angle_between_vectors((1, 0, 0), self.vpn)
-            z_angle = self.system.angle_between_vectors((0, 0, 1), self.vpn)
-            transformer.add_rotation(transformation_list, x_angle, "x")
-            transformer.add_rotation(transformation_list, z_angle, "z")
+            m = self.system.get_rotation_matrix(self.vpn, [0, 1, 0])
+            transformation_list.append(m)
 
             transformer.add_rotation(transformation_list, degrees, "y")
 
-            transformer.add_rotation(transformation_list, -x_angle, "x")
-            transformer.add_rotation(transformation_list, -z_angle, "z")
+            mr = list()
+            for i, (a, b, c, d) in enumerate(m):
+                if   (i == 0): mr.append([ a, -b, -c, d])
+                elif (i == 1): mr.append([-a,  b, -c, d])
+                elif (i == 2): mr.append([-a, -b,  c, d])
+                else: mr.append([a, b, c, d])
+            transformation_list.append(mr)
 
             transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
 
-
         self.up_vector = self.system.normalize_vector(transformer.transform([self.up_vector], transformation_list)[0])
         self.right_vector = self.system.normalize_vector(transformer.transform([self.right_vector], transformation_list)[0])
+        print(self.vpn)
         self.vpn = self.system.normalize_vector(transformer.transform([self.vpn], transformation_list)[0])
+        print(self.vpn)
         self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
     def zoom(self, transformer: Transformer, factor: float):

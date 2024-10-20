@@ -299,15 +299,25 @@ class CGSystemInterface():
 
     def add_obj_rotation_menu(self):
         self.rotation_menu_frame = Frame(self.obj_controls_tab, self.tab_width-26,150)
-        self.rotation_menu_frame.place(x=10, y=240)
+        self.rotation_menu_frame.place(x=10, y=270)
 
         Label(self.rotation_menu_frame, "Rotation", 10).place(x=10, y=10)
 
+        self.rotation_opt_var = tk.StringVar(self.rotation_menu_frame, "obj_axis")
+        tk.Radiobutton(self.rotation_menu_frame, text="Obj axis", variable=self.rotation_opt_var, value="obj_axis").place(x=0, y=35)
+        tk.Radiobutton(self.rotation_menu_frame, text="X", variable=self.rotation_opt_var, value="x").place(x=90, y=35)
+        tk.Radiobutton(self.rotation_menu_frame, text="Y", variable=self.rotation_opt_var, value="y").place(x=140, y=35)
+        tk.Radiobutton(self.rotation_menu_frame, text="Z", variable=self.rotation_opt_var, value="z").place(x=190, y=35)
+
         self.object_degrees_var = tk.DoubleVar()
         self.object_degrees_var.set(10.)
-        Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=35)
-        tk.Entry(self.rotation_menu_frame, textvariable=self.object_degrees_var, width=4).place(x=60, y=35)
+        Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=65)
+        tk.Entry(self.rotation_menu_frame, textvariable=self.object_degrees_var, width=4).place(x=70, y=65)
 
+        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotate_object(True)).place(x=5, y=100)
+        tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotate_object(False)).place(x=145, y=100)
+
+        """
         self.obj_rotation_coord_var = (tk.IntVar(), tk.IntVar())
         Label(self.rotation_menu_frame, "X:", 10).place(x=100, y=35)
         Label(self.rotation_menu_frame, "Y:", 10).place(x=170, y=35)
@@ -316,16 +326,15 @@ class CGSystemInterface():
         self.rotation_Ypoint_entry = tk.Entry(self.rotation_menu_frame, textvariable=self.obj_rotation_coord_var[1], state="disabled", width=4)
         self.rotation_Ypoint_entry.place(x=190, y=35)
 
-        self.rotation_opt_var = tk.StringVar(self.rotation_menu_frame, "Origin")
+        self.rotation_opt_var = tk.StringVar(self.rotation_menu_frame, "obj_axis")
         self.obj_center_rb = tk.Radiobutton(self.rotation_menu_frame, text="Obj Center", variable=self.rotation_opt_var, value="Obj Center", command=self.rotation_point_entry_state)
         self.origin_rb = tk.Radiobutton(self.rotation_menu_frame, text="Origin", variable=self.rotation_opt_var, value="Origin", command=self.rotation_point_entry_state)
         self.other_rb = tk.Radiobutton(self.rotation_menu_frame, text="Other", variable=self.rotation_opt_var, value="Other", command=self.rotation_point_entry_state)
         self.obj_center_rb.place(x=0, y=65)
         self.origin_rb.place(x=100, y=65)
         self.other_rb.place(x=170, y=65)
+        """
 
-        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotate_object(True)).place(x=5, y=100)
-        tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotate_object(False)).place(x=145, y=100)
 
 
     def rotation_point_entry_state(self):
@@ -406,31 +415,13 @@ class CGSystemInterface():
         rotation_opt = self.rotation_opt_var.get()
         obj_id = selected[0]
 
-        if (rotation_opt == "Other"):
-            coord_x = self.verify_num_entry(self.obj_rotation_coord_var[0])
-            coord_y = self.verify_num_entry(self.obj_rotation_coord_var[1])
-
-            if (coord_x is None) or (coord_y is None):
-                return
-
-        else:
-            coord_x = 0
-            coord_y = 0
-
-        self.system.rotate_object(anticlockwise, degrees, obj_id, rotation_opt, (coord_x, coord_y))
-
+        axis = self.rotation_opt_var.get()
+        print(axis)
+        self.system.rotate_object(anticlockwise, degrees, obj_id, axis)
         obj = self.system.get_object(obj_id)
         obj_name = obj.name + "-" + obj.type
 
-        message: str
-        if (rotation_opt == "Origin"):
-            message = "%s rotated %d degree by the Origin %s" % (obj_name, degrees, ("anti-clockwise" if (anticlockwise) else "clockwise"))
-        elif(rotation_opt == "Obj Center"):
-            message = "%s rotated %d degree by the Object Center %s" % (obj_name, degrees, ("anti-clockwise" if (anticlockwise) else "clockwise"))
-        else:
-            message = "%s rotated %d degree by the point (%d, %d) %s" % (obj_name, degrees, coord_x, coord_y, ("anti-clockwise" if (anticlockwise) else "clockwise"))
-
-        self.add_message(message)
+        self.add_message("%s rotated %d degrees %s by %s" % (obj_name, degrees, ("anti-clockwise" if (anticlockwise) else "clockwise"), axis))
 
     def rotate_window(self, anticlockwise: bool):
         degrees = self.verify_num_entry(self.window_degrees_var)

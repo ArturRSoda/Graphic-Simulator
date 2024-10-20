@@ -45,9 +45,9 @@ class CGSystem():
         self.display_file = list()
 
         # world center lines
-        self.display_file.append(Line3D("X", "black", [(-1000, 0, 0), (1000, 0, 0)], []))
-        self.display_file.append(Line3D("Y", "black", [(0, -1000, 0), (0, 1000, 0)], []))
-        self.display_file.append(Line3D("Z", "black", [(0, 0, -1000), (0, 0, 1000)], []))
+        self.display_file.append(Line3D(self, "X", "black", [(-1000, 0, 0), (1000, 0, 0)], []))
+        self.display_file.append(Line3D(self, "Y", "black", [(0, -1000, 0), (0, 1000, 0)], []))
+        self.display_file.append(Line3D(self, "Z", "black", [(0, 0, -1000), (0, 0, 1000)], []))
 
         # test objects
         self.add_test()
@@ -74,7 +74,7 @@ class CGSystem():
 
 
     def add_point(self,name: str, color: str, coord: tuple[float, float, float]):
-        point = Point3D(name, color, [coord], [])
+        point = Point3D(self, name, color, [coord], [])
 
         self.display_file.append(point)
         self.interface.objects_listbox.insert("end", "%s [%s - Point]" % (name, color))
@@ -84,7 +84,7 @@ class CGSystem():
 
 
     def add_line(self, name: str, color: str, start_coord: tuple[float, float, float], end_coord: tuple[float, float, float]):
-        line = Line3D(name, color, [start_coord, end_coord], [])
+        line = Line3D(self, name, color, [start_coord, end_coord], [])
 
         self.display_file.append(line)
         self.interface.objects_listbox.insert("end", "%s [%s - Line]" % (name, color))
@@ -98,7 +98,7 @@ class CGSystem():
             self.add_point(name, color, coord_list[0])
             return
 
-        wf = WireFrame3D(name, color, coord_list, edges, [])
+        wf = WireFrame3D(self, name, color, coord_list, edges, [])
 
         self.display_file.append(wf)
         self.interface.objects_listbox.insert("end", "%s [%s - Wireframe]" % (name, color))
@@ -113,7 +113,7 @@ class CGSystem():
             return
 
         norm_coord = self.normalize_object_coordinates(coord_list)
-        plg = Polygon3D(name, color, coord_list, edges, norm_coord)
+        plg = Polygon3D(self, name, color, coord_list, edges, norm_coord)
 
         self.display_file.append(plg)
         self.interface.objects_listbox.insert("end", "%s [%s - Polygon]" % (name, color))
@@ -137,7 +137,13 @@ class CGSystem():
 
 
     def add_test(self):
-        self.add_wireframe("cube", "green", [(100, 100, 100), (100, -100, 100), (100, 100, -100), (100, -100, -100), (-100, 100, 100), (-100, -100, 100), (-100, 100, -100), (-100, -100, -100)], [(0, 1), (0, 2), (0, 4), (3, 1), (3, 7), (3, 2), (6, 4), (6, 7), (6, 2), (5, 4), (5, 1), (5, 7)])
+        self.add_wireframe("cube", "green", [(100, 100, 100), (100, 100, -100), (100, 100, 100), (-100, 100, 100), (-100, 100, -100), (-100, 100, 100), (-100, -100, 100), (-100, -100, -100), (-100, -100, 100), (100, -100, 100), (100, -100, -100), (100, -100, 100), (100, 100, 100), (100, 100, -100), (-100, 100, -100), (-100, -100, -100), (100, -100, -100), (100, 100, -100)], [(0, 1), (0, 2), (0, 4), (3, 1), (3, 7), (3, 2), (6, 4), (6, 7), (6, 2), (5, 4), (5, 1), (5, 7)])
+        self.add_line("l", "red", (0, 0, 0), (0, 0, 1))
+        self.add_point("vpn", "red", (0, 0, 1))
+        self.add_point("p", "red", (100, 100, 100))
+        self.add_point("x", "blue", (100, 0, 0))
+        self.add_point("y", "purple", (0, 100, 0))
+        self.add_point("z", "pink", (0, 0, 100))
         #self.add_line("line3d", "red", (0, 0, 0), (100, 100, 100))
         #self.add_line("linez", "purple", (0, 0, 0), (0, 0, 100))
         #self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
@@ -162,21 +168,38 @@ class CGSystem():
         angle_deg = np.degrees(angle_rad)
         return angle_deg
 
+    def get_rotation_matrix(self, i_v, unit=None):
+        if unit is None:
+            unit = [0.0, 0.0, 1.0]
+        # Normalize vector length
+        i_v /= np.linalg.norm(i_v)
 
-    def orthogonal_parallel_projection(self):
-        transformation_list = []
-        offset_x, offset_y, offset_z = self.window.get_center()
-        self.transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
+        # Get axis
+        uvw = np.cross(i_v, unit)
 
-        x_angle = self.angle_between_vectors((1, 0, 0), self.window.vpn)
-        y_angle = self.angle_between_vectors((0, 1, 0), self.window.vpn)
-        self.transformer.add_rotation(transformation_list, x_angle, "x", (0, 0, 0))
-        self.transformer.add_rotation(transformation_list, y_angle, "y", (0, 0, 0))
+        # compute trig values - no need to go through arccos and back
+        rcos = np.dot(i_v, unit)
+        rsin = np.linalg.norm(uvw)
 
-        for obj in self.display_file:
-            coord = obj.coordinates
-            obj.projection_coord = [(x, y) for (x, y, z) in self.transformer.transform(coord, transformation_list)]
+        #normalize and unpack axis
+        if not np.isclose(rsin, 0):
+            uvw /= rsin
+        u, v, w = uvw
 
+        # Compute rotation matrix - re-expressed to show structure
+        m = (
+            rcos * np.eye(3) +
+            rsin * np.array([
+                [ 0, -w,  v],
+                [ w,  0, -u],
+                [-v,  u,  0]
+            ]) +
+            (1.0 - rcos) * uvw[:,None] * uvw[None,:]
+        )
+
+        mr = [[float(a), float(b), float(c), 0] for (a, b, c) in m]
+        mr.append([0, 0, 0, 1])
+        return mr
 
     def update_viewport(self):
         self.interface.clear_canvas()
@@ -264,11 +287,8 @@ class CGSystem():
         self.transformer.add_translation(transformation_list, -w_center[0], -w_center[1], -w_center[2])
 
         # align world with z axis
-
-        x_angle = self.angle_between_vectors((1, 0, 0), self.window.vpn)
-        y_angle = self.angle_between_vectors((0, 1, 0), self.window.vpn)
-        self.transformer.add_rotation(transformation_list, x_angle, "x")
-        self.transformer.add_rotation(transformation_list, y_angle, "y")
+        m = self.get_rotation_matrix(self.window.vpn)
+        transformation_list.append(m)
 
         # aligns the window and the up vector with the y-axis, move the objects
         # and calculates the normalized coordinates
@@ -349,23 +369,28 @@ class CGSystem():
         self.update_viewport()
 
 
-    # direction can be: "up", "down", "left", "right"
+    # direction can be: "up", "down", "left", "right", "in", "out"
     def move_object(self, offset: int, direction: str, obj_id: int):
         obj = self.get_object(obj_id)
 
-        offset_x, offset_y = 0, 0
+        offset_x, offset_y, offset_z = 0, 0, 0
         match direction:
             case "up":
-                offset_x, offset_y = [up_v*offset for up_v in self.window.up_vector]
+                offset_x, offset_y, offset_z = [up_v*offset for up_v in self.window.up_vector]
             case "down":
-                offset_x, offset_y = [-up_v*offset for up_v in self.window.up_vector]
+                offset_x, offset_y, offset_z = [-up_v*offset for up_v in self.window.up_vector]
             case "right":
-                offset_x, offset_y = [rg_v*offset for rg_v in self.window.right_vector]
+                offset_x, offset_y, offset_z = [rg_v*offset for rg_v in self.window.right_vector]
             case "left":
-                offset_x, offset_y = [-rg_v*offset for rg_v in self.window.right_vector]
+                offset_x, offset_y, offset_z = [-rg_v*offset for rg_v in self.window.right_vector]
+            case "in":
+                offset_x, offset_y, offset_z = [vpn*offset for vpn in self.window.vpn]
+            case "out":
+                offset_x, offset_y, offset_z = [-vpn*offset for vpn in self.window.vpn]
 
-        obj.move(self.transformer, offset_x, offset_y)
-        obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)
+        obj.move(self.transformer, offset_x, offset_y, offset_z)
+        #obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)
+        self.generate_normal_coordinates()
         self.update_viewport()
 
 
@@ -374,17 +399,18 @@ class CGSystem():
         scale_factor = 1/scale_factor if (inORout == "out") else scale_factor 
         obj = self.get_object(object_id)
         obj.scale(self.transformer, scale_factor)
-        obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)
+        #obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)
+        self.generate_normal_coordinates()
         self.update_viewport()
 
 
     # rotation_opt can be: "Origin", "Obj Center" and "Other"
-    def rotate_object(self, antiClockwise: bool, degrees: int, object_id: int, rotation_opt: str, rotation_point: tuple[float, float]=(0, 0)):
+    def rotate_object(self, antiClockwise: bool, degrees: int, object_id: int, axis: str):
         degrees = degrees if (antiClockwise) else -degrees
         obj = self.get_object(object_id)
-        rp = obj.get_center() if (rotation_opt == "Obj Center") else (0, 0) if (rotation_opt == "Origin") else rotation_point
-        obj.rotate(self.transformer, degrees, rp)
-        obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)
+        obj.rotate(self.transformer, degrees, axis)
+        #obj.normalized_coordinates = self.normalize_object_coordinates(obj.coordinates)
+        self.generate_normal_coordinates()
         self.update_viewport()
 
 

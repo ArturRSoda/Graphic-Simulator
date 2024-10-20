@@ -3,18 +3,19 @@ import numpy as np
 from transformer import Transformer
 
 class Object3D:
-    def __init__(self, name: str, 
+    def __init__(self, system,
+                       name: str, 
                        color: str,
                        type: str,
                        coordinates: list[tuple[float, float, float]],
                        normalized_coordinates: list[tuple[float, float]]):
 
+        self.system = system
         self.name = name
         self.color = color
         self.type = type
         self.coordinates = coordinates
         self.normalized_coordinates = normalized_coordinates
-        self.projection_coord = [(0, 0)]
 
     def get_center(self):
         coordinates = self.coordinates
@@ -44,30 +45,55 @@ class Object3D:
         transformer.add_scaling(transformation_list, factor, self.get_center())
         self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
-    def rotate(self, transformer: Transformer, degrees: int, axis: str, rotation_point: tuple[float, float, float]):
+    def rotate(self, transformer: Transformer, degrees: int, axis: str):
         transformation_list = []
-        transformer.add_rotation(transformation_list, degrees, axis, rotation_point)
+
+        if (axis in ("x", "y", "z")):
+            transformer.add_rotation(transformation_list, degrees, axis)
+        else:
+            offset_x, offset_y, offset_z = self.get_center()
+            transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
+
+            m = self.system.get_rotation_matrix(self.system.window.vpn, [0, 1, 0])
+            transformation_list.append(m)
+
+            transformer.add_rotation(transformation_list, degrees, "y")
+
+            mr = list()
+            for i, (a, b, c, d) in enumerate(m):
+                if   (i == 0): mr.append([ a, -b, -c, d])
+                elif (i == 1): mr.append([-a,  b, -c, d])
+                elif (i == 2): mr.append([-a, -b,  c, d])
+                else: mr.append([a, b, c, d])
+            transformation_list.append(mr)
+
+            transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
+
+        print(self.coordinates)
         self.coordinates = transformer.transform(self.coordinates, transformation_list)
+        print(self.coordinates)
 
 class Point3D(Object3D):
-    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float, float]]):
-        super().__init__(name, color, "point", coordinates, normalized_coordinates)
+    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float]]):
+        super().__init__(system, name, color, "point", coordinates, normalized_coordinates)
+        self.edges = []
 
 
 class Line3D(Object3D):
-    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float, float]]):
-        super().__init__(name, color, "line", coordinates, normalized_coordinates)
+    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float]]):
+        super().__init__(system, name, color, "line", coordinates, normalized_coordinates)
+        self.edges = [(0, 1)]
 
 
 class WireFrame3D(Object3D):
-    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float, float]]):
-        super().__init__(name, color, "wireframe", coordinates, normalized_coordinates)
+    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
+        super().__init__(system, name, color, "wireframe", coordinates, normalized_coordinates)
         self.edges = edges
 
 
 class Polygon3D(Object3D):
-    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float, float]]):
-        super().__init__(name, color, "polygon", coordinates, normalized_coordinates)
+    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float, float]]):
+        super().__init__(system, name, color, "polygon", coordinates, normalized_coordinates)
         self.edges = edges
 
 
