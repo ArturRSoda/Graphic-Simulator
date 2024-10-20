@@ -1,5 +1,5 @@
 import numpy as np
-import math as m
+from math import cos, sin, radians
 
 class Transformer:
     def __init__(self, system):
@@ -15,7 +15,7 @@ class Transformer:
 
 
     def add_scaling(self, transformation_list: list[list[list]], scale_factor: float, transformation_point: tuple[float, float, float]=(0, 0, 0)):
-        if transformation_point != (0, 0):
+        if transformation_point != (0, 0, 0):
             transformation_list.append(np.array(
                 [[                       1,                        0,                        0, 0],
                  [                       0,                        1,                        0, 0],
@@ -37,8 +37,8 @@ class Transformer:
         ))
 
 
-    def add_rotation(self, transformation_list: list[list[list]], rotation_degrees: float, transformation_point: tuple[float, float, float]=(0, 0, 0), axis: str):
-        if transformation_point != (0, 0):
+    def add_rotation(self, transformation_list: list[list[list]], rotation_degrees: float, axis: str, transformation_point: tuple[float, float, float]=(0, 0, 0)):
+        if transformation_point != (0, 0, 0):
             transformation_list.append(np.array(
                 [[                       1,                        0,                        0, 0],
                  [                       0,                        1,                        0, 0],
@@ -52,8 +52,8 @@ class Transformer:
                  [transformation_point[0], transformation_point[1], transformation_point[2], 1]]
             ))
 
-        s = m.sin(m.radians(rotation_degrees))
-        c = m.cos(m.radians(rotation_degrees))
+        s = sin(radians(rotation_degrees))
+        c = cos(radians(rotation_degrees))
 
         if (axis == "x"):
             m = [
@@ -91,7 +91,7 @@ class Transformer:
             z = coordinates[i][2]
             coord_matrix = np.array([x, y, z, 1])
             new_coord_matrix = np.matmul(coord_matrix, transformation_matrix)
-            new_coordinates.append((new_coord_matrix[0].item(), new_coord_matrix[1].item()))
+            new_coordinates.append((new_coord_matrix[0].item(), new_coord_matrix[1].item(), new_coord_matrix[2].item()))
 
         return new_coordinates
 

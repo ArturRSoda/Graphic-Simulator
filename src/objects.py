@@ -7,13 +7,14 @@ class Object3D:
                        color: str,
                        type: str,
                        coordinates: list[tuple[float, float, float]],
-                       normalized_coordinates: list[tuple[float, float, float]]):
+                       normalized_coordinates: list[tuple[float, float]]):
 
         self.name = name
         self.color = color
         self.type = type
         self.coordinates = coordinates
         self.normalized_coordinates = normalized_coordinates
+        self.projection_coord = [(0, 0)]
 
     def get_center(self):
         coordinates = self.coordinates
@@ -43,9 +44,9 @@ class Object3D:
         transformer.add_scaling(transformation_list, factor, self.get_center())
         self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
-    def rotate(self, transformer: Transformer, degrees: int, rotation_point: tuple[float, float, float], axis: str):
+    def rotate(self, transformer: Transformer, degrees: int, axis: str, rotation_point: tuple[float, float, float]):
         transformation_list = []
-        transformer.add_rotation(transformation_list, degrees, rotation_point, axis)
+        transformer.add_rotation(transformation_list, degrees, axis, rotation_point)
         self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
 class Point3D(Object3D):

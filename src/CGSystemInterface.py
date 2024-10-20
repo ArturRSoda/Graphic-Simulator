@@ -34,6 +34,7 @@ class CGSystemInterface():
         self.canvas                : tk.Canvas
         self.rotation_opt_var      : tk.StringVar
         self.line_clip_opt_var     : tk.StringVar
+        self.window_rotation_opt   : tk.StringVar
         self.window_degrees_var    : tk.DoubleVar
         self.object_degrees_var    : tk.DoubleVar
         self.window_offset_entr    : tk.Entry
@@ -41,7 +42,7 @@ class CGSystemInterface():
         self.w_zoom_factor_entry   : tk.Entry
         self.obj_scale_factor_entry: tk.Entry
         self.obj_rotation_coord_var: tuple[tk.IntVar, tk.IntVar]
-        self.w_coord_var           : tuple[tk.IntVar, tk.IntVar]
+        self.w_coord_var           : tuple[tk.IntVar, tk.IntVar, tk.IntVar]
         self.canvas_width          : float
         self.canvas_height         : float
         self.subcanvas_height      : float
@@ -237,7 +238,7 @@ class CGSystemInterface():
 
         parent = self.obj_controls_tab if (isObject) else self.window_controls_tab
 
-        self.controls_menu_frame = Frame(parent, self.tab_width-26, 220)
+        self.controls_menu_frame = Frame(parent, self.tab_width-26, 250)
         self.controls_menu_frame.place(x=10, y=10)
 
         Label(self.controls_menu_frame, "Controls", 10).place(x=10, y=10)
@@ -247,45 +248,53 @@ class CGSystemInterface():
         tk.Button(self.controls_menu_frame, text="Left", command=lambda: move_func("left")).place(x=10, y=70)
         tk.Button(self.controls_menu_frame, text="Right", command=lambda: move_func("right")).place(x=62, y=70)
         tk.Button(self.controls_menu_frame, text="Down", command=lambda: move_func("down")).place(x=30, y=100)
+        tk.Button(self.controls_menu_frame, text="In", command=lambda: move_func("in")).place(x=10, y=130)
+        tk.Button(self.controls_menu_frame, text="Out", command=lambda: move_func("out")).place(x=72, y=130)
 
         scale_func = self.scale_object if (isObject) else self.zoom_window
-        tk.Button(self.controls_menu_frame, text="Increase" if (isObject) else "Zoom In", command=lambda: scale_func("in")).place(x=145, y=50)
-        tk.Button(self.controls_menu_frame, text="Decrease" if (isObject) else "Zoom Out", command=lambda: scale_func("out")).place(x=145, y=90)
+        tk.Button(self.controls_menu_frame, text="Increase" if (isObject) else "Zoom In", command=lambda: scale_func("in")).place(x=145, y=80)
+        tk.Button(self.controls_menu_frame, text="Decrease" if (isObject) else "Zoom Out", command=lambda: scale_func("out")).place(x=145, y=120)
 
-        tk.Button(self.controls_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=170)
+        tk.Button(self.controls_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=200)
 
-        Label(self.controls_menu_frame, "Offset", 10).place(x=10, y=140)
-        Label(self.controls_menu_frame, "Escl. Factor" if (isObject) else "zoom factor", 10).place(x=115, y=140)
+        Label(self.controls_menu_frame, "Offset", 10).place(x=10, y=170)
+        Label(self.controls_menu_frame, "Escl. Factor" if (isObject) else "zoom factor", 10).place(x=115, y=170)
 
         if (isObject):
             self.obj_scale_factor_entry = tk.Entry(self.controls_menu_frame, width=4)
             self.obj_offset_entry = tk.Entry(self.controls_menu_frame, width=4)
             self.obj_offset_entry.insert(0, "10")
             self.obj_scale_factor_entry.insert(0, "2.0")
-            self.obj_offset_entry.place(x=55, y=140)
-            self.obj_scale_factor_entry.place(x=195, y=140)
+            self.obj_offset_entry.place(x=55, y=170)
+            self.obj_scale_factor_entry.place(x=195, y=170)
         else:
             self.window_offset_entry = tk.Entry(self.controls_menu_frame, width=4)
             self.w_zoom_factor_entry = tk.Entry(self.controls_menu_frame, width=4)
             self.window_offset_entry.insert(0, "10")
             self.w_zoom_factor_entry.insert(0, "2.0")
-            self.window_offset_entry.place(x=55, y=140)
-            self.w_zoom_factor_entry.place(x=195, y=140)
+            self.window_offset_entry.place(x=55, y=170)
+            self.w_zoom_factor_entry.place(x=195, y=170)
 
 
     def add_window_rotation_menu(self):
-        self.rotation_menu_frame = Frame(self.window_controls_tab, self.tab_width-26,110)
-        self.rotation_menu_frame.place(x=10, y=240)
+        self.rotation_menu_frame = Frame(self.window_controls_tab, self.tab_width-26, 150)
+        self.rotation_menu_frame.place(x=10, y=270)
 
         Label(self.rotation_menu_frame, "Rotation", 10).place(x=10, y=10)
 
+        self.window_rotation_opt = tk.StringVar(self.rotation_menu_frame, "w_center")
+        tk.Radiobutton(self.rotation_menu_frame, text="W Center", variable=self.window_rotation_opt, value="w_center").place(x=0, y=35)
+        tk.Radiobutton(self.rotation_menu_frame, text="X", variable=self.window_rotation_opt, value="x").place(x=90, y=35)
+        tk.Radiobutton(self.rotation_menu_frame, text="Y", variable=self.window_rotation_opt, value="y").place(x=140, y=35)
+        tk.Radiobutton(self.rotation_menu_frame, text="Z", variable=self.window_rotation_opt, value="z").place(x=190, y=35)
+
         self.window_degrees_var = tk.DoubleVar()
         self.window_degrees_var.set(10.)
-        Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=50)
-        tk.Entry(self.rotation_menu_frame, textvariable=self.window_degrees_var, width=4).place(x=60, y=50)
+        Label(self.rotation_menu_frame, "Degrees", 10).place(x=10, y=65)
+        tk.Entry(self.rotation_menu_frame, textvariable=self.window_degrees_var, width=4).place(x=70, y=65)
 
-        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotate_window(True)).place(x=110, y=25)
-        tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotate_window(False)).place(x=110, y=65)
+        tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotate_window(True)).place(x=5, y=100)
+        tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotate_window(False)).place(x=145, y=100)
 
 
     def add_obj_rotation_menu(self):
@@ -343,30 +352,33 @@ class CGSystemInterface():
     def set_window_coord(self):
         app = tk.Toplevel()
         app.title("Set Coordinates")
-        app.geometry("180x150")
+        app.geometry("250x150")
 
         Label(app, "Coordinates", 10).place(x=10, y=10)
 
-        fm = Frame(app, width=160, height=50)
+        fm = Frame(app, width=240, height=50)
         fm.place(x=10, y=30)
 
-        self.w_coord_var = (tk.IntVar(), tk.IntVar())
+        self.w_coord_var = (tk.IntVar(), tk.IntVar(), tk.IntVar())
 
         Label(fm, "X:", 10).place(x=10, y=15)
         tk.Entry(fm, textvariable=self.w_coord_var[0], width=4).place(x=30, y=10)
         Label(fm, "Y:", 10).place(x=80, y=15)
         tk.Entry(fm, textvariable=self.w_coord_var[1], width=4).place(x=100, y=10)
+        Label(fm, "Z:", 10).place(x=150, y=15)
+        tk.Entry(fm, textvariable=self.w_coord_var[1], width=4).place(x=170, y=10)
 
-        tk.Button(app, text="Set", command=self.set_wcoord).place(x=20, y=90)
-        tk.Button(app, text="Cancel", command=app.destroy).place(x=80, y=90)
+        tk.Button(app, text="Set", command=self.set_wcoord).place(x=60, y=90)
+        tk.Button(app, text="Cancel", command=app.destroy).place(x=120, y=90)
 
 
     def set_wcoord(self):
         coord_x = self.verify_num_entry(self.w_coord_var[0])
         coord_y = self.verify_num_entry(self.w_coord_var[1])
+        coord_z = self.verify_num_entry(self.w_coord_var[2])
 
-        if (coord_x is not None) and (coord_y is not None):
-            self.system.set_window_coord((coord_x, coord_y))
+        if (coord_x is not None) and (coord_y is not None) and (coord_z is not None):
+            self.system.set_window_coord((coord_x, coord_y, coord_z))
             self.add_message("Window coordinates seted to (%d, %d)" % (coord_x, coord_y))
 
 
@@ -424,9 +436,10 @@ class CGSystemInterface():
         degrees = self.verify_num_entry(self.window_degrees_var)
         if (degrees is None): return
 
-        self.system.rotate_window(degrees, anticlockwise)
+        axis = self.window_rotation_opt.get()
+        self.system.rotate_window(degrees, anticlockwise, axis)
 
-        self.add_message("Window rotated %d degrees %s" % (degrees, ("anti-clockwise" if (anticlockwise) else "clockwise")))
+        self.add_message("Window rotated %d degrees %s by %s" % (degrees, ("anti-clockwise" if (anticlockwise) else "clockwise"), axis))
 
 
     def rotation(self, isObject: bool, antiClockwise: bool):
