@@ -203,39 +203,6 @@ class CGSystem():
         mr.append([0, 0, 0, 1])
         return mr
 
-    """
-        if unit is None:
-            unit = [0.0, 0.0, 1.0]
-        # Normalize vector length
-        i_v /= np.linalg.norm(i_v)
-
-        # Get axis
-        uvw = np.cross(i_v, unit)
-
-        # compute trig values - no need to go through arccos and back
-        rcos = np.dot(i_v, unit)
-        rsin = np.linalg.norm(uvw)
-
-        #normalize and unpack axis
-        if not np.isclose(rsin, 0):
-            uvw /= rsin
-        u, v, w = uvw
-
-        # Compute rotation matrix - re-expressed to show structure
-        m = (
-            rcos * np.eye(3) +
-            rsin * np.array([
-                [ 0, -w,  v],
-                [ w,  0, -u],
-                [-v,  u,  0]
-            ]) +
-            (1.0 - rcos) * uvw[:,None] * uvw[None,:]
-        )
-
-        mr = [[float(a), float(b), float(c), 0] for (a, b, c) in m]
-        mr.append([0, 0, 0, 1])
-        return mr
-    """
 
     def update_viewport(self):
         self.interface.clear_canvas()
@@ -315,41 +282,74 @@ class CGSystem():
         return tuple([float(x) for x in normalized_vector])
 
 
+    def get_align_vector_matrix(self, v1, v2):
+        # Define the vector to be aligned
+        v1 = np.array(v1)
+        # Define the z-axis
+        v2 = np.array(v2)
+        # Determine the angle between the vector and the z-axis
+        theta = np.acos(np.dot(v1, v2)/(np.linalg.norm(v1) * np.linalg.norm(v2)));
+        # Determine the axis of rotation
+        axis = np.cross(v1, v2)/np.linalg.norm(np.cross(v1, v2));
+        # Construct the rotation matrix using Rodrigues' formula
+        K = np.array([
+            [0, -axis[2] ,axis[1]],
+            [axis[2], 0, -axis[0]],
+            [-axis[1], axis[0], 0]
+        ])
+
+        R = np.eye(3) + np.sin(theta)*K + (1-np.cos(theta))*K@K;
+        # Apply the rotation matrix to the vector
+        #v_aligned = R@v1
+
+        m = list()
+        for (a, b, c) in R:
+            m.append([float(a), float(b), float(c), 0])
+        m.append([0, 0, 0, 1])
+
+        return m
+
+
     def generate_normal_coordinates(self):
         transformation_list = []
 
         # translate world to center
         w_center = self.window.get_center()
-        print(w_center)
         self.transformer.add_translation(transformation_list, -w_center[0], -w_center[1], -w_center[2])
 
         # align world with z axis
-        m = self.get_rotation_matrix(self.window.vpn, [0, 0, 1])
-        print(m)
-        transformation_list.append(m)
+        vpn_proj_yz = (0, self.window.vpn[1], self.window.vpn[2])
+
+
+        tm = []
+        delta_x = self.get_delta_angle([self.window.vpn[1], self.window.vpn[2], 0])
+        self.transformer.add_rotation(tm, -delta_x, "x")
+        t_vpn_x, t_vpn_y, t_vpn_z = self.transformer.transform([self.window.vpn], tm)[0]
+        tm = []
+        delta_y = self.get_delta_angle([t_vpn_x, t_vpn_z, 0])
+
+        m = []
+        self.transformer.add_rotation(m, -delta_x, "x")
+        self.transformer.add_rotation(m, delta_y, "y")
+        self.transformer.add_rotation(transformation_list, -delta_x, "x")
+        self.transformer.add_rotation(transformation_list, delta_y, "y")
 
         # aligns the window and the up vector with the y-axis, move the objects
         # and calculates the normalized coordinates
-        delta_angle = self.get_delta_angle()
+        v_up = self.transformer.transform([self.window.up_vector], m)[0]
+        delta_angle = self.get_delta_angle(v_up)
 
         self.transformer.add_rotation(transformation_list, -delta_angle, "z")
 
         window_coordinates = self.transformer.transform(self.window.coordinates, transformation_list)
-        print(self.window.coordinates)
-        print(window_coordinates)
-        print(self.window.up_vector)
-        print(self.window.right_vector)
-        print(self.window.vpn)
-        print()
 
         for obj in self.display_file:
             transformed_coords = self.transformer.transform(obj.coordinates, transformation_list)
             obj.normalized_coordinates = self.normalize_coordinates(transformed_coords, window_coordinates)
 
 
-    # get angle between y-axis and up vector 
-    def get_delta_angle(self):
-        x, y, z = self.window.up_vector
+    def get_delta_angle(self, v1):
+        x, y, z = self.normalize_vector(v1)
         up_vector = np.array([x, y])
         norm_up = np.linalg.norm(up_vector)
 
@@ -358,10 +358,9 @@ class CGSystem():
 
         dot_product = np.dot(up_vector, y_axis)
         delta_angle = m.degrees(m.acos(dot_product / (norm_up * norm_y)))
-        delta_angle = -delta_angle if (x > 0) else delta_angle # dark magic
+        delta_angle = -delta_angle if (x < 0) else delta_angle
 
         return delta_angle
-
 
     def set_window_coord(self, coord: tuple[float, float, float]):
         w_center = self.window.get_center()

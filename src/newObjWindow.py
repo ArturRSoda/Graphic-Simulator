@@ -282,6 +282,10 @@ class NewObjWindow:
         name = self.obj_name_var.get()
         color = self.color_opt_var.get()
 
+        if (len(self.wireframe_coord_list) < 2):
+            self.send_error("More coordinates", "Please informe at least 2 coordinates!")
+            return
+
         edges = list()
         for i in range(len(self.wireframe_coord_list)-1):
             edges.append((i, i+1))
