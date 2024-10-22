@@ -318,40 +318,82 @@ class CGSystem():
         self.transformer.add_translation(transformation_list, -w_center[0], -w_center[1], -w_center[2])
 
         # align world with z axis
-        tm = []
-        delta_x = self.get_delta_angle([self.window.vpn[1], self.window.vpn[2], 0])
-        print(delta_x)
-        self.transformer.add_rotation(tm, delta_x, "x")
-        t_vpn_x, t_vpn_y, t_vpn_z = self.transformer.transform([self.window.vpn], tm)[0]
-        print("vpn", self.window.vpn)
-        print("t_vpn", (t_vpn_x, t_vpn_y, t_vpn_z))
-        tm = []
-        delta_y = self.get_delta_angle([t_vpn_x, t_vpn_z, 0])
-
+        x_angle, y_angle = self.get_angles_to_align((self.window.vpn[0], self.window.vpn[2], self.window.vpn[1]), [0, 1, 0])
+        x_angle, y_angle = self.get_angles_to_align_xy_axis(self.window.vpn, [0, 0, 1])
+        print(x_angle, y_angle)
 
         m = []
-        self.transformer.add_rotation(m, delta_x, "x")
-        self.transformer.add_rotation(m, -delta_y, "y")
-        self.transformer.add_rotation(transformation_list, delta_x, "x")
-        self.transformer.add_rotation(transformation_list, -delta_y, "y")
+        self.transformer.add_rotation(m, x_angle, "x")
+        self.transformer.add_rotation(m, y_angle, "y")
+        self.transformer.add_rotation(transformation_list, x_angle, "x")
+        self.transformer.add_rotation(transformation_list, y_angle, "y")
 
         # aligns the window and the up vector with the y-axis, move the objects
         # and calculates the normalized coordinates
         v_up = self.transformer.transform([self.window.up_vector], m)[0]
-        print("up_vector", self.window.up_vector)
+        print("up_vec", self.window.up_vector)
         print("v_up", v_up)
-        delta_angle = self.get_delta_angle(self.window.up_vector)
 
-        self.transformer.add_rotation(transformation_list, -delta_angle, "z")
+        vpn = self.transformer.transform([self.window.vpn], m)[0]
+        print("w_vpn", self.window.vpn)
+        print("vpn", vpn)
+
+        x_angle, z_angle = self.get_angles_to_align(v_up, [0, 1, 0])
+        print(x_angle, z_angle)
+        self.transformer.add_rotation(transformation_list, x_angle, "x")
+        self.transformer.add_rotation(transformation_list, z_angle, "z")
 
         window_coordinates = self.transformer.transform(self.window.coordinates, transformation_list)
-
-        print()
 
         for obj in self.display_file:
             transformed_coords = self.transformer.transform(obj.coordinates, transformation_list)
             obj.normalized_coordinates = self.normalize_coordinates(transformed_coords, window_coordinates)
 
+    def get_angles_to_align_xy_axis(self, v1, v2):
+        vector1 = np.array(v1)
+        vector2 = np.array(v2)
+        vector2 = vector2 / np.linalg.norm(vector2)
+
+        a, b, c = vector1
+        x, y, z = vector2
+
+        # Calculate the angle to rotate around the x-axis
+        x_angle = np.arccos(z / np.sqrt(b ** 2 + c ** 2)) - np.arctan2(-b, c)
+
+        # Rotate around the x-axis
+        x_after_x_rotation = a
+        y_after_x_rotation = b * np.cos(x_angle) - c * np.sin(x_angle)
+        z_after_x_rotation = b * np.sin(x_angle) + c * np.cos(x_angle)
+
+        # Now, calculate the angle to rotate around the y-axis using the new components
+        y_angle = np.arccos(x / np.sqrt(x_after_x_rotation ** 2 + z_after_x_rotation ** 2)) - np.arctan2(z_after_x_rotation, x_after_x_rotation)
+
+        # Rotate around the y-axis
+        x_final = x_after_x_rotation * np.cos(y_angle) + z_after_x_rotation * np.sin(y_angle)
+        z_final = -x_after_x_rotation * np.sin(y_angle) + z_after_x_rotation * np.cos(y_angle)
+        y_final = y_after_x_rotation  # No change in the y-component when rotating around y-axis
+
+        return np.rad2deg(x_angle), np.rad2deg(y_angle) 
+
+    def get_angles_to_align(self, v1, v2):
+        vector1 = np.array(v1)
+        vector2 = np.array(v2)
+        vector1 = vector1 / np.linalg.norm(vector1)
+        vector2 = vector2 / np.linalg.norm(vector2)
+        a, b, c = vector1
+        x, y, z = vector2
+        x_angle = np.arccos(z / np.sqrt(b ** 2 + c ** 2)) - np.arctan2(-b, c)
+        x_after_x_rotation = a
+        y_after_x_rotation = b * np.cos(x_angle) - c * np.sin(x_angle)
+
+        det = np.sqrt(x_after_x_rotation ** 2 + y_after_x_rotation ** 2)
+        sin = x_after_x_rotation * y - y_after_x_rotation * x
+        cos = y_after_x_rotation * y + x_after_x_rotation * x
+        sin /= det if (det) else 1
+        cos /= det if (det) else 1
+        z_angle = np.arctan2(sin, cos)
+
+        return np.rad2deg(x_angle), np.rad2deg(z_angle)
 
     def get_delta_angle(self, v1):
         x, y, z = self.normalize_vector(v1)
@@ -363,7 +405,7 @@ class CGSystem():
 
         dot_product = np.dot(up_vector, y_axis)
         delta_angle = m.degrees(m.acos(dot_product / (norm_up * norm_y)))
-        delta_angle = -delta_angle if (x < 0) else delta_angle
+        delta_angle = -delta_angle if (x > 0) else delta_angle
 
         return delta_angle
 

@@ -51,26 +51,20 @@ class Window:
             offset_x, offset_y, offset_z = self.get_center()
             transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
 
+            x_angle, z_angle = self.system.get_angles_to_align(self.system.window.vpn, [0, 1, 0])
 
-            tm = []
-            delta_x = self.system.get_delta_angle([self.vpn[2], self.vpn[1], 0])
-            transformer.add_rotation(tm, -delta_x, "x")
-            t_vpn_x, t_vpn_y, t_vpn_z = transformer.transform([self.vpn], tm)[0]
-            tm = []
-            delta_y = self.system.get_delta_angle([t_vpn_x, t_vpn_y, 0])
+            transformer.add_rotation(transformation_list, x_angle, "x")
+            transformer.add_rotation(transformation_list, z_angle, "z")
+            transformer.add_rotation(vec_transformation_list, x_angle, "x")
+            transformer.add_rotation(vec_transformation_list, z_angle, "z")
 
-            transformer.add_rotation(transformation_list, -delta_x, "x", self.get_center())
-            transformer.add_rotation(transformation_list, delta_y, "z", self.get_center())
-            transformer.add_rotation(vec_transformation_list, -delta_x, "x", self.get_center())
-            transformer.add_rotation(vec_transformation_list, delta_y, "z", self.get_center())
+            transformer.add_rotation(transformation_list, degrees, "y")
+            transformer.add_rotation(vec_transformation_list, degrees, "y")
 
-            transformer.add_rotation(transformation_list, degrees, "y", self.get_center())
-            transformer.add_rotation(vec_transformation_list, degrees, "y", self.get_center())
-
-            transformer.add_rotation(transformation_list, delta_x, "x", self.get_center())
-            transformer.add_rotation(transformation_list, -delta_y, "z", self.get_center())
-            transformer.add_rotation(vec_transformation_list, delta_x, "x", self.get_center())
-            transformer.add_rotation(vec_transformation_list, -delta_y, "z", self.get_center())
+            transformer.add_rotation(transformation_list, -z_angle, "z")
+            transformer.add_rotation(transformation_list, -x_angle, "x")
+            transformer.add_rotation(vec_transformation_list, -z_angle, "z")
+            transformer.add_rotation(vec_transformation_list, -x_angle, "x")
 
             transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
 
@@ -78,6 +72,9 @@ class Window:
         self.right_vector = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.right_vector], vec_transformation_list)[0])])
         self.vpn = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.vpn], vec_transformation_list)[0])])
         self.coordinates = transformer.transform(self.coordinates, transformation_list)
+        print(self.up_vector)
+        print(self.get_center())
+        print()
 
     def zoom(self, transformer: Transformer, factor: float):
         transformation_list = []
