@@ -59,27 +59,6 @@ class Object3D:
             offset_x, offset_y, offset_z = self.get_center()
             transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
 
-
-            """
-            tm = []
-            delta_x = self.system.get_delta_angle([100, 100, 0])
-            print(delta_x)
-            transformer.add_rotation(tm, -delta_x, "x", self.get_center([100, 100, 100]))
-            t_vpn_x, t_vpn_y, t_vpn_z = transformer.transform([(100, 100, 100)], tm)[0]
-            print((t_vpn_x, t_vpn_y, t_vpn_z))
-            tm = []
-            delta_y = self.system.get_delta_angle([t_vpn_x, t_vpn_y, 0])
-            transformer.add_rotation(tm, -delta_y, "z", self.get_center([t_vpn_x, t_vpn_y, t_vpn_z]))
-            t_vpn_x, t_vpn_y, t_vpn_z = transformer.transform([(t_vpn_x, t_vpn_y, t_vpn_z)], tm)[0]
-            print((t_vpn_x, t_vpn_y, t_vpn_z))
-            """
-
-            m = self.system.get_align_vector_matrix([100, 100, 100], [0, 0, 1])
-
-            tm = [m]
-            v = transformer.transform([(100, 100, 100)], tm)
-            print(v)
-
             tm = []
             delta_x = self.system.get_delta_angle([self.system.window.vpn[2], self.system.window.vpn[1], 0])
             transformer.add_rotation(tm, -delta_x, "x")
@@ -88,13 +67,13 @@ class Object3D:
             delta_y = self.system.get_delta_angle([t_vpn_x, t_vpn_y, 0])
 
 
-            transformer.add_rotation(transformation_list, -delta_x, "x")
-            transformer.add_rotation(transformation_list, delta_y, "z")
+            transformer.add_rotation(transformation_list, -delta_x, "x", self.get_center())
+            transformer.add_rotation(transformation_list, delta_y, "z", self.get_center())
 
-            transformer.add_rotation(transformation_list, degrees, "y")
+            transformer.add_rotation(transformation_list, degrees, "y", self.get_center())
 
-            transformer.add_rotation(transformation_list, delta_x, "x")
-            transformer.add_rotation(transformation_list, -delta_y, "z")
+            transformer.add_rotation(transformation_list, delta_x, "x", self.get_center())
+            transformer.add_rotation(transformation_list, -delta_y, "z", self.get_center())
 
             transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
 

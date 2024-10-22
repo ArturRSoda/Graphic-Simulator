@@ -59,18 +59,18 @@ class Window:
             tm = []
             delta_y = self.system.get_delta_angle([t_vpn_x, t_vpn_y, 0])
 
-            transformer.add_rotation(transformation_list, -delta_x, "x")
-            transformer.add_rotation(transformation_list, delta_y, "z")
-            transformer.add_rotation(vec_transformation_list, -delta_x, "x")
-            transformer.add_rotation(vec_transformation_list, delta_y, "z")
+            transformer.add_rotation(transformation_list, -delta_x, "x", self.get_center())
+            transformer.add_rotation(transformation_list, delta_y, "z", self.get_center())
+            transformer.add_rotation(vec_transformation_list, -delta_x, "x", self.get_center())
+            transformer.add_rotation(vec_transformation_list, delta_y, "z", self.get_center())
 
-            transformer.add_rotation(transformation_list, degrees, "y")
-            transformer.add_rotation(vec_transformation_list, degrees, "y")
+            transformer.add_rotation(transformation_list, degrees, "y", self.get_center())
+            transformer.add_rotation(vec_transformation_list, degrees, "y", self.get_center())
 
-            transformer.add_rotation(transformation_list, delta_x, "x")
-            transformer.add_rotation(transformation_list, -delta_y, "z")
-            transformer.add_rotation(vec_transformation_list, delta_x, "x")
-            transformer.add_rotation(vec_transformation_list, -delta_y, "z")
+            transformer.add_rotation(transformation_list, delta_x, "x", self.get_center())
+            transformer.add_rotation(transformation_list, -delta_y, "z", self.get_center())
+            transformer.add_rotation(vec_transformation_list, delta_x, "x", self.get_center())
+            transformer.add_rotation(vec_transformation_list, -delta_y, "z", self.get_center())
 
             transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
 

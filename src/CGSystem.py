@@ -318,30 +318,35 @@ class CGSystem():
         self.transformer.add_translation(transformation_list, -w_center[0], -w_center[1], -w_center[2])
 
         # align world with z axis
-        vpn_proj_yz = (0, self.window.vpn[1], self.window.vpn[2])
-
-
         tm = []
         delta_x = self.get_delta_angle([self.window.vpn[1], self.window.vpn[2], 0])
-        self.transformer.add_rotation(tm, -delta_x, "x")
+        print(delta_x)
+        self.transformer.add_rotation(tm, delta_x, "x")
         t_vpn_x, t_vpn_y, t_vpn_z = self.transformer.transform([self.window.vpn], tm)[0]
+        print("vpn", self.window.vpn)
+        print("t_vpn", (t_vpn_x, t_vpn_y, t_vpn_z))
         tm = []
         delta_y = self.get_delta_angle([t_vpn_x, t_vpn_z, 0])
 
+
         m = []
-        self.transformer.add_rotation(m, -delta_x, "x")
-        self.transformer.add_rotation(m, delta_y, "y")
-        self.transformer.add_rotation(transformation_list, -delta_x, "x")
-        self.transformer.add_rotation(transformation_list, delta_y, "y")
+        self.transformer.add_rotation(m, delta_x, "x")
+        self.transformer.add_rotation(m, -delta_y, "y")
+        self.transformer.add_rotation(transformation_list, delta_x, "x")
+        self.transformer.add_rotation(transformation_list, -delta_y, "y")
 
         # aligns the window and the up vector with the y-axis, move the objects
         # and calculates the normalized coordinates
         v_up = self.transformer.transform([self.window.up_vector], m)[0]
-        delta_angle = self.get_delta_angle(v_up)
+        print("up_vector", self.window.up_vector)
+        print("v_up", v_up)
+        delta_angle = self.get_delta_angle(self.window.up_vector)
 
         self.transformer.add_rotation(transformation_list, -delta_angle, "z")
 
         window_coordinates = self.transformer.transform(self.window.coordinates, transformation_list)
+
+        print()
 
         for obj in self.display_file:
             transformed_coords = self.transformer.transform(obj.coordinates, transformation_list)
