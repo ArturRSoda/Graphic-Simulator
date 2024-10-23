@@ -14,9 +14,11 @@ class Clipper:
         x, y = coords[0]
         return None if ((x < -1) or (x > 1) or (y < -1) or (y > 1)) else coords
 
+
     def clip_line(self, coords: list[tuple[float, float]], func_opt: str) -> list[tuple[float, float]]|None:
         func = self.cohen_sutherland if (func_opt == "cohen_sutherland") else self.liang_barsky
         return func(coords)
+
 
     def clip_wireframe(self, coords: list[tuple[float, float]], func_opt: str) -> list[tuple[float, float]]|None:
         pop = None

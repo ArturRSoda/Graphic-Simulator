@@ -49,6 +49,7 @@ class TransformationWindow:
         Label(self.app, "SELECTED OBJECT: %s" % obj_name, 10).place(x=10, y=10)
         Label(self.app, "CURRENT COORDINATES: %s" % coord_str, 10).place(x=10, y=30)
 
+
     def add_controls(self):
         self.controls_frame = Frame(self.app, 305, 450)
         self.controls_frame.place(x=10, y=50)
@@ -59,6 +60,7 @@ class TransformationWindow:
         self.add_translation_controls()
         self.add_scale_controls()
         self.add_rotation_controls()
+
 
     def add_translation_controls(self):
         self.translation_controls_frame = Frame(self.controls_frame, 135, 210)
@@ -78,6 +80,7 @@ class TransformationWindow:
         self.offset_entry.place(x=55, y=170)
         self.offset_entry.insert("end", "10")
 
+
     def add_scale_controls(self):
         self.scale_controls_frame = Frame(self.controls_frame, 135, 210)
         self.scale_controls_frame.place(x=155, y=30)
@@ -91,6 +94,7 @@ class TransformationWindow:
         self.scale_factor_entry = tk.Entry(self.scale_controls_frame, width=4)
         self.scale_factor_entry.place(x=40, y=160)
         self.scale_factor_entry.insert("end", "2.0")
+
 
     def add_rotation_controls(self):
         width = self.controls_frame.winfo_width()-26
@@ -113,14 +117,6 @@ class TransformationWindow:
         tk.Button(self.rotation_controls_frame, text="Anti-ClockWise", command=lambda: self.rotate(True)).place(x=10, y=100)
         tk.Button(self.rotation_controls_frame, text="ClockWise", command=lambda: self.rotate(False)).place(x=150, y=100)
 
-    def rotation_point_entry_state(self):
-        if (self.rotation_opt_var.get() == "Other"):
-            self.rotation_Xpoint_entry.config(state="normal")
-            self.rotation_Ypoint_entry.config(state="normal")
-        else:
-            self.rotation_Xpoint_entry.config(state="disabled")
-            self.rotation_Ypoint_entry.config(state="disabled")
-
 
     def add_transformation_list(self):
         self.transformation_list_frame = Frame(self.app, 305, 450)
@@ -135,6 +131,7 @@ class TransformationWindow:
         tk.Button(self.transformation_list_frame, text="Apply", command=self.apply).place(x=120, y=390)
         tk.Button(self.transformation_list_frame, text="Cancel", command=self.app.destroy).place(x=200, y=390)
 
+
     def del_transformation(self):
         selected = self.transformation_listbox.curselection()
         if (not selected):
@@ -142,6 +139,7 @@ class TransformationWindow:
             return
 
         self.transformation_listbox.delete(selected[0])
+
 
     def apply(self):
         self.system.apply_transformations(self.obj, self.transformation_list)
@@ -153,12 +151,14 @@ class TransformationWindow:
         self.system.interface.add_message(self.obj.name + " - " + self.obj.type + " was transformed. New coordinates: ")
         self.app.destroy()
 
+
     def move_up(self):
         v = self.verify_num_entry(self.offset_entry)
         if (not v): return
 
         self.transformation_list.append(("move_up", v, None, None))
         self.transformation_listbox.insert("end", "Move up by %.1f" % v)
+
 
     def move_down(self):
         v = self.verify_num_entry(self.offset_entry)
@@ -167,12 +167,14 @@ class TransformationWindow:
         self.transformation_list.append(("move_down", v, None, None))
         self.transformation_listbox.insert("end", "Move down by %.1f" % v)
 
+
     def move_left(self):
         v = self.verify_num_entry(self.offset_entry)
         if (not v): return
 
         self.transformation_list.append(("move_left", v, None, None))
         self.transformation_listbox.insert("end", "Move left by %.1f" % v)
+
 
     def move_right(self):
         v = self.verify_num_entry(self.offset_entry)
@@ -181,12 +183,14 @@ class TransformationWindow:
         self.transformation_list.append(("move_right", v, None, None))
         self.transformation_listbox.insert("end", "Move right by %.1f" % v)
 
+
     def move_in(self):
         v = self.verify_num_entry(self.offset_entry)
         if (not v): return
 
         self.transformation_list.append(("move_in", v, None, None))
         self.transformation_listbox.insert("end", "Move in by %.1f" % v)
+
 
     def move_out(self):
         v = self.verify_num_entry(self.offset_entry)
@@ -195,6 +199,7 @@ class TransformationWindow:
         self.transformation_list.append(("move_out", v, None, None))
         self.transformation_listbox.insert("end", "Move in by %.1f" % v)
 
+
     def increase_scale(self):
         v = self.verify_num_entry(self.scale_factor_entry)
         if (not v): return
@@ -202,12 +207,14 @@ class TransformationWindow:
         self.transformation_list.append(("increase_scale", v, None, None))
         self.transformation_listbox.insert("end", "Increase scale by %.1f" % v)
 
+
     def decrease_scale(self):
         v = self.verify_num_entry(self.scale_factor_entry)
         if (not v): return
 
         self.transformation_list.append(("decrease_scale", v, None, None))
         self.transformation_listbox.insert("end", "Decrease scale by %.1f" % v)
+
 
     def rotate(self, antiClockwise: bool):
         v = self.verify_num_entry(self.degrees_entry)
@@ -228,6 +235,7 @@ class TransformationWindow:
             self.send_error("Value Error", "Please enter a numeric value on entry")
         else:
             return value
+
 
     def send_error(self, title: str, message: str):
         messagebox.showerror(title, message)

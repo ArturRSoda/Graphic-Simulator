@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
 
-from objects import Object
+from objects import Object3D
 
 
 class Frame(tk.Frame):
@@ -118,7 +118,7 @@ class CGSystemInterface():
             self.canvas.delete(self.canvas_elements[i])
 
 
-    def draw_object(self, obj: Object, obj_vp_coords: list[tuple[float, float]]):
+    def draw_object(self, obj: Object3D, obj_vp_coords: list[tuple[float, float]]):
         if (obj.type == "point"):
             coord = obj_vp_coords[0]
             p = self.canvas.create_oval(coord[0], coord[1], coord[0], coord[1], outline=obj.color, width=5)
@@ -255,7 +255,8 @@ class CGSystemInterface():
         tk.Button(self.controls_menu_frame, text="Increase" if (isObject) else "Zoom In", command=lambda: scale_func("in")).place(x=145, y=80)
         tk.Button(self.controls_menu_frame, text="Decrease" if (isObject) else "Zoom Out", command=lambda: scale_func("out")).place(x=145, y=120)
 
-        tk.Button(self.controls_menu_frame, text="Set Coord", command=self.set_window_coord).place(x=80, y=200)
+        set_coord_func = self.set_obj_coord if (isObject) else self.set_window_coord
+        tk.Button(self.controls_menu_frame, text="Set Coord", command=lambda: self.set_coord_window(set_coord_func)).place(x=80, y=200)
 
         Label(self.controls_menu_frame, "Offset", 10).place(x=10, y=170)
         Label(self.controls_menu_frame, "Escl. Factor" if (isObject) else "zoom factor", 10).place(x=115, y=170)
@@ -317,34 +318,6 @@ class CGSystemInterface():
         tk.Button(self.rotation_menu_frame, text="Anti-ClockWise", command=lambda: self.rotate_object(True)).place(x=5, y=100)
         tk.Button(self.rotation_menu_frame, text="ClockWise", command=lambda: self.rotate_object(False)).place(x=145, y=100)
 
-        """
-        self.obj_rotation_coord_var = (tk.IntVar(), tk.IntVar())
-        Label(self.rotation_menu_frame, "X:", 10).place(x=100, y=35)
-        Label(self.rotation_menu_frame, "Y:", 10).place(x=170, y=35)
-        self.rotation_Xpoint_entry = tk.Entry(self.rotation_menu_frame, textvariable=self.obj_rotation_coord_var[0], state="disabled", width=4)
-        self.rotation_Xpoint_entry.place(x=120, y=35)
-        self.rotation_Ypoint_entry = tk.Entry(self.rotation_menu_frame, textvariable=self.obj_rotation_coord_var[1], state="disabled", width=4)
-        self.rotation_Ypoint_entry.place(x=190, y=35)
-
-        self.rotation_opt_var = tk.StringVar(self.rotation_menu_frame, "obj_axis")
-        self.obj_center_rb = tk.Radiobutton(self.rotation_menu_frame, text="Obj Center", variable=self.rotation_opt_var, value="Obj Center", command=self.rotation_point_entry_state)
-        self.origin_rb = tk.Radiobutton(self.rotation_menu_frame, text="Origin", variable=self.rotation_opt_var, value="Origin", command=self.rotation_point_entry_state)
-        self.other_rb = tk.Radiobutton(self.rotation_menu_frame, text="Other", variable=self.rotation_opt_var, value="Other", command=self.rotation_point_entry_state)
-        self.obj_center_rb.place(x=0, y=65)
-        self.origin_rb.place(x=100, y=65)
-        self.other_rb.place(x=170, y=65)
-        """
-
-
-
-    def rotation_point_entry_state(self):
-        if (self.rotation_opt_var.get() == "Other"):
-            self.rotation_Xpoint_entry.config(state="normal")
-            self.rotation_Ypoint_entry.config(state="normal")
-        else:
-            self.rotation_Xpoint_entry.config(state="disabled")
-            self.rotation_Ypoint_entry.config(state="disabled")
-
 
     def del_object(self):
         tp = self.objects_listbox.curselection()
@@ -358,7 +331,14 @@ class CGSystemInterface():
         self.add_message("Object Deleted")
 
 
-    def set_window_coord(self):
+    def set_coord_window(self, func):
+        selected = self.objects_listbox.curselection()
+        if (not selected):
+            self.send_error("Object not selected", "Please select an object!")
+            return
+
+        obj_id = selected[0]
+
         app = tk.Toplevel()
         app.title("Set Coordinates")
         app.geometry("250x150")
@@ -375,20 +355,32 @@ class CGSystemInterface():
         Label(fm, "Y:", 10).place(x=80, y=15)
         tk.Entry(fm, textvariable=self.w_coord_var[1], width=4).place(x=100, y=10)
         Label(fm, "Z:", 10).place(x=150, y=15)
-        tk.Entry(fm, textvariable=self.w_coord_var[1], width=4).place(x=170, y=10)
+        tk.Entry(fm, textvariable=self.w_coord_var[2], width=4).place(x=170, y=10)
 
-        tk.Button(app, text="Set", command=self.set_wcoord).place(x=60, y=90)
+        tk.Button(app, text="Set", command=lambda: func(obj_id)).place(x=60, y=90)
         tk.Button(app, text="Cancel", command=app.destroy).place(x=120, y=90)
 
 
-    def set_wcoord(self):
+    def set_window_coord(self, n):
         coord_x = self.verify_num_entry(self.w_coord_var[0])
         coord_y = self.verify_num_entry(self.w_coord_var[1])
         coord_z = self.verify_num_entry(self.w_coord_var[2])
 
         if (coord_x is not None) and (coord_y is not None) and (coord_z is not None):
             self.system.set_window_coord((coord_x, coord_y, coord_z))
-            self.add_message("Window coordinates seted to (%d, %d)" % (coord_x, coord_y))
+            self.add_message("Window coordinates seted to (%d, %d, %d)" % (coord_x, coord_y, coord_z))
+
+
+    def set_obj_coord(self, obj_id):
+        coord_x = self.verify_num_entry(self.w_coord_var[0])
+        coord_y = self.verify_num_entry(self.w_coord_var[1])
+        coord_z = self.verify_num_entry(self.w_coord_var[2])
+
+        if (coord_x is not None) and (coord_y is not None) and (coord_z is not None):
+            obj = self.system.get_object(obj_id)
+            obj_name = obj.name + "-" + obj.type
+            self.system.set_obj_coord(obj_id, (coord_x, coord_y, coord_z))
+            self.add_message("%s was moved to (%.1f, %.1f, %.1f)" % (obj_name, coord_x, coord_y, coord_z))
 
 
     def add_messagesBox(self):
@@ -415,7 +407,6 @@ class CGSystemInterface():
         obj_id = selected[0]
 
         axis = self.rotation_opt_var.get()
-        print(axis)
         self.system.rotate_object(anticlockwise, degrees, obj_id, axis)
         obj = self.system.get_object(obj_id)
         obj_name = obj.name + "-" + obj.type
@@ -519,8 +510,10 @@ class CGSystemInterface():
         else:
             return value
 
+
     def send_error(self, title: str, message: str):
         messagebox.showerror(title, message)
+
 
     def add_message(self, message: str):
         self.messageBox.insert(0, message)

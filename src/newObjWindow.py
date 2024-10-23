@@ -47,6 +47,7 @@ class NewObjWindow:
         self.obj_name_var = tk.StringVar()
         tk.Entry(self.app, textvariable=self.obj_name_var, width=35).place(x=60, y=10)
 
+
     def add_color_buttons(self):
         self.app.update()
         self.color_opt_frame = Frame(self.app, self.app.winfo_width()-20, 60)
@@ -59,6 +60,7 @@ class NewObjWindow:
         tk.Radiobutton(self.color_opt_frame, text="Blue", variable=self.color_opt_var, value="Blue").place(x=70, y=30)
         tk.Radiobutton(self.color_opt_frame, text="Green", variable=self.color_opt_var, value="Green").place(x=130, y=30)
         tk.Radiobutton(self.color_opt_frame, text="Black", variable=self.color_opt_var, value="Black").place(x=200, y=30)
+
 
     def add_tabs(self):
         self.tab_menu = ttk.Notebook(self.app)
@@ -73,6 +75,7 @@ class NewObjWindow:
         #self.add_curve_tab()
 
         self.tab_menu.place(x=10, y=105)
+
 
     def add_coord_frame(self, parent, x: float, y: float, variables: tuple[tk.IntVar, tk.IntVar, tk.IntVar]):
         fm = Frame(parent, width=240, height=50)
@@ -101,6 +104,7 @@ class NewObjWindow:
 
         self.tab_menu.add(self.point_tab, text="Point")
 
+
     def add_line_tab(self):
         self.line_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
 
@@ -117,6 +121,7 @@ class NewObjWindow:
         tk.Button(self.line_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
 
         self.tab_menu.add(self.line_tab, text="Line")
+
 
     def add_wireframe_tab(self):
         self.wireframe_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
@@ -138,6 +143,7 @@ class NewObjWindow:
 
         self.tab_menu.add(self.wireframe_tab, text="WireFrame")
 
+
     def add_polygon_tab(self):
         self.polygon_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
 
@@ -157,6 +163,7 @@ class NewObjWindow:
         tk.Button(self.polygon_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
 
         self.tab_menu.add(self.polygon_tab, text="Polygon")
+
 
     def add_curve_tab(self):
         self.curve_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
@@ -182,6 +189,7 @@ class NewObjWindow:
 
         self.tab_menu.add(self.curve_tab, text="Curve")
 
+
     def add_wireframe_coord(self):
         coord_x = self.verify_num_entry(self.wireframe_coord_tuple[0])
         coord_y = self.verify_num_entry(self.wireframe_coord_tuple[1])
@@ -190,6 +198,7 @@ class NewObjWindow:
         if (coord_x is not None) and (coord_y is not None) and (coord_z is not None):
             self.wireframe_coord_list.append((coord_x, coord_y, coord_z))
             self.wireframe_coord_listbox.insert(tk.END, "(%d, %d, %d)" % (coord_x, coord_y, coord_z))
+
 
     def del_wireframe_coord(self):
         tp = self.wireframe_coord_listbox.curselection()
@@ -201,6 +210,7 @@ class NewObjWindow:
         self.wireframe_coord_listbox.delete(id)
         self.wireframe_coord_list.pop(id)
 
+
     def add_polygon_coord(self):
         coord_x = self.verify_num_entry(self.polygon_coord_tuple[0])
         coord_y = self.verify_num_entry(self.polygon_coord_tuple[1])
@@ -208,6 +218,7 @@ class NewObjWindow:
         if (coord_x is not None) and (coord_y is not None):
             self.polygon_coord_list.append((coord_x, coord_y))
             self.polygon_coord_listbox.insert(tk.END, "(%d , %d)" % (coord_x, coord_y))
+
 
     def del_polygon_coord(self):
         tp = self.polygon_coord_listbox.curselection()
@@ -219,6 +230,7 @@ class NewObjWindow:
         self.polygon_coord_listbox.delete(id)
         self.polygon_coord_list.pop(id)
 
+
     def add_curve_coord(self):
         coord_x = self.verify_num_entry(self.curve_coord_tuple[0])
         coord_y = self.verify_num_entry(self.curve_coord_tuple[1])
@@ -226,6 +238,7 @@ class NewObjWindow:
         if (coord_x is not None) and (coord_y is not None):
             self.curve_coord_list.append((coord_x, coord_y))
             self.curve_coord_listbox.insert(tk.END, "(%d , %d)" % (coord_x, coord_y))
+
 
     def del_curve_coord(self):
         tp = self.curve_coord_listbox.curselection()
@@ -236,6 +249,7 @@ class NewObjWindow:
         id = tp[0]
         self.curve_coord_listbox.delete(id)
         self.curve_coord_list.pop(id)
+
 
     def add_point(self):
         coord_x = self.verify_num_entry(self.point_coord_tuple[0])
@@ -253,6 +267,7 @@ class NewObjWindow:
             self.system.interface.add_message("Point added:")
 
             self.app.destroy()
+
 
     def add_line(self):
         start_coord_x = self.verify_num_entry(self.line_start_coord_tuple[0])
@@ -277,6 +292,7 @@ class NewObjWindow:
             self.system.interface.add_message("Line added:")
 
             self.app.destroy()
+
 
     def add_wireframe(self):
         name = self.obj_name_var.get()
@@ -304,6 +320,7 @@ class NewObjWindow:
 
         self.app.destroy()
 
+
     def add_polygon(self):
         name = self.obj_name_var.get()
         color = self.color_opt_var.get()
@@ -318,6 +335,7 @@ class NewObjWindow:
         self.system.interface.add_message("Polygon added:")
 
         self.app.destroy()
+
 
     def add_curve(self):
         name = self.obj_name_var.get()
@@ -340,8 +358,10 @@ class NewObjWindow:
 
         self.app.destroy()
 
+
     def cancel(self):
         self.app.destroy()
+
 
     def verify_num_entry(self, entry) -> int|float|None:
         try:
@@ -350,6 +370,7 @@ class NewObjWindow:
             self.send_error("Value Error", "Please enter a numeric value on entry")
         else:
             return value
+
 
     def send_error(self, title: str, message: str):
         messagebox.showerror(title, message)

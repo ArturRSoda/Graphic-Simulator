@@ -41,51 +41,41 @@ class Window:
 
 
     #axis can be "w_center", "x", "y" and "z"
-    def rotate(self, transformer: Transformer, degrees: int, axis: str):
+    def rotate(self, degrees: int, axis: str):
         transformation_list = []
         vec_transformation_list = []
         if (axis in ("x", "y", "z")):
-            transformer.add_rotation(transformation_list, degrees, axis)
-            transformer.add_rotation(vec_transformation_list, degrees, axis)
+            self.system.transformer.add_rotation(transformation_list, degrees, axis)
+            self.system.transformer.add_rotation(vec_transformation_list, degrees, axis)
         else:
             offset_x, offset_y, offset_z = self.get_center()
-            transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
+            self.system.transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
 
-            x_angle, z_angle = self.system.get_angles_to_align(self.system.window.vpn, [0, 1, 0])
+            self.system.transformer.add_align_matrix(transformation_list, self.system.window.vpn, [0, 1, 0])
+            self.system.transformer.add_align_matrix(vec_transformation_list, self.system.window.vpn, [0, 1, 0])
 
-            transformer.add_rotation(transformation_list, x_angle, "x")
-            transformer.add_rotation(transformation_list, z_angle, "z")
-            transformer.add_rotation(vec_transformation_list, x_angle, "x")
-            transformer.add_rotation(vec_transformation_list, z_angle, "z")
+            self.system.transformer.add_rotation(transformation_list, degrees, "y")
+            self.system.transformer.add_rotation(vec_transformation_list, degrees, "y")
 
-            transformer.add_rotation(transformation_list, degrees, "y")
-            transformer.add_rotation(vec_transformation_list, degrees, "y")
+            self.system.transformer.add_align_matrix(transformation_list, [0, 1, 0], self.system.window.vpn)
+            self.system.transformer.add_align_matrix(vec_transformation_list, [0, 1, 0], self.system.window.vpn)
 
-            transformer.add_rotation(transformation_list, -z_angle, "z")
-            transformer.add_rotation(transformation_list, -x_angle, "x")
-            transformer.add_rotation(vec_transformation_list, -z_angle, "z")
-            transformer.add_rotation(vec_transformation_list, -x_angle, "x")
+            self.system.transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
 
-            transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
+        self.up_vector = self.system.transformer.transform([self.up_vector], vec_transformation_list)[0]
+        self.right_vector = self.system.transformer.transform([self.right_vector], vec_transformation_list)[0]
+        self.vpn = self.system.transformer.transform([self.vpn], vec_transformation_list)[0]
+        self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
 
-        #self.up_vector = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.up_vector], vec_transformation_list)[0])])
-        #self.right_vector = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.right_vector], vec_transformation_list)[0])])
-        #self.vpn = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.vpn], vec_transformation_list)[0])])
-        self.up_vector = transformer.transform([self.up_vector], vec_transformation_list)[0]
-        self.right_vector = transformer.transform([self.right_vector], vec_transformation_list)[0]
-        self.vpn = transformer.transform([self.vpn], vec_transformation_list)[0]
-        print(self.get_center())
-        self.coordinates = transformer.transform(self.coordinates, transformation_list)
-        print(self.get_center())
 
-    def zoom(self, transformer: Transformer, factor: float):
+    def zoom(self, factor: float):
         transformation_list = []
-        transformer.add_scaling(transformation_list, factor)
-        self.coordinates = transformer.transform(self.coordinates, transformation_list)
+        self.system.transformer.add_scaling(transformation_list, factor)
+        self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
 
 
-    def move(self, transformer: Transformer, offset_x: float, offset_y: float, offset_z: float):
+    def move(self, offset_x: float, offset_y: float, offset_z: float):
         transformation_list = []
-        transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
-        self.coordinates = transformer.transform(self.coordinates, transformation_list)
+        self.system.transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
+        self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
 

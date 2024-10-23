@@ -7,10 +7,10 @@ class Transformer:
 
     def add_translation(self, transformation_list: list[list[list]], offset_x: float, offset_y: float, offset_z: float):
         transformation_list.append(np.array(
-            [[       1,        0,        0, offset_x],
-             [       0,        1,        0, offset_y],
-             [       0,        0,        1, offset_z],
-             [       0,        0,        0,        1]]
+            [[ 1, 0, 0, offset_x],
+             [ 0, 1, 0, offset_y],
+             [ 0, 0, 1, offset_z],
+             [ 0, 0, 0,        1]]
         ))
 
 
@@ -27,16 +27,16 @@ class Transformer:
         else:
             offset_x, offset_y, offset_z = transformation_point
             mt = np.array(
-                [[                       1,                        0,                        0, -offset_x],
-                 [                       0,                        1,                        0, -offset_y],
-                 [                       0,                        0,                        1, -offset_z],
-                 [                       0,                        0,                        0,         1]]
+                [[ 1, 0, 0, -offset_x],
+                 [ 0, 1, 0, -offset_y],
+                 [ 0, 0, 1, -offset_z],
+                 [ 0, 0, 0,         1]]
             )
             mtr = np.array(
-                [[                       1,                        0,                        0, offset_x],
-                 [                       0,                        1,                        0, offset_y],
-                 [                       0,                        0,                        1, offset_z],
-                 [                       0,                        0,                        0,        1]]
+                [[ 1, 0, 0, offset_x],
+                 [ 0, 1, 0, offset_y],
+                 [ 0, 0, 1, offset_z],
+                 [ 0, 0, 0,        1]]
             )
             transformation_list.append(mt)
             transformation_list.append(m)
@@ -61,7 +61,7 @@ class Transformer:
                 [-s,  0,  c,  0],
                 [ 0,  0,  0,  1]
             ])
-        else:
+        elif (axis == "z"):
             m = np.array([
                 [  c, -s, 0, 0],
                 [  s,  c, 0, 0],
@@ -74,34 +74,30 @@ class Transformer:
         else:
             offset_x, offset_y, offset_z = transformation_point
             mt = np.array(
-                [[                       1,                        0,                        0, -offset_x],
-                 [                       0,                        1,                        0, -offset_y],
-                 [                       0,                        0,                        1, -offset_z],
-                 [                       0,                        0,                        0,         1]]
+                [[ 1, 0, 0, -offset_x],
+                 [ 0, 1, 0, -offset_y],
+                 [ 0, 0, 1, -offset_z],
+                 [ 0, 0, 0,         1]]
             )
             mtr = np.array(
-                [[                       1,                        0,                        0, offset_x],
-                 [                       0,                        1,                        0, offset_y],
-                 [                       0,                        0,                        1, offset_z],
-                 [                       0,                        0,                        0,        1]]
+                [[ 1, 0, 0, offset_x],
+                 [ 0, 1, 0, offset_y],
+                 [ 0, 0, 1, offset_z],
+                 [ 0, 0, 0,        1]]
             )
             transformation_list.append(mt)
             transformation_list.append(m)
             transformation_list.append(mtr)
 
     def transform(self, coordinates: list[tuple[float, float, float]], transformation_list: list[list[list]]):
-        transformation_matrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
-        for matrix in transformation_list:
+        transformation_matrix = np.eye(4)
+        for matrix in reversed(transformation_list):
             transformation_matrix = transformation_matrix @ matrix
 
-        new_coordinates = []
-        for i in range(len(coordinates)):
-            x = coordinates[i][0]
-            y = coordinates[i][1]
-            z = coordinates[i][2]
-            coord_matrix = np.array([x, y, z, 1])
-            new_coord_matrix = transformation_matrix @ coord_matrix
-            new_coordinates.append((new_coord_matrix[0].item(), new_coord_matrix[1].item(), new_coord_matrix[2].item()))
+        coords = np.array([[*coord, 1] for coord in coordinates])
+
+        new_coords = coords @ transformation_matrix.T
+        new_coordinates = [tuple(new_coord[:-1].tolist()) for new_coord in new_coords]
 
         return new_coordinates
 
@@ -149,8 +145,10 @@ class Transformer:
                                                               -self.system.window.vpn[2]*factor)
                 case "increase_scale":
                     self.add_scaling(transformation_list, factor, obj_center)
+
                 case "decrease_scale":
                     self.add_scaling(transformation_list, 1/factor, obj_center)
+
                 case "rotate":
                     self.add_rotation(transformation_list, factor, axis)
 
@@ -174,7 +172,7 @@ class Transformer:
 
         # Calculate the angle of rotation
         cos_theta = np.dot(v1_norm, v2_norm)
-        angle = np.arccos(cos_theta)
+        angle = np.arccos(np.clip(cos_theta, -1.0, 1.0))
 
         # Normalize the rotation axis
         rotation_axis /= np.linalg.norm(rotation_axis)
@@ -192,19 +190,3 @@ class Transformer:
 
         transformation_list.append(np.array(rotation_matrix_4x4))
 
-
-    def add_rotation_matrix(self, transformation_list, axis: tuple[float, float, float], angle: float):
-        angle = np.deg2rad(angle)
-        axis = np.array(axis)
-        axis = axis / np.linalg.norm(axis)  # Normalize the axis
-        K = np.array([[0, -axis[2], axis[1]],
-                    [axis[2], 0, -axis[0]],
-                    [-axis[1], axis[0], 0]])
-        
-        I = np.eye(3)
-        R = I + np.sin(angle) * K + (1 - np.cos(angle)) * (K @ K)
-
-        rotation_matrix_4x4 = np.eye(4)
-        rotation_matrix_4x4[:3, :3] = R
-
-        transformation_list.append(np.array(rotation_matrix_4x4))

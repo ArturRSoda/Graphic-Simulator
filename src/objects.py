@@ -1,7 +1,6 @@
 import numpy as np
 
 from transformer import Transformer
-import window
 
 class Object3D:
     def __init__(self, system,
@@ -18,12 +17,8 @@ class Object3D:
         self.coordinates = coordinates
         self.normalized_coordinates = normalized_coordinates
 
-    def get_center(self, v=None):
-        if (not v):
-            coordinates = self.coordinates
-        else:
-            coordinates = v
-
+    def get_center(self):
+        coordinates = self.coordinates
         coords = [tuple(t) for t in coordinates]
         if (coords[0] == coords[-1]) and (len(coords) > 1):
             coords.pop()
@@ -40,66 +35,37 @@ class Object3D:
 
         return (average_x, average_y, average_z)
 
-    def move(self, transformer: Transformer, offset_x: float, offset_y: float, offset_z: float):
-        transformation_list = []
-        transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
-        self.coordinates = transformer.transform(self.coordinates, transformation_list)
 
-    def scale(self, transformer: Transformer, factor: float):
+    def move(self, offset_x: float, offset_y: float, offset_z: float):
         transformation_list = []
-        transformer.add_scaling(transformation_list, factor, self.get_center())
-        self.coordinates = transformer.transform(self.coordinates, transformation_list)
+        self.system.transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
+        self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
 
-    def rotate(self, transformer: Transformer, degrees: int, axis: str):
+
+    def scale(self, factor: float):
+        transformation_list = []
+        self.system.transformer.add_scaling(transformation_list, factor, self.get_center())
+        self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
+
+
+    def rotate(self, degrees: int, axis: str):
         transformation_list = []
         if (axis in ("x", "y", "z")):
-            transformer.add_rotation(transformation_list, degrees, axis)
+            self.system.transformer.add_rotation(transformation_list, degrees, axis)
         else:
-            print(self.coordinates)
-            print(self.get_center())
-            print()
-
-            m = []
             offset_x, offset_y, offset_z = self.get_center()
-            transformer.add_translation(m, -offset_x, -offset_y, -offset_z)
-            c = transformer.transform(self.coordinates, m)
-            print(c)
-            print(self.get_center(c))
-            print()
 
-            m.clear()
-            transformer.add_align_matrix(m, self.system.window.vpn, [0, 1, 0])
-            c = transformer.transform(c, m)
-            print(c)
-            print(self.get_center(c))
-            print()
+            self.system.transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
 
-            m.clear()
-            transformer.add_rotation(m, degrees, "y")
-            c = transformer.transform(c, m)
-            print(c)
-            print(self.get_center(c))
-            print()
+            self.system.transformer.add_align_matrix(transformation_list, self.system.window.vpn, [0, 1, 0])
 
-            m.clear()
-            transformer.add_align_matrix(m, [0, 1, 0], self.system.window.vpn)
-            c = transformer.transform(c, m)
-            print(c)
-            print(self.get_center(c))
-            print()
+            self.system.transformer.add_rotation(transformation_list, degrees, "y")
 
+            self.system.transformer.add_align_matrix(transformation_list, [0, 1, 0], self.system.window.vpn)
 
-            m.clear()
-            transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
-            c = transformer.transform(self.coordinates, m)
-            print(c)
-            print(self.get_center(c))
-            print()
+            self.system.transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
 
-            self.coordinates = c
-            return
-
-        self.coordinates = transformer.transform(self.coordinates, transformation_list)
+        self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
 
 
 class Point3D(Object3D):
@@ -121,7 +87,7 @@ class WireFrame3D(Object3D):
 
 
 class Polygon3D(Object3D):
-    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float, float]]):
+    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
         super().__init__(system, name, color, "polygon", coordinates, normalized_coordinates)
         self.edges = edges
 
