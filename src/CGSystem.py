@@ -8,6 +8,7 @@ from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
 #from objects import BSplineCurve, Object, Point, Line, Polygon, WireFrame, BezierCurve, BSplineCurve
 from objects import Object3D, Point3D, Line3D, Polygon3D, WireFrame3D
+import transformer
 from window import Window
 from transformer import Transformer
 from clipper import Clipper
@@ -146,63 +147,6 @@ class CGSystem():
         self.add_point("x", "blue", (100, 0, 0))
         self.add_point("y", "purple", (0, 100, 0))
         self.add_point("z", "pink", (0, 0, 100))
-        #self.add_line("line3d", "red", (0, 0, 0), (100, 100, 100))
-        #self.add_line("linez", "purple", (0, 0, 0), (0, 0, 100))
-        #self.add_wireframe("L", "red", [(-70, 70), (-70, 30), (-45, 30)])
-        #self.add_wireframe("wireframe triangle", "green", [(-70, -70), (-30, -70), (-30, -40), (-70, -70)])
-        #self.add_polygon("triangle", "green", [(10, 10), (100, 10), (100, 100)])
-        #self.add_point("point", "blue", (10, 10))
-        #self.add_polygon("concave hexagon", "red", [(100, 100), (150, 100), (200, 130), (160, 170), (200, 200), (100, 200)])
-        #self.add_wireframe("concave wireframe hexagon", "red", [(-100, -100), (-150, -100), (-200, -130), (-160, -170), (-200, -200), (-100, -200), (-100, -100)])
-        #self.add_curve("curva", "pink", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100)], "bezier")
-        #self.add_curve("curva", "black", [(25, 25), (40, 75), (70, 75)], "bezier")
-        #self.add_curve("curva", "purple", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)], "bezier")
-        #self.add_curve("curva BSPLINE", "red", [(-100, -100), (-100, 100), (100, 100), (100, -100)], "bspline")
-        #self.add_curve("curva", "green", [(25, 25), (40, 75), (70, 75), (90, 30), (120, 100), (150, 50), (180, 200), (200, 150), (250, 300)], "bspline")
-        #self.add_curve("circle", "purple", [(0, -100), (-100, -100), (-100, 0), (-100, 100), (0, 100), (100, 100), (100, 0), (100, -100), (0, -100), (-100, -100)], "bspline")
-
-
-    def angle_between_vectors(self, u: tuple[float, float, float], v: tuple[float, float, float]) -> float:
-        u = np.array(u)
-        v = np.array(v)
-        cos_theta = np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
-        angle_rad = np.arccos(np.clip(cos_theta, -1.0, 1.0))
-        angle_deg = np.degrees(angle_rad)
-        return angle_deg
-
-    def get_rotation_matrix(self, i_v, unit=None):
-        if unit is None:
-            unit = [0.0, 0.0, 1.0]
-
-        v1 = np.array(i_v)
-        v2 = np.array(unit)
-
-        # unit vectors
-        u = v1 / np.linalg.norm(v1)
-        Ru = v2 / np.linalg.norm(v2)
-        # dimension of the space and identity
-        dim = u.size
-        I = np.identity(dim)
-        # the cos angle between the vectors
-        c = np.dot(u, Ru)
-        # a small number
-        eps = 1.0e-10
-        if np.abs(c - 1.0) < eps:
-            # same direction
-            result = I
-        elif np.abs(c + 1.0) < eps:
-            # opposite direction
-            result = -I
-        else:
-            # the cross product matrix of a vector to rotate around
-            K = np.outer(Ru, u) - np.outer(u, Ru)
-            # Rodrigues' formula
-            result = I + K + (K @ K) / (1 + c)
-
-        mr = [[float(a), float(b), float(c), 0] for (a, b, c) in result]
-        mr.append([0, 0, 0, 1])
-        return mr
-
 
     def update_viewport(self):
         self.interface.clear_canvas()
@@ -281,67 +225,22 @@ class CGSystem():
         normalized_vector = vector / magnitude
         return tuple([float(x) for x in normalized_vector])
 
-
-    def get_align_vector_matrix(self, v1, v2):
-        # Define the vector to be aligned
-        v1 = np.array(v1)
-        # Define the z-axis
-        v2 = np.array(v2)
-        # Determine the angle between the vector and the z-axis
-        theta = np.acos(np.dot(v1, v2)/(np.linalg.norm(v1) * np.linalg.norm(v2)));
-        # Determine the axis of rotation
-        axis = np.cross(v1, v2)/np.linalg.norm(np.cross(v1, v2));
-        # Construct the rotation matrix using Rodrigues' formula
-        K = np.array([
-            [0, -axis[2] ,axis[1]],
-            [axis[2], 0, -axis[0]],
-            [-axis[1], axis[0], 0]
-        ])
-
-        R = np.eye(3) + np.sin(theta)*K + (1-np.cos(theta))*K@K;
-        # Apply the rotation matrix to the vector
-        #v_aligned = R@v1
-
-        m = list()
-        for (a, b, c) in R:
-            m.append([float(a), float(b), float(c), 0])
-        m.append([0, 0, 0, 1])
-
-        return m
-
-
     def generate_normal_coordinates(self):
         transformation_list = []
+        align_vup_m = []
 
         # translate world to center
         w_center = self.window.get_center()
         self.transformer.add_translation(transformation_list, -w_center[0], -w_center[1], -w_center[2])
 
         # align world with z axis
-        x_angle, y_angle = self.get_angles_to_align((self.window.vpn[0], self.window.vpn[2], self.window.vpn[1]), [0, 1, 0])
-        x_angle, y_angle = self.get_angles_to_align_xy_axis(self.window.vpn, [0, 0, 1])
-        print(x_angle, y_angle)
-
-        m = []
-        self.transformer.add_rotation(m, x_angle, "x")
-        self.transformer.add_rotation(m, y_angle, "y")
-        self.transformer.add_rotation(transformation_list, x_angle, "x")
-        self.transformer.add_rotation(transformation_list, y_angle, "y")
+        self.transformer.add_align_matrix(transformation_list, self.window.vpn, [0, 0, 1])
+        self.transformer.add_align_matrix(align_vup_m, self.window.vpn, [0, 0, 1])
 
         # aligns the window and the up vector with the y-axis, move the objects
         # and calculates the normalized coordinates
-        v_up = self.transformer.transform([self.window.up_vector], m)[0]
-        print("up_vec", self.window.up_vector)
-        print("v_up", v_up)
-
-        vpn = self.transformer.transform([self.window.vpn], m)[0]
-        print("w_vpn", self.window.vpn)
-        print("vpn", vpn)
-
-        x_angle, z_angle = self.get_angles_to_align(v_up, [0, 1, 0])
-        print(x_angle, z_angle)
-        self.transformer.add_rotation(transformation_list, x_angle, "x")
-        self.transformer.add_rotation(transformation_list, z_angle, "z")
+        v_up = self.transformer.transform([self.window.up_vector], align_vup_m)[0]
+        self.transformer.add_align_matrix(transformation_list, v_up, [0, 1, 0])
 
         window_coordinates = self.transformer.transform(self.window.coordinates, transformation_list)
 
@@ -349,31 +248,6 @@ class CGSystem():
             transformed_coords = self.transformer.transform(obj.coordinates, transformation_list)
             obj.normalized_coordinates = self.normalize_coordinates(transformed_coords, window_coordinates)
 
-    def get_angles_to_align_xy_axis(self, v1, v2):
-        vector1 = np.array(v1)
-        vector2 = np.array(v2)
-        vector2 = vector2 / np.linalg.norm(vector2)
-
-        a, b, c = vector1
-        x, y, z = vector2
-
-        # Calculate the angle to rotate around the x-axis
-        x_angle = np.arccos(z / np.sqrt(b ** 2 + c ** 2)) - np.arctan2(-b, c)
-
-        # Rotate around the x-axis
-        x_after_x_rotation = a
-        y_after_x_rotation = b * np.cos(x_angle) - c * np.sin(x_angle)
-        z_after_x_rotation = b * np.sin(x_angle) + c * np.cos(x_angle)
-
-        # Now, calculate the angle to rotate around the y-axis using the new components
-        y_angle = np.arccos(x / np.sqrt(x_after_x_rotation ** 2 + z_after_x_rotation ** 2)) - np.arctan2(z_after_x_rotation, x_after_x_rotation)
-
-        # Rotate around the y-axis
-        x_final = x_after_x_rotation * np.cos(y_angle) + z_after_x_rotation * np.sin(y_angle)
-        z_final = -x_after_x_rotation * np.sin(y_angle) + z_after_x_rotation * np.cos(y_angle)
-        y_final = y_after_x_rotation  # No change in the y-component when rotating around y-axis
-
-        return np.rad2deg(x_angle), np.rad2deg(y_angle) 
 
     def get_angles_to_align(self, v1, v2):
         vector1 = np.array(v1)
@@ -393,10 +267,12 @@ class CGSystem():
         cos /= det if (det) else 1
         z_angle = np.arctan2(sin, cos)
 
-        return np.rad2deg(x_angle), np.rad2deg(z_angle)
+        return float(np.rad2deg(x_angle)), float(np.rad2deg(z_angle))
 
+
+    # get angle between y-axis and up vector 
     def get_delta_angle(self, v1):
-        x, y, z = self.normalize_vector(v1)
+        x, y, z = v1
         up_vector = np.array([x, y])
         norm_up = np.linalg.norm(up_vector)
 
@@ -405,7 +281,7 @@ class CGSystem():
 
         dot_product = np.dot(up_vector, y_axis)
         delta_angle = m.degrees(m.acos(dot_product / (norm_up * norm_y)))
-        delta_angle = -delta_angle if (x > 0) else delta_angle
+        delta_angle = -delta_angle if (x > 0) else delta_angle # dark magic
 
         return delta_angle
 

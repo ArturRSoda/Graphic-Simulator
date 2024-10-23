@@ -21,10 +21,10 @@ class Object3D:
     def get_center(self, v=None):
         if (not v):
             coordinates = self.coordinates
-            coords = [tuple(t) for t in coordinates]
         else:
-            coords = [v]
+            coordinates = v
 
+        coords = [tuple(t) for t in coordinates]
         if (coords[0] == coords[-1]) and (len(coords) > 1):
             coords.pop()
 
@@ -55,22 +55,52 @@ class Object3D:
         if (axis in ("x", "y", "z")):
             transformer.add_rotation(transformation_list, degrees, axis)
         else:
+            print(self.coordinates)
+            print(self.get_center())
+            print()
+
+            m = []
             offset_x, offset_y, offset_z = self.get_center()
+            transformer.add_translation(m, -offset_x, -offset_y, -offset_z)
+            c = transformer.transform(self.coordinates, m)
+            print(c)
+            print(self.get_center(c))
+            print()
+
+            m.clear()
+            transformer.add_align_matrix(m, self.system.window.vpn, [0, 1, 0])
+            c = transformer.transform(c, m)
+            print(c)
+            print(self.get_center(c))
+            print()
+
+            m.clear()
+            transformer.add_rotation(m, degrees, "y")
+            c = transformer.transform(c, m)
+            print(c)
+            print(self.get_center(c))
+            print()
+
+            m.clear()
+            transformer.add_align_matrix(m, [0, 1, 0], self.system.window.vpn)
+            c = transformer.transform(c, m)
+            print(c)
+            print(self.get_center(c))
+            print()
+
+
+            m.clear()
             transformer.add_translation(transformation_list, -offset_x, -offset_y, -offset_z)
+            c = transformer.transform(self.coordinates, m)
+            print(c)
+            print(self.get_center(c))
+            print()
 
-            x_angle, z_angle = self.system.get_angles_to_align(self.system.window.vpn, [0, 1, 0])
-
-            transformer.add_rotation(transformation_list, x_angle, "x")
-            transformer.add_rotation(transformation_list, z_angle, "z")
-
-            transformer.add_rotation(transformation_list, degrees, "y")
-
-            transformer.add_rotation(transformation_list, -z_angle, "z")
-            transformer.add_rotation(transformation_list, -x_angle, "x")
-
-            transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
+            self.coordinates = c
+            return
 
         self.coordinates = transformer.transform(self.coordinates, transformation_list)
+
 
 class Point3D(Object3D):
     def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float]]):

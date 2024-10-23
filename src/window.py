@@ -68,13 +68,15 @@ class Window:
 
             transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
 
-        self.up_vector = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.up_vector], vec_transformation_list)[0])])
-        self.right_vector = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.right_vector], vec_transformation_list)[0])])
-        self.vpn = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.vpn], vec_transformation_list)[0])])
-        self.coordinates = transformer.transform(self.coordinates, transformation_list)
-        print(self.up_vector)
+        #self.up_vector = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.up_vector], vec_transformation_list)[0])])
+        #self.right_vector = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.right_vector], vec_transformation_list)[0])])
+        #self.vpn = tuple([round(x, 5) for x in self.system.normalize_vector(transformer.transform([self.vpn], vec_transformation_list)[0])])
+        self.up_vector = transformer.transform([self.up_vector], vec_transformation_list)[0]
+        self.right_vector = transformer.transform([self.right_vector], vec_transformation_list)[0]
+        self.vpn = transformer.transform([self.vpn], vec_transformation_list)[0]
         print(self.get_center())
-        print()
+        self.coordinates = transformer.transform(self.coordinates, transformation_list)
+        print(self.get_center())
 
     def zoom(self, transformer: Transformer, factor: float):
         transformation_list = []
