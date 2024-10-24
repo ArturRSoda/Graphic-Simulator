@@ -10,36 +10,31 @@ class Clipper:
         self.bottom = 8
 
 
-    def clip_point(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
-        x, y = coords[0]
-        return None if ((x < -1) or (x > 1) or (y < -1) or (y > 1)) else coords
+    def clip_point(self, coords: list[tuple[float, float, float]]) -> list[tuple[float, float]]|None:
+        x, y, z = coords[0]
+        return None if ((x < -1) or (x > 1) or (y < -1) or (y > 1) or (z < 0)) else [(x, y)]
 
 
-    def clip_line(self, coords: list[tuple[float, float]], func_opt: str) -> list[tuple[float, float]]|None:
+    def clip_line(self, coords: list[tuple[float, float, float]], func_opt: str) -> list[tuple[float, float]]|None:
+        (x_s, y_s, z_s), (x_e, y_e, z_e) = coords
         func = self.cohen_sutherland if (func_opt == "cohen_sutherland") else self.liang_barsky
-        return func(coords)
+        return None if ((z_s < 0) and (z_e < 0)) else func([(x_s, y_s), (x_e, y_e)])
+        #return func([(x_s, y_s), (x_e, y_e)])
 
 
-    def clip_wireframe(self, coords: list[tuple[float, float]], func_opt: str) -> list[tuple[float, float]]|None:
-        pop = None
+    def clip_wireframe(self, coords: list[tuple[float, float, float]], edges: list[tuple[int, int]], func_opt: str) -> list[tuple[float, float]]|None:
         wf_clip_coords = list()
-        if coords[0] == coords[-1]:
-            pop = coords[-1]
+        clip_func = self.cohen_sutherland if (func_opt == "cohen_sutherland") else self.liang_barsky
 
-            wf_clip_coords = self.sutherland_hodgman_clip(coords)
+        for (id1, id2) in edges:
+            (x1, y1, z1), (x2, y2, z2) = coords[id1], coords[id2]
+            if (z1 < 0) and (z2 < 0):
+                continue
 
-            if (wf_clip_coords):
-                coords.append(pop)
-                wf_clip_coords.append(wf_clip_coords[0])
-
-        else:
-            clip_func = self.cohen_sutherland if (func_opt == "cohen_sutherland") else self.liang_barsky
-            for i in range(len(coords)-1):
-                line_coords = [coords[i], coords[i+1]]
-                clip_coords = clip_func(line_coords)
-                if (clip_coords is not None):
-                    wf_clip_coords.append(clip_coords[0])
-                    wf_clip_coords.append(clip_coords[1])
+            clip_coords = clip_func([(x1, y1), (x2, y2)])
+            if (clip_coords is not None):
+                wf_clip_coords.append(clip_coords[0])
+                wf_clip_coords.append(clip_coords[1])
 
         return wf_clip_coords if (wf_clip_coords) else None
 

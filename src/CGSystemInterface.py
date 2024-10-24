@@ -130,7 +130,7 @@ class CGSystemInterface():
             self.canvas_elements.append(plg)
 
         elif (obj.type in ("line", "wireframe")):
-            for i in range(len(obj_vp_coords)-1):
+            for i in range(0, len(obj_vp_coords)-1, 2):
                 start_coord = obj_vp_coords[i]
                 end_coord = obj_vp_coords[i+1]
 

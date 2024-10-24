@@ -4,11 +4,12 @@ from transformer import Transformer
 
 class Object3D:
     def __init__(self, system,
-                       name: str, 
-                       color: str,
-                       type: str,
-                       coordinates: list[tuple[float, float, float]],
-                       normalized_coordinates: list[tuple[float, float]]):
+                       name                   : str, 
+                       color                  : str,
+                       type                   : str,
+                       coordinates            : list[tuple[float, float, float]],
+                       normalized_coordinates : list[tuple[float, float, float]],
+                       edges                  : list[tuple[int, int]]):
 
         self.system = system
         self.name = name
@@ -16,6 +17,7 @@ class Object3D:
         self.type = type
         self.coordinates = coordinates
         self.normalized_coordinates = normalized_coordinates
+        self.edges = edges
 
     def get_center(self):
         coordinates = self.coordinates
@@ -69,27 +71,23 @@ class Object3D:
 
 
 class Point3D(Object3D):
-    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float]]):
-        super().__init__(system, name, color, "point", coordinates, normalized_coordinates)
-        self.edges = []
+    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float, float]]):
+        super().__init__(system, name, color, "point", coordinates, normalized_coordinates, [])
 
 
 class Line3D(Object3D):
-    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float]]):
-        super().__init__(system, name, color, "line", coordinates, normalized_coordinates)
-        self.edges = [(0, 1)]
+    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float, float]]):
+        super().__init__(system, name, color, "line", coordinates, normalized_coordinates, [(0, 1)])
 
 
 class WireFrame3D(Object3D):
-    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
-        super().__init__(system, name, color, "wireframe", coordinates, normalized_coordinates)
-        self.edges = edges
+    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[int, int]], normalized_coordinates: list[tuple[float, float, float]]):
+        super().__init__(system, name, color, "wireframe", coordinates, normalized_coordinates, edges)
 
 
 class Polygon3D(Object3D):
-    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
-        super().__init__(system, name, color, "polygon", coordinates, normalized_coordinates)
-        self.edges = edges
+    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[int, int]], normalized_coordinates: list[tuple[float, float, float]]):
+        super().__init__(system, name, color, "polygon", coordinates, normalized_coordinates, edges)
 
 
 class Object:

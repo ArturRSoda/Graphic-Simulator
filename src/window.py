@@ -8,6 +8,7 @@ class Window:
         self.right_vector: tuple[float, float, float]
         self.vpn         : tuple[float, float, float]
         self.vrp         : tuple[float, float, float]
+        self.cop         : tuple[float, float, float]
 
         self.system = system
         self.coordinates = coordinates
@@ -15,6 +16,8 @@ class Window:
         self.right_vector = (1, 0, 0)
         self.vpn = (0, 0, 1)
         self.vrp = self.get_center()
+        self.cop_dist = 300
+        self.cop = (0, 0, self.get_center()[2]-self.cop_dist)
 
 
     def get_center(self):
@@ -65,17 +68,20 @@ class Window:
         self.up_vector = self.system.transformer.transform([self.up_vector], vec_transformation_list)[0]
         self.right_vector = self.system.transformer.transform([self.right_vector], vec_transformation_list)[0]
         self.vpn = self.system.transformer.transform([self.vpn], vec_transformation_list)[0]
+        self.cop = self.system.transformer.transform([self.cop], transformation_list)[0]
         self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
 
 
     def zoom(self, factor: float):
         transformation_list = []
         self.system.transformer.add_scaling(transformation_list, factor)
+        self.cop = self.system.transformer.transform([self.cop], transformation_list)[0]
         self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
 
 
     def move(self, offset_x: float, offset_y: float, offset_z: float):
         transformation_list = []
         self.system.transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
+        self.cop = self.system.transformer.transform([self.cop], transformation_list)[0]
         self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
 

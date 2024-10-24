@@ -1,4 +1,6 @@
 import math as m
+from tkinter import PROJECTING
+import numpy as np
 
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
@@ -36,9 +38,9 @@ class CGSystem():
         ])
 
         # world center lines
-        self.display_file.append(Line3D(self, "X", "black", [(-1000, 0, 0), (1000, 0, 0)], []))
-        self.display_file.append(Line3D(self, "Y", "black", [(0, -1000, 0), (0, 1000, 0)], []))
-        self.display_file.append(Line3D(self, "Z", "black", [(0, 0, -1000), (0, 0, 1000)], []))
+        self.display_file.append(Line3D(self, "X", "black", [(0, 0, 0), (10000, 0, 0)], []))
+        self.display_file.append(Line3D(self, "Y", "black", [(0, 0, 0), (0, 10000, 0)], []))
+        self.display_file.append(Line3D(self, "Z", "black", [(0, 0, 0), (0, 0, 10000)], []))
 
         # test objects
         self.rotate_window(45, False, "x")
@@ -129,14 +131,14 @@ class CGSystem():
 
 
     def add_test(self):
-        self.add_wireframe("cube", "green", [(50, 50, 50), (50, 50, -50), (50, 50, 50), (-50, 50, 50), (-50, 50, -50), (-50, 50, 50), (-50, -50, 50), (-50, -50, -50), (-50, -50, 50), (50, -50, 50), (50, -50, -50), (50, -50, 50), (50, 50, 50), (50, 50, -50), (-50, 50, -50), (-50, -50, -50), (50, -50, -50), (50, 50, -50)], [(0, 1), (0, 2), (0, 4), (3, 1), (3, 7), (3, 2), (6, 4), (6, 7), (6, 2), (5, 4), (5, 1), (5, 7)])
-        self.add_wireframe("w", "red", [(50, 50, -50), (-50, 50, -50), (-50, -50, -50), (50, -50, -50)], [])
+        self.add_wireframe("cube", "green", [(100, 100, 100), (-100, 100, 100), (-100, -100, 100), (100, -100, 100), (100, 100, -100), (-100, 100, -100), (-100, -100, -100), (100, -100, -100)], [(0, 1), (1, 2), (2, 3), (3, 0), (0, 4), (1, 5), (2, 6), (3, 7), (4, 5), (5, 6), (6, 7), (7, 4)])
+        self.add_wireframe("w", "red", [(100, 100, -100), (-100, 100, -100), (-100, -100, -100), (100, -100, -100)], [(0, 1), (1, 2), (2, 3)])
         self.add_line("l", "red", (0, 0, 0), (0, 0, 1))
-        self.add_wireframe("vpn", "red", [(0, 0, 0), (0, 0, 50)], [])
-        self.add_point("p", "red", (50, 50, 50))
-        self.add_point("x", "blue", (50, 0, 0))
-        self.add_point("y", "purple", (0, 50, 0))
-        self.add_point("z", "pink", (0, 0, 50))
+        self.add_wireframe("vpn", "red", [(0, 0, 0), (0, 0, 100)], [(0, 1)])
+        self.add_point("p", "red", (100, 100, 100))
+        self.add_point("x", "blue", (100, 0, 0))
+        self.add_point("y", "purple", (0, 100, 0))
+        self.add_point("z", "pink", (0, 0, 100))
 
 
     def update_viewport(self):
@@ -152,7 +154,7 @@ class CGSystem():
                     clip_coords = self.clipper.clip_line(obj.normalized_coordinates, func_opt)
                 case "wireframe":
                     func_opt = self.interface.line_clip_opt_var.get()
-                    clip_coords = self.clipper.clip_wireframe(obj.normalized_coordinates, func_opt)
+                    clip_coords = self.clipper.clip_wireframe(obj.normalized_coordinates, obj.edges, func_opt)
                 case "polygon":
                     clip_coords = self.clipper.clip_polygon(obj.normalized_coordinates)
                 case "curve":
@@ -170,10 +172,8 @@ class CGSystem():
 
         for norm_coord in norm_coords:
             norm_coord = (((norm_coord[0] + 1) / 2), ((norm_coord[1] +1) / 2))
-            x = norm_coord[0] * x_vp_max 
-            y = y_vp_max - (norm_coord[1] * y_vp_max)
-            x += self.interface.subcanvas_shift
-            y += self.interface.subcanvas_shift
+            x = (norm_coord[0] * x_vp_max) + self.interface.subcanvas_shift
+            y = (y_vp_max - (norm_coord[1] * y_vp_max)) + self.interface.subcanvas_shift
             vp_coords.append((x, y))
 
         return vp_coords
@@ -190,7 +190,7 @@ class CGSystem():
             normalized_x = 2 * (x - p0[0]) / width - 1
             normalized_y = 2 * (y - p0[1]) / height - 1
 
-            normalized_coords.append((normalized_x, normalized_y))
+            normalized_coords.append((normalized_x, normalized_y, z))
         return normalized_coords
 
 
@@ -198,16 +198,15 @@ class CGSystem():
         transformation_list = []
         align_vup_m = []
 
-        # translate world to center
-        w_center = self.window.get_center()
-        self.transformer.add_translation(transformation_list, -w_center[0], -w_center[1], -w_center[2])
+        # translate de cop to the world center
+        cop = self.window.cop
+        self.transformer.add_translation(transformation_list, -cop[0], -cop[1], -cop[2])
 
-        # align world with z axis
+        # align vpn with z-axis
         self.transformer.add_align_matrix(transformation_list, self.window.vpn, [0, 0, 1])
         self.transformer.add_align_matrix(align_vup_m, self.window.vpn, [0, 0, 1])
 
-        # aligns the window and the up vector with the y-axis, move the objects
-        # and calculates the normalized coordinates
+        # align vup with y-axis
         v_up = self.transformer.transform([self.window.up_vector], align_vup_m)[0]
         self.transformer.add_align_matrix(transformation_list, v_up, [0, 1, 0])
 
@@ -218,16 +217,38 @@ class CGSystem():
         transformation_list = self.get_aligner_transformation_list()
         window_coordinates = self.transformer.transform(self.window.coordinates, transformation_list)
         transformed_coords = self.transformer.transform(obj.coordinates, transformation_list)
-        obj.normalized_coordinates = self.normalize_coordinates(transformed_coords, window_coordinates)
-
+        projection_coords = self.get_projection_coords(transformed_coords, self.window.cop_dist)
+        obj.normalized_coordinates = self.normalize_coordinates(projection_coords, window_coordinates)
 
     def generate_normal_coordinates(self):
         transformation_list = self.get_aligner_transformation_list()
         window_coordinates = self.transformer.transform(self.window.coordinates, transformation_list)
-
         for obj in self.display_file:
             transformed_coords = self.transformer.transform(obj.coordinates, transformation_list)
-            obj.normalized_coordinates = self.normalize_coordinates(transformed_coords, window_coordinates)
+            projection_coords = self.get_projection_coords(transformed_coords, self.window.cop_dist)
+            obj.normalized_coordinates = self.normalize_coordinates(projection_coords, window_coordinates)
+
+
+    def get_projection_coords(self, coordinates: list[tuple[float, float, float]], d: float) -> list[tuple[float, float, float]]:
+        projection_coords = [(d*x/z, d*y/z, z) for (x, y, z) in coordinates]
+        return projection_coords
+
+
+    def get_center(self, coords: list[tuple[float, float, float]]) -> tuple[float, float, float]:
+        if (coords[0] == coords[-1]) and (len(coords) > 1):
+            coords.pop()
+
+        average_x, average_y, average_z = 0, 0, 0
+        for x, y, z in coords:
+            average_x += x
+            average_y += y
+            average_z += z
+        points_num = len(coords)
+        average_x /= points_num
+        average_y /= points_num
+        average_z /= points_num
+
+        return (average_x, average_y, average_z)
 
 
     def set_window_coord(self, coord: tuple[float, float, float]):
