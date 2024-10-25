@@ -1,5 +1,6 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import  messagebox
+from tkinter.filedialog import askopenfile, askdirectory
 from tkinter import ttk
 
 from objects import Object3D
@@ -55,11 +56,12 @@ class CGSystemInterface():
         self.obj_center_rb         : tk.Radiobutton
         self.origin_rb             : tk.Radiobutton
         self.other_rb              : tk.Radiobutton
-        self.menu_tab     : ttk.Notebook
+        self.menu_tab              : ttk.Notebook
         self.window_controls_tab   : Tab
         self.obj_controls_tab      : Tab
         self.clipping_tab          : Tab
         self.canvas_elements       : list
+        self.menu_bar              : tk.Menu
 
         self.app = tk.Tk()
         self.app.title("Computer Graphics System")
@@ -67,9 +69,36 @@ class CGSystemInterface():
         self.system = system
         self.canvas_elements = list()
 
+        self.add_menu_bar()
         self.add_menu()
         self.add_canvas()
         self.add_messagesBox()
+
+
+    def add_menu_bar(self):
+        self.menu_bar = tk.Menu(self.app)
+
+        file_menu = tk.Menu(self.menu_bar, tearoff=0)
+        file_menu.add_command(label="Import", command=self.import_file)
+        file_menu.add_command(label="Export", command=self.export_file)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.app.quit)
+
+        self.menu_bar.add_cascade(label="File", menu=file_menu)
+        self.app.config(menu=self.menu_bar)
+
+
+    def import_file(self):
+        file = askopenfile(mode='r', filetypes=[("Object Files", "*.obj")])
+        if (file is None): return
+
+        content = file.read()
+        print(content)
+
+
+    def export_file(self):
+        dir_path = askdirectory()
+        print("dir path: %s" % dir_path)
 
 
     def add_canvas(self):
