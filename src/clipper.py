@@ -18,8 +18,7 @@ class Clipper:
     def clip_line(self, coords: list[tuple[float, float, float]], func_opt: str) -> list[tuple[float, float]]|None:
         (x_s, y_s, z_s), (x_e, y_e, z_e) = coords
         func = self.cohen_sutherland if (func_opt == "cohen_sutherland") else self.liang_barsky
-        return None if ((z_s < 0) and (z_e < 0)) else func([(x_s, y_s), (x_e, y_e)])
-        #return func([(x_s, y_s), (x_e, y_e)])
+        return None if ((z_s < 0) or (z_e < 0)) else func([(x_s, y_s), (x_e, y_e)])
 
 
     def clip_wireframe(self, coords: list[tuple[float, float, float]], edges: list[tuple[int, int]], func_opt: str) -> list[tuple[float, float]]|None:
@@ -28,7 +27,7 @@ class Clipper:
 
         for (id1, id2) in edges:
             (x1, y1, z1), (x2, y2, z2) = coords[id1], coords[id2]
-            if (z1 < 0) and (z2 < 0):
+            if (z1 < 0) or (z2 < 0):
                 continue
 
             clip_coords = clip_func([(x1, y1), (x2, y2)])

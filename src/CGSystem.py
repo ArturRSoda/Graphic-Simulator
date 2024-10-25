@@ -144,6 +144,9 @@ class CGSystem():
     def update_viewport(self):
         self.interface.clear_canvas()
 
+        for obj in self.display_file[:3]:
+            obj.normalized_coordinates = [(x, y, 0) for (x, y, _) in obj.normalized_coordinates]
+
         for obj in self.display_file:
             clip_coords = None
             match obj.type:
