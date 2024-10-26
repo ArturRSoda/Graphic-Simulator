@@ -48,10 +48,10 @@ class CGSystem():
         # test objects
         self.rotate_window(45, False, "x")
         self.rotate_window(10, True, "y")
-        self.add_test()
+        #self.add_test()
         self.generate_normal_coordinates()
         self.update_viewport()
-        self.export_obj()
+        self.import_obj()
 
         self.interface.app.mainloop()
 
@@ -148,6 +148,12 @@ class CGSystem():
     def export_obj(self):
         print(self.display_file)
         self.obj_converter.export_obj("test")
+
+
+    def import_obj(self):
+        self.obj_converter.import_obj("test")
+        self.generate_normal_coordinates()
+        self.update_viewport()
 
 
     def update_viewport(self):
