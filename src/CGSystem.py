@@ -9,6 +9,7 @@ from objects import Object3D, Point3D, Line3D, Polygon3D, WireFrame3D
 from window import Window
 from transformer import Transformer
 from clipper import Clipper
+from objConverter import ObjConverter
 
 
 class CGSystem():
@@ -20,11 +21,13 @@ class CGSystem():
         self.vp_coord_min  : tuple[float, float]
         self.vp_coord_max  : tuple[float, float]
         self.display_file  : list[Object3D]
+        self.obj_converter : ObjConverter
 
     def run(self):
         self.interface = CGSystemInterface(self)
         self.transformer = Transformer(self)
         self.clipper = Clipper()
+        self.obj_converter = ObjConverter(self)
         self.display_file = list()
 
         self.vp_coord_max = (self.interface.subcanvas_width, self.interface.subcanvas_height)
@@ -48,6 +51,7 @@ class CGSystem():
         self.add_test()
         self.generate_normal_coordinates()
         self.update_viewport()
+        self.export_obj()
 
         self.interface.app.mainloop()
 
@@ -141,6 +145,11 @@ class CGSystem():
         self.add_point("z", "pink", (0, 0, 100))
 
 
+    def export_obj(self):
+        print(self.display_file)
+        self.obj_converter.export_obj("test")
+
+
     def update_viewport(self):
         self.interface.clear_canvas()
 
@@ -222,6 +231,7 @@ class CGSystem():
         transformed_coords = self.transformer.transform(obj.coordinates, transformation_list)
         projection_coords = self.get_projection_coords(transformed_coords, self.window.cop_dist)
         obj.normalized_coordinates = self.normalize_coordinates(projection_coords, window_coordinates)
+
 
     def generate_normal_coordinates(self):
         transformation_list = self.get_aligner_transformation_list()

@@ -1,4 +1,5 @@
 import numpy as np
+from tkinter import Tk
 
 from transformer import Transformer
 
@@ -68,6 +69,39 @@ class Object3D:
             self.system.transformer.add_translation(transformation_list, offset_x, offset_y, offset_z)
 
         self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
+
+    def generate_obj(self, offset):
+        types = {
+            "point": "p",
+            "line": "l",
+            "wireframe": "l",
+            "polygon": "f",
+            "curve": "c"
+        }
+
+        mtl = ""
+        """
+        rgb = tuple(((c//256)/255 for c in Tk().winfo_rgb(self.color)))
+
+        mtl += f"newmtl {self.name}\n"
+        mtl += f"Kd {rgb[0]} {rgb[1]} {rgb[2]}\n"
+        mtl += "\n"
+        """
+
+        vertices = ""
+        for point in self.coordinates:
+            vertices += f"v {point[0]} {point[1]} {point[2]}\n"
+
+        obj = ""
+        obj += f"o {self.name}\n"
+        #obj += f"usemtl {self.name}\n"
+        obj += f"{types[self.type]} "
+        obj += " ".join(str(i+offset+1) for i in range(len(self.coordinates))) + "\n"
+
+        offset += len(self.coordinates)
+
+        print(self.name, obj)
+        return mtl, vertices, obj, offset
 
 
 class Point3D(Object3D):
