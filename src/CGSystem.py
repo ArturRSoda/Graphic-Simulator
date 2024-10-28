@@ -46,12 +46,11 @@ class CGSystem():
         self.display_file.append(Line3D(self, "Z", "black", [(0, 0, 0), (0, 0, 10000)], []))
 
         # test objects
-        self.rotate_window(45, False, "x")
-        self.rotate_window(10, True, "y")
-        #self.add_test()
+        #self.rotate_window(45, False, "x")
+        #self.rotate_window(10, True, "y")
+        self.add_test()
         self.generate_normal_coordinates()
         self.update_viewport()
-        self.import_obj()
 
         self.interface.app.mainloop()
 
@@ -145,13 +144,19 @@ class CGSystem():
         self.add_point("z", "pink", (0, 0, 100))
 
 
-    def export_obj(self):
+    def export_obj(self, path):
         print(self.display_file)
-        self.obj_converter.export_obj("test")
+        self.obj_converter.export_obj()
 
 
-    def import_obj(self):
-        self.obj_converter.import_obj("test")
+    def import_obj(self, path):
+        path_ = ""
+        for c in path:
+            if c == '.':
+                break
+            path_ += c
+
+        self.obj_converter.import_obj(path_)
         self.generate_normal_coordinates()
         self.update_viewport()
 

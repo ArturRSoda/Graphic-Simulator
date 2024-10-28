@@ -54,14 +54,16 @@ class ObjConverter():
 
                 if element[0] == 'o':
                     name = f"{element[1:]}"
-                    objects[name] = {'vertices': [], 'type': None, "mtl": ""}
+                    objects[name] = {'vertices': set(), 'faces': [], 'type': None, "mtl": ""}
 
                 if element[0] == 'usemtl':
                     objects[name]["mtl"] = name
 
                 if element[0] in ("l", "f", "p",  "c"):
                     objects[name]["type"] = element[0]
-                    objects[name]["vertices"] = [int(v)-1 for v in element[1:]]
+                    objects[name]["vertices"].update([int(v)-1 for v in element[1:]])
+                    if element[0] in ("f"):
+                        objects[name]["faces"].append([int(v)-1 for v in element[1:]])
 
         mtl = {}
         with open(path_mtl, 'r') as mtl_file:
@@ -81,8 +83,22 @@ class ObjConverter():
         for obj, attr in objects.items():
             name = obj
             points = [vertices[v] for v in attr["vertices"]]
-            print(points)
+            print(attr["vertices"])
             color = "black"
+
+            edges = set()
+            for face in attr["faces"]:
+                num_vertices = len(face)
+                for i in range(num_vertices - 1):
+                    v1 = face[i]
+                    v2 = face[i + 1]
+                    edges.add((min(v1, v2), max(v1, v2)))
+
+                if face[0] == face[-1]:
+                    v1 = face[-1]
+                    v2 = face[0]
+                    edges.add((min(v1, v2), max(v1, v2)))
+            edges = list(edges)
 
             if len(points) == 1:
                 self.system.add_point(name, color, points[0])
@@ -90,8 +106,8 @@ class ObjConverter():
                 self.system.add_line(name, color, points[0], points[1])
             elif len(points) > 2:
                 if attr["type"] == "f":
-                    self.system.add_wireframe(name, color, points, [])
+                    self.system.add_wireframe(name, color, points, edges)
                 elif attr["type"] == "c":
                     self.system.add_curve(name, color, points)
                 else:
-                    self.system.add_wireframe(name, color, points, [])
+                    self.system.add_wireframe(name, color, points, edges)

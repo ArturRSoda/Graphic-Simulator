@@ -92,8 +92,7 @@ class CGSystemInterface():
         file = askopenfile(mode='r', filetypes=[("Object Files", "*.obj")])
         if (file is None): return
 
-        content = file.read()
-        print(content)
+        self.system.import_obj(file.name)
 
 
     def export_file(self):
