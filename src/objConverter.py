@@ -83,14 +83,12 @@ class ObjConverter():
                     mtl[name] = {}
 
                 if (element[0] == 'Kd'):
-                    mtl[name]["color"] = "#%02x%02x%02x" % tuple([int(float(c)*100) for c in element[1:]])
-
+                    mtl[name]["color"] = "#%02x%02x%02x" % tuple([int(float(c)*255) for c in element[1:]])
 
         for obj, attr in objects.items():
             name = obj
             points = [vertices[v] for v in attr["vertices"]]
             color = mtl[objects[name]['mtl']]['color'] if (objects[name]['mtl']) else "black"
-
 
             edges = set()
             for face in attr["faces"]:
