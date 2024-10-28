@@ -80,7 +80,7 @@ class CGSystemInterface():
 
         file_menu = tk.Menu(self.menu_bar, tearoff=0)
         file_menu.add_command(label="Import", command=self.import_file)
-        file_menu.add_command(label="Export", command=self.export_file)
+        #file_menu.add_command(label="Export", command=self.export_file)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.app.quit)
 

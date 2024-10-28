@@ -135,17 +135,9 @@ class CGSystem():
 
     def add_test(self):
         self.add_wireframe("cube", "green", [(100, 100, 100), (-100, 100, 100), (-100, -100, 100), (100, -100, 100), (100, 100, -100), (-100, 100, -100), (-100, -100, -100), (100, -100, -100)], [(0, 1), (1, 2), (2, 3), (3, 0), (0, 4), (1, 5), (2, 6), (3, 7), (4, 5), (5, 6), (6, 7), (7, 4)])
-        self.add_wireframe("w", "red", [(100, 100, -100), (-100, 100, -100), (-100, -100, -100), (100, -100, -100)], [(0, 1), (1, 2), (2, 3)])
-        self.add_line("l", "red", (0, 0, 0), (0, 0, 1))
-        self.add_wireframe("vpn", "red", [(0, 0, 0), (0, 0, 100)], [(0, 1)])
-        self.add_point("p", "red", (100, 100, 100))
-        self.add_point("x", "blue", (100, 0, 0))
-        self.add_point("y", "purple", (0, 100, 0))
-        self.add_point("z", "pink", (0, 0, 100))
 
 
     def export_obj(self, path):
-        print(self.display_file)
         self.obj_converter.export_obj()
 
 
