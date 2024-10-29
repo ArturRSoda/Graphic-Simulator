@@ -342,9 +342,10 @@ class NewObjWindow:
 
 
     def add_curve(self):
-        if (len(self.curve_coord_list) != 16):
-            self.send_error("Error bezier curve", "To generate bezier curves you need to have exactly 16 control points")
-            return
+        if (self.curve_opt.get() == "bezier"):
+            if (len(self.curve_coord_list) != 16):
+                self.send_error("Error bezier curve", "To generate bezier curves you need to have exactly 16 control points")
+                return
 
         name = self.obj_name_var.get()
         color = self.color_opt_var.get()
