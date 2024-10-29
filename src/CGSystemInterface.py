@@ -262,8 +262,6 @@ class CGSystemInterface():
 
 
     def add_controls_menu(self, isObject: bool):
-        # if isObject == True then "object controls" else "window controls"
-
         parent = self.obj_controls_tab if (isObject) else self.window_controls_tab
 
         self.controls_menu_frame = Frame(parent, self.tab_width-26, 250)

@@ -14,7 +14,7 @@ class NewObjWindow:
         self.color_opt_frame         : Frame
         self.wireframe_coord_list    : list[tuple[float, float, float]]
         self.polygon_coord_list      : list[tuple[float, float]]
-        self.curve_coord_list        : list[tuple[float, float]]
+        self.curve_coord_list        : list[tuple[float, float, float]]
         self.wireframe_coord_listbox : tk.Listbox
         self.polygon_coord_listbox   : tk.Listbox
         self.curve_coord_listbox     : tk.Listbox
@@ -28,8 +28,8 @@ class NewObjWindow:
         self.line_start_coord_tuple  : tuple[tk.IntVar, tk.IntVar, tk.IntVar]
         self.line_end_coord_tuple    : tuple[tk.IntVar, tk.IntVar, tk.IntVar]
         self.wireframe_coord_tuple   : tuple[tk.IntVar, tk.IntVar, tk.IntVar]
+        self.curve_coord_tuple       : tuple[tk.IntVar, tk.IntVar, tk.IntVar]
         self.polygon_coord_tuple     : tuple[tk.IntVar, tk.IntVar]
-        self.curve_coord_tuple       : tuple[tk.IntVar, tk.IntVar]
 
         self.system = system
         self.app = tk.Toplevel()
@@ -72,7 +72,7 @@ class NewObjWindow:
         self.add_line_tab()
         self.add_wireframe_tab()
         #self.add_polygon_tab()
-        #self.add_curve_tab()
+        self.add_curve_tab()
 
         self.tab_menu.place(x=10, y=105)
 
@@ -169,16 +169,16 @@ class NewObjWindow:
         self.curve_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
 
         self.curve_coord_list = list()
-        self.curve_coord_tuple = (tk.IntVar(), tk.IntVar())
+        self.curve_coord_tuple = (tk.IntVar(), tk.IntVar(), tk.IntVar())
 
         ttk.Label(self.curve_tab, text="Control coordinates").place(x=10, y=10)
         self.add_coord_frame(self.curve_tab, 10, 30, self.curve_coord_tuple)
 
-        ttk.Label(self.curve_tab, text="Added Coordinates").place(x=200, y=10)
+        ttk.Label(self.curve_tab, text="Added Coordinates").place(x=250, y=10)
         self.curve_coord_listbox = tk.Listbox(self.curve_tab, width=10, height=7)
-        self.curve_coord_listbox.place(x=200, y=30)
+        self.curve_coord_listbox.place(x=260, y=30)
 
-        self.curve_opt = tk.StringVar(self.curve_tab, "bspline")
+        self.curve_opt = tk.StringVar(self.curve_tab, "bezier")
         tk.Radiobutton(self.curve_tab, text="B-Spline", variable=self.curve_opt, value="bspline").place(x=10, y=170)
         tk.Radiobutton(self.curve_tab, text="Bezier", variable=self.curve_opt, value="bezier").place(x=100, y=170)
 
@@ -234,10 +234,11 @@ class NewObjWindow:
     def add_curve_coord(self):
         coord_x = self.verify_num_entry(self.curve_coord_tuple[0])
         coord_y = self.verify_num_entry(self.curve_coord_tuple[1])
+        coord_z = self.verify_num_entry(self.curve_coord_tuple[2])
 
-        if (coord_x is not None) and (coord_y is not None):
-            self.curve_coord_list.append((coord_x, coord_y))
-            self.curve_coord_listbox.insert(tk.END, "(%d , %d)" % (coord_x, coord_y))
+        if (coord_x is not None) and (coord_y is not None) and (coord_z is not None):
+            self.curve_coord_listbox.insert(0, "%d - (%d, %d, %d)" % (len(self.curve_coord_list)+1, coord_x, coord_y, coord_z))
+            self.curve_coord_list.append((coord_x, coord_y, coord_z))
 
 
     def del_curve_coord(self):
@@ -247,8 +248,11 @@ class NewObjWindow:
             return
 
         id = tp[0]
-        self.curve_coord_listbox.delete(id)
         self.curve_coord_list.pop(id)
+
+        self.curve_coord_listbox.delete(0, tk.END)
+        for i, v in enumerate(self.curve_coord_list):
+            self.curve_coord_listbox.insert(0, "%d - (%d, %d, %d)" % (i+1, *v))
 
 
     def add_point(self):
@@ -338,19 +342,25 @@ class NewObjWindow:
 
 
     def add_curve(self):
+        if (len(self.curve_coord_list) != 16):
+            self.send_error("Error bezier curve", "To generate bezier curves you need to have exactly 16 control points")
+            return
+
         name = self.obj_name_var.get()
         color = self.color_opt_var.get()
 
+        """
         minimum_num_coord = 3 if (self.curve_opt.get() == "bezier") else 4
         message = "Pleas insert at least %d coordinates to create a %s curve" % (minimum_num_coord, self.curve_opt.get())
         if (len(self.curve_coord_list) < minimum_num_coord):
             self.send_error("Minimum coordinates", message)
             return
+        """
 
         self.system.add_curve(name, color, self.curve_coord_list, self.curve_opt.get())
 
         coords = ""
-        for v in self.curve_coord_list: coords += "(%d, %d) " % v
+        for v in self.curve_coord_list: coords += "(%d, %d, %d) " % v
         self.system.interface.add_message("    - Coord:  %s" % coords)
         self.system.interface.add_message("    - Color:  %s" % color)
         self.system.interface.add_message("    - Name:  %s" % name)

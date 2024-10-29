@@ -121,6 +121,9 @@ class CGSystem():
 
     # type can be "bspline" or "bezier"
     def add_curve(self, name: str, color: str, coord_list: list[tuple[float, float]], type: str):
+        print(coord_list)
+        print("okey")
+        return
         curve_class = BezierCurve if (type == "bezier") else BSplineCurve
 
         plg = curve_class(name, color, coord_list, [])
