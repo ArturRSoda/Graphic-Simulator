@@ -229,38 +229,44 @@ class NewObjWindow:
     def add_matrix(self):
         app = tk.Toplevel()
         app.title("Add Matrix")
-        app.geometry("200x430")
+        app.geometry("600x150")
 
         Label(app, "Ctrl. Points", 10).grid(row=0, column=0)
-        Label(app, "X", 10).grid(row=0, column=1)
-        Label(app, "Y", 10).grid(row=0, column=2)
-        Label(app, "Z", 10).grid(row=0, column=3)
+        Label(app, "X1", 10).grid(row=0, column=1); Label(app, "Y1", 10).grid(row=0, column=2); Label(app, "Z1", 10).grid(row=0, column=3)
+        Label(app, "|", 10).grid(row=0, column=4)
+        Label(app, "Y2", 10).grid(row=0, column=6); Label(app, "X2", 10).grid(row=0, column=5); Label(app, "Z2", 10).grid(row=0, column=7)
+        Label(app, "|", 10).grid(row=0, column=8)
+        Label(app, "X3", 10).grid(row=0, column=9); Label(app, "Y3", 10).grid(row=0, column=10); Label(app, "Z3", 10).grid(row=0, column=11)
+        Label(app, "|", 10).grid(row=0, column=12)
+        Label(app, "X4", 10).grid(row=0, column=13); Label(app, "Y4", 10).grid(row=0, column=14); Label(app, "Z4", 10).grid(row=0, column=15)
 
         entries: list[tuple[tk.Entry, tk.Entry, tk.Entry]] = list()
-        for i in range(1, 17):
-            tx = tk.Entry(app, width=4)
-            ty = tk.Entry(app, width=4)
-            tz = tk.Entry(app, width=4)
-            entries.append((tx, ty, tz))
+        for i in range(1, 5):
+            ex1, ey1, ez1 = tk.Entry(app, width=4), tk.Entry(app, width=4), tk.Entry(app, width=4)
+            ex2, ey2, ez2 = tk.Entry(app, width=4), tk.Entry(app, width=4), tk.Entry(app, width=4)
+            ex3, ey3, ez3 = tk.Entry(app, width=4), tk.Entry(app, width=4), tk.Entry(app, width=4)
+            ex4, ey4, ez4 = tk.Entry(app, width=4), tk.Entry(app, width=4), tk.Entry(app, width=4)
+            entries.extend([(ex1, ey1, ez1), (ex2, ey2, ez2), (ex3, ey3, ez3), (ex4, ey4, ez4)])
 
             Label(app, "%d" % i, 10).grid(row=i, column=0)
-            tx.grid(row=i, column=1)
-            ty.grid(row=i, column=2)
-            tz.grid(row=i, column=3)
+            ex1.grid(row=i, column=1); ey1.grid(row=i, column=2); ez1.grid(row=i, column=3)
+            ex2.grid(row=i, column=5); ey2.grid(row=i, column=6); ez2.grid(row=i, column=7)
+            ex3.grid(row=i, column=9); ey3.grid(row=i, column=10); ez3.grid(row=i, column=11)
+            ex4.grid(row=i, column=13); ey4.grid(row=i, column=14); ez4.grid(row=i, column=15)
 
-        tk.Button(app, text="Add", command=lambda: self.add_coord_matrix(app, entries)).grid(row=17, column=0, columnspan=2)
-        tk.Button(app, text="Cancel", command=app.destroy).grid(row=17, column=2, columnspan=2)
+        tk.Button(app, text="Add", command=lambda: self.add_coord_matrix(app, entries)).grid(row=17, column=0, columnspan=8)
+        tk.Button(app, text="Cancel", command=app.destroy).grid(row=17, column=8, columnspan=8)
 
 
     def add_coord_matrix(self, app, entries: list[tuple[tk.Entry, tk.Entry, tk.Entry]]):
         matrix = list()
         for (ex, ey, ez) in entries:
             x = self.verify_num_entry(ex)
+            if (x is None): break
             y = self.verify_num_entry(ey)
+            if (y is None): break
             z = self.verify_num_entry(ez)
-
-            if (x is None) or (y is None) or (z is None):
-                break
+            if (z is None): break
 
             matrix.append((x, y, z))
         else:
