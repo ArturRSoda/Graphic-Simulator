@@ -137,6 +137,11 @@ class BezierCurve3D(Object3D):
 
     def continuity(self, matrices: list[list[tuple[float, float, float]]]):
         for i in range(len(matrices)-1):
+            matrices[i][-4:] = matrices[i+1][:4]
+
+    """
+    def continuity(self, matrices: list[list[tuple[float, float, float]]]):
+        for i in range(len(matrices)-1):
             offset_x1, offset_y1, offset_z1 = [float(x) for x in (np.array(matrices[i][-4]) - np.array(matrices[i+1][0]))]
             offset_x2, offset_y2, offset_z2 = [float(x) for x in (np.array(matrices[i][-3]) - np.array(matrices[i+1][1]))]
             offset_x3, offset_y3, offset_z3 = [float(x) for x in (np.array(matrices[i][-2]) - np.array(matrices[i+1][2]))]
@@ -146,12 +151,15 @@ class BezierCurve3D(Object3D):
                 x1, y1, z1 = matrices[i+1][j]
                 matrices[i+1][j] = (x1+offset_x1, y1+offset_y1, z1+offset_z1)
                 x2, y2, z2 = matrices[i+1][j+1]
-                matrices[i+1][j+1] = (x2+offset_x2, y2+offset_y2, z2+offset_z2)
-                x3, y3, z3 = matrices[i+1][j+2]
-                matrices[i+1][j+2] = (x3+offset_x3, y3+offset_y3, z3+offset_z3)
-                x4, y4, z4 = matrices[i+1][j+3]
-                matrices[i+1][j+3] = (x4+offset_x4, y4+offset_y4, z4+offset_z4)
+                matrices[i+1][j] = (x2+offset_x2, y2+offset_y2, z2+offset_z2)
+                x3, y3, z3 = matrices[i+1][j]
+                matrices[i+1][j] = (x3+offset_x3, y+offset_y3, z+offset_z3)
+                x4, y4, z4 = matrices[i+1][j]
+                matrices[i+1][j] = (x+offset_x, y+offset_y, z+offset_z)
 
+            for j, (x, y, z) in enumerate(matrices[i+1]):
+                matrices[i+1][j] = (x+offset_x, y+offset_y, z+offset_z)
+    """
 
     def get_GB(self, matrix: list[tuple[float, float, float]]) -> tuple:
         lcp = len(matrix)
