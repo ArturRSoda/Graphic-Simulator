@@ -125,30 +125,41 @@ class Polygon3D(Object3D):
 
 
 class BezierCurve3D(Object3D):
-    def __init__(self, system, name: str, color: str, control_points: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float, float]], n: int=15):
+    def __init__(self, system, name: str, color: str, control_matrices: list[list[tuple[float, float, float]]], normalized_coordinates: list[tuple[float, float, float]]):
         super().__init__(system, name, color, "curve", [], normalized_coordinates, [])
 
-        self.control_points = control_points
-        self.step = n
+        self.control_matrices = control_matrices
 
-        self.Mb = np.array([
+        self.continuity(self.control_matrices)
+        for i, m in enumerate(self.control_matrices):
+            self.generate(i, m)
+
+
+    def continuity(self, matrices: list[list[tuple[float, float, float]]]):
+        for i in range(len(matrices)-1):
+            matrices[i][-4:] = matrices[i+1][:4]
+
+
+    def get_GB(self, matrix: list[tuple[float, float, float]]) -> tuple:
+        lcp = len(matrix)
+        GBx = np.array([[x for (x,_,_) in matrix[i:i+4]] for i in range(0, lcp, 4)])
+        GBy = np.array([[y for (_,y,_) in matrix[i:i+4]] for i in range(0, lcp, 4)])
+        GBz = np.array([[z for (_,_,z) in matrix[i:i+4]] for i in range(0, lcp, 4)])
+
+        return GBx, GBy, GBz
+
+    def generate(self, mi: int, matrix: list[tuple[float, float, float]], step: int=15):
+        Mb = np.array([
             [-1,  3, -3,  1],
             [ 3, -6,  3,  0],
             [-3,  3,  0,  0],
             [ 1,  0,  0,  0]
         ])
 
-        self.generate()
+        s = np.linspace(0, 1, step)
+        t = np.linspace(0, 1, step)
 
-
-    def generate(self):
-        lcp = len(self.control_points)
-        GBx = np.array([[x for (x,_,_) in self.control_points[i:i+4]] for i in range(0, lcp, 4)])
-        GBy = np.array([[y for (_,y,_) in self.control_points[i:i+4]] for i in range(0, lcp, 4)])
-        GBz = np.array([[z for (_,_,z) in self.control_points[i:i+4]] for i in range(0, lcp, 4)])
-
-        s = np.linspace(0, 1, self.step)
-        t = np.linspace(0, 1, self.step)
+        GBx, GBy, GBz = self.get_GB(matrix)
 
         for i, ti in enumerate(t):
             tv = np.array([ti**3, ti**2, ti, 1])
@@ -156,18 +167,21 @@ class BezierCurve3D(Object3D):
             for j, si in enumerate(s):
                 sv = np.array([si**3, si**2, si, 1])
 
-                xp = float(sv @ self.Mb @ GBx @ self.Mb.T @ tv.T)
-                yp = float(sv @ self.Mb @ GBy @ self.Mb.T @ tv.T)
-                zp = float(sv @ self.Mb @ GBz @ self.Mb.T @ tv.T)
+                xp = float(sv @ Mb @ GBx @ Mb.T @ tv.T)
+                yp = float(sv @ Mb @ GBy @ Mb.T @ tv.T)
+                zp = float(sv @ Mb @ GBz @ Mb.T @ tv.T)
 
                 self.coordinates.append((xp, yp, zp))
-                if (j < self.step-1):
+                if (j < step-1):
                     l = len(self.coordinates)
                     self.edges.append((l-1, l))
 
-            if (i < self.step-1):
-                for t in range(self.step):
-                    self.edges.append((i*self.step+t, i*self.step+self.step+t))
+            if (i < step-1):
+                for t in range(step):
+                    l = len(self.coordinates)
+                    p1 = mi*step**2 + i*step+t
+                    p2 = p1+step
+                    self.edges.append((p1, p2))
 
 
 class Object:

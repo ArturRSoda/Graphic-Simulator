@@ -274,8 +274,7 @@ class CGSystemInterface():
         tk.Button(self.controls_menu_frame, text="Increase" if (isObject) else "Zoom In", command=lambda: scale_func("in")).place(x=145, y=80)
         tk.Button(self.controls_menu_frame, text="Decrease" if (isObject) else "Zoom Out", command=lambda: scale_func("out")).place(x=145, y=120)
 
-        set_coord_func = self.set_obj_coord if (isObject) else self.set_window_coord
-        tk.Button(self.controls_menu_frame, text="Set Coord", command=lambda: self.set_coord_window(set_coord_func)).place(x=80, y=200)
+        tk.Button(self.controls_menu_frame, text="Set Coord", command=lambda: self.set_coord(isObject)).place(x=80, y=200)
 
         Label(self.controls_menu_frame, "Offset", 10).place(x=10, y=170)
         Label(self.controls_menu_frame, "Escl. Factor" if (isObject) else "zoom factor", 10).place(x=115, y=170)
@@ -350,13 +349,15 @@ class CGSystemInterface():
         self.add_message("Object Deleted")
 
 
-    def set_coord_window(self, func):
-        selected = self.objects_listbox.curselection()
-        if (not selected):
-            self.send_error("Object not selected", "Please select an object!")
-            return
+    def set_coord(self, isObject: bool):
+        obj_id = None
+        if (isObject):
+            selected = self.objects_listbox.curselection()
+            if (not selected):
+                self.send_error("Object not selected", "Please select an object!")
+                return
 
-        obj_id = selected[0]
+            obj_id = selected[0]
 
         app = tk.Toplevel()
         app.title("Set Coordinates")
@@ -376,6 +377,7 @@ class CGSystemInterface():
         Label(fm, "Z:", 10).place(x=150, y=15)
         tk.Entry(fm, textvariable=self.w_coord_var[2], width=4).place(x=170, y=10)
 
+        func = self.set_obj_coord if (isObject) else self.set_window_coord
         tk.Button(app, text="Set", command=lambda: func(obj_id)).place(x=60, y=90)
         tk.Button(app, text="Cancel", command=app.destroy).place(x=120, y=90)
 
