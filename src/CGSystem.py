@@ -5,7 +5,7 @@ import numpy as np
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
-from objects import Object3D, Point3D, Line3D, Polygon3D, WireFrame3D
+from objects import Object3D, Point3D, Line3D, Polygon3D, WireFrame3D, BezierCurve3D
 from window import Window
 from transformer import Transformer
 from clipper import Clipper
@@ -41,13 +41,17 @@ class CGSystem():
         ])
 
         # world center lines
-        self.display_file.append(Line3D(self, "X", "black", [(0, 0, 0), (10000, 0, 0)], []))
-        self.display_file.append(Line3D(self, "Y", "black", [(0, 0, 0), (0, 10000, 0)], []))
-        self.display_file.append(Line3D(self, "Z", "black", [(0, 0, 0), (0, 0, 10000)], []))
+        x = Line3D(self, "X", "black", [(0, 0, 0), (10000, 0, 0)], [])
+        y = Line3D(self, "Y", "black", [(0, 0, 0), (0, 10000, 0)], [])
+        z = Line3D(self, "Z", "black", [(0, 0, 0), (0, 0, 10000)], [])
+        self.normalize_object_coordinates(x)
+        self.normalize_object_coordinates(y)
+        self.normalize_object_coordinates(z)
+        self.display_file.extend((x, y, z))
 
         # test objects
-        #self.rotate_window(45, False, "x")
-        #self.rotate_window(10, True, "y")
+        self.rotate_window(45, False, "x")
+        self.rotate_window(10, True, "y")
         self.add_test()
         self.generate_normal_coordinates()
         self.update_viewport()
@@ -76,7 +80,7 @@ class CGSystem():
         self.display_file.append(point)
         self.interface.objects_listbox.insert("end", "%s [%s - Point]" % (name, color))
 
-        self.generate_normal_coordinates()
+        self.normalize_object_coordinates(point)
         self.update_viewport()
 
 
@@ -86,7 +90,7 @@ class CGSystem():
         self.display_file.append(line)
         self.interface.objects_listbox.insert("end", "%s [%s - Line]" % (name, color))
 
-        self.generate_normal_coordinates()
+        self.normalize_object_coordinates(line)
         self.update_viewport()
 
 
@@ -100,7 +104,7 @@ class CGSystem():
         self.display_file.append(wf)
         self.interface.objects_listbox.insert("end", "%s [%s - Wireframe]" % (name, color))
 
-        self.generate_normal_coordinates()
+        self.normalize_object_coordinates(wf)
         self.update_viewport()
 
 
@@ -120,24 +124,23 @@ class CGSystem():
 
 
     # type can be "bspline" or "bezier"
-    def add_curve(self, name: str, color: str, coord_list: list[tuple[float, float]], type: str):
-        print(coord_list)
-        print("okey")
-        return
-        curve_class = BezierCurve if (type == "bezier") else BSplineCurve
+    def add_curve(self, name: str, color: str, coord_list: list[tuple[float, float, float]], type: str):
+        curve_class = BezierCurve3D if (type == "bezier") else None
 
-        plg = curve_class(name, color, coord_list, [])
-        plg.normalized_coordinates = self.normalize_object_coordinates(plg.coordinates)
+        if (curve_class is None): return
+
+        plg = curve_class(self, name, color, coord_list, [])
 
         self.display_file.append(plg)
         self.interface.objects_listbox.insert("end", "%s [%s - Curve]" % (name, color))
 
-        self.generate_normal_coordinates()
+        self.normalize_object_coordinates(plg)
         self.update_viewport()
 
 
     def add_test(self):
-        self.add_wireframe("cube", "green", [(100, 100, 100), (-100, 100, 100), (-100, -100, 100), (100, -100, 100), (100, 100, -100), (-100, 100, -100), (-100, -100, -100), (100, -100, -100)], [(0, 1), (1, 2), (2, 3), (3, 0), (0, 4), (1, 5), (2, 6), (3, 7), (4, 5), (5, 6), (6, 7), (7, 4)])
+        #self.add_wireframe("cube", "green", [(100, 100, 100), (-100, 100, 100), (-100, -100, 100), (100, -100, 100), (100, 100, -100), (-100, 100, -100), (-100, -100, -100), (100, -100, -100)], [(0, 1), (1, 2), (2, 3), (3, 0), (0, 4), (1, 5), (2, 6), (3, 7), (4, 5), (5, 6), (6, 7), (7, 4)])
+        self.add_curve("curve", "blue", [(0, 0, 0), (100, 100, 0), (200, 0, 0), (300, 100, 0), (0, 100, 100), (100, 200, 100), (200, 100, 100), (300, 200, 100), (0, 0, 200), (100, 100, 200), (200, 0, 200), (300, 100, 200), (0, 100, 300), (100, 200, 300), (200, 100, 300), (300, 0, 300)], "bezier")
 
 
     def export_obj(self, path):
@@ -176,7 +179,8 @@ class CGSystem():
                 case "polygon":
                     clip_coords = self.clipper.clip_polygon(obj.normalized_coordinates)
                 case "curve":
-                    clip_coords = self.clipper.clip_curve(obj.normalized_coordinates)
+                    func_opt = self.interface.line_clip_opt_var.get()
+                    clip_coords = self.clipper.clip_curve(obj.normalized_coordinates, obj.edges, func_opt)
 
             if (clip_coords is not None):
                 obj_vp_coords = self.normalized_coords_to_vp_coords(clip_coords)

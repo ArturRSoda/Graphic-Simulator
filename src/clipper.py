@@ -42,8 +42,8 @@ class Clipper:
         return self.sutherland_hodgman_clip(coords)
 
 
-    def clip_curve(self, coords: list[tuple[float, float]]) -> list[tuple[float, float]]|None:
-        return self.clip_wireframe(coords, "")
+    def clip_curve(self, coords: list[tuple[float, float, float]], edges: list[tuple[int, int]], func_opt: str) -> list[tuple[float, float]]|None:
+        return self.clip_wireframe(coords, edges, func_opt)
 
 
     def get_region_code(self, coord: tuple[float, float]) -> int:

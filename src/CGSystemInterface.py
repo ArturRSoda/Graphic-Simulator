@@ -157,7 +157,7 @@ class CGSystemInterface():
             plg = self.canvas.create_polygon(flatten_coords, fill=obj.color)
             self.canvas_elements.append(plg)
 
-        elif (obj.type in ("line", "wireframe")):
+        elif (obj.type in ("line", "wireframe", "curve")):
             for i in range(0, len(obj_vp_coords)-1, 2):
                 start_coord = obj_vp_coords[i]
                 end_coord = obj_vp_coords[i+1]
@@ -165,13 +165,6 @@ class CGSystemInterface():
                 l = self.canvas.create_line(start_coord[0], start_coord[1], end_coord[0], end_coord[1], fill=obj.color, width=2)
                 self.canvas_elements.append(l)
 
-        elif (obj.type == "curve"):
-            for i in range(len(obj_vp_coords)-1):
-                start_coord = obj_vp_coords[i]
-                end_coord = obj_vp_coords[i+1]
-
-                l = self.canvas.create_line(start_coord[0], start_coord[1], end_coord[0], end_coord[1], fill=obj.color, width=2)
-                self.canvas_elements.append(l)
 
 
     def add_menu(self):

@@ -118,88 +118,56 @@ class WireFrame3D(Object3D):
     def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[int, int]], normalized_coordinates: list[tuple[float, float, float]]):
         super().__init__(system, name, color, "wireframe", coordinates, normalized_coordinates, edges)
 
-    """
-    def generate_obj(self, offset):
-        types = {
-            "point": "p",
-            "line": "l",
-            "wireframe": "l",
-            "polygon": "f",
-            "curve": "c"
-        }
-
-        mtl = ""
-
-        rgb = tuple(((c//256)/255 for c in Tk().winfo_rgb(self.color)))
-
-        mtl += f"newmtl {self.name}\n"
-        mtl += f"Kd {rgb[0]} {rgb[1]} {rgb[2]}\n"
-        mtl += "\n"
-
-        vertices = ""
-        for point in self.coordinates:
-            vertices += f"v {point[0]} {point[1]} {point[2]}\n"
-
-        obj = ""
-        obj += f"o {self.name}\n"
-        #obj += f"usemtl {self.name}\n"
-        obj += f"{types[self.type]} "
-        obj += " ".join(str(i+offset+1) for i in range(len(self.coordinates))) + "\n"
-
-
-
-        offset += len(self.coordinates)
-
-        print(self.name, obj)
-
-        return mtl, vertices, obj, offset
-
-    def get_faces(self):
-        adjacency_list = defaultdict(list)
-        for v1, v2 in self.edges:
-            adjacency_list[v1].append(v2)
-            adjacency_list[v2].append(v1)
-        
-        faces = []
-        visited_edges = set()
-        for start_v1, start_v2 in self.edges:
-            if (start_v1, start_v2) in visited_edges:
-                continue
-
-            path = [start_v1]
-            current_vertex = start_v2
-            previous_vertex = start_v1
-            is_closed = False
-
-            while True:
-                path.append(current_vertex)
-                visited_edges.add((previous_vertex, current_vertex))
-                visited_edges.add((current_vertex, previous_vertex))
-
-                if current_vertex == start_v1:
-                    is_closed = True
-                    break
-
-                neighbors = adjacency_list[current_vertex]
-                unvisited_neighbors = [v for v in neighbors if v != previous_vertex and (current_vertex, v) not in visited_edges]
-
-                if not unvisited_neighbors:
-                    break
-
-                next_vertex = unvisited_neighbors[0]
-                previous_vertex = current_vertex
-                current_vertex = next_vertex
-
-            if not is_closed:
-                path.pop(0)
-
-            faces.append(path)
-        return faces
-    """
 
 class Polygon3D(Object3D):
     def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[int, int]], normalized_coordinates: list[tuple[float, float, float]]):
         super().__init__(system, name, color, "polygon", coordinates, normalized_coordinates, edges)
+
+
+class BezierCurve3D(Object3D):
+    def __init__(self, system, name: str, color: str, control_points: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float, float]], n: int=15):
+        super().__init__(system, name, color, "curve", [], normalized_coordinates, [])
+
+        self.control_points = control_points
+        self.step = n
+
+        self.Mb = np.array([
+            [-1,  3, -3,  1],
+            [ 3, -6,  3,  0],
+            [-3,  3,  0,  0],
+            [ 1,  0,  0,  0]
+        ])
+
+        self.generate()
+
+
+    def generate(self):
+        lcp = len(self.control_points)
+        GBx = np.array([[x for (x,_,_) in self.control_points[i:i+4]] for i in range(0, lcp, 4)])
+        GBy = np.array([[y for (_,y,_) in self.control_points[i:i+4]] for i in range(0, lcp, 4)])
+        GBz = np.array([[z for (_,_,z) in self.control_points[i:i+4]] for i in range(0, lcp, 4)])
+
+        s = np.linspace(0, 1, self.step)
+        t = np.linspace(0, 1, self.step)
+
+        for i, ti in enumerate(t):
+            tv = np.array([ti**3, ti**2, ti, 1])
+
+            for j, si in enumerate(s):
+                sv = np.array([si**3, si**2, si, 1])
+
+                xp = float(sv @ self.Mb @ GBx @ self.Mb.T @ tv.T)
+                yp = float(sv @ self.Mb @ GBy @ self.Mb.T @ tv.T)
+                zp = float(sv @ self.Mb @ GBz @ self.Mb.T @ tv.T)
+
+                self.coordinates.append((xp, yp, zp))
+                if (j < self.step-1):
+                    l = len(self.coordinates)
+                    self.edges.append((l-1, l))
+
+            if (i < self.step-1):
+                for t in range(self.step):
+                    self.edges.append((i*self.step+t, i*self.step+self.step+t))
 
 
 class Object:
