@@ -270,6 +270,10 @@ class NewObjWindow:
 
             matrix.append((x, y, z))
         else:
+            if (not self.verify_continuity(matrix)):
+                self.send_error("Must have continuity", "Some side of the new matrix must be the same as some matrix already added, for continuity")
+                return
+
             self.curve_coord_list.append(matrix)
             for i in range(0, len(matrix), 4):
                 message = "   (%d, %d, %d) (%d, %d, %d) (%d, %d, %d) (%d, %d, %d)" % (*matrix[i], *matrix[i+1], *matrix[i+2], *matrix[i+3])
@@ -277,6 +281,27 @@ class NewObjWindow:
             self.curve_coord_listbox.insert(0, "%d ->" % len(self.curve_coord_list))
             app.destroy()
 
+
+    def get_matrix_sides(self, matrix: list[tuple[float, float, float]]) -> list[list[tuple[float, float, float]]]:
+        top = matrix[:4]
+        bottom = matrix[-4:]
+        left = matrix[0:13:4]
+        right = matrix[3:16:4]
+        return [top, bottom, left, right]
+
+
+    def verify_continuity(self, matrix: list[tuple[float, float, float]]) -> bool:
+        if (not self.curve_coord_list): return True
+
+        matrix_top, matrix_bottom, matrix_left, matrix_right = self.get_matrix_sides(matrix)
+        for added_m in self.curve_coord_list:
+            for side in self.get_matrix_sides(added_m):
+                if (side == matrix_top): return True
+                if (side == matrix_bottom): return True
+                if (side == matrix_left): return True
+                if (side == matrix_right): return True
+
+        return False
 
 
     def add_point(self):
@@ -376,6 +401,10 @@ class NewObjWindow:
             self.send_error("Minimum coordinates", message)
             return
         """
+
+        if (not self.curve_coord_list):
+            self.send_error("Empty list of matrices", "At least one control coordinate matrix must be passed")
+            return
 
         self.system.add_curve(name, color, self.curve_coord_list, self.curve_opt.get())
 

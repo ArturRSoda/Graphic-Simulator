@@ -130,7 +130,7 @@ class BezierCurve3D(Object3D):
 
         self.control_matrices = control_matrices
 
-        self.continuity(self.control_matrices)
+        #self.continuity(self.control_matrices)
         for i, m in enumerate(self.control_matrices):
             self.generate(i, m)
 
