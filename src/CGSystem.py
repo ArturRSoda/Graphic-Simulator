@@ -135,8 +135,6 @@ class CGSystem():
         self.interface.objects_listbox.insert("end", "%s [%s - Curve]" % (name, color))
         
         self.normalize_object_coordinates(plg)
-        print(plg.name)
-        print(plg.normalized_coordinates)
         self.update_viewport()
 
 
