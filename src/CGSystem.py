@@ -5,7 +5,7 @@ import numpy as np
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
-from objects import Object3D, Point3D, Line3D, Polygon3D, WireFrame3D, BezierCurve3D
+from objects import Object3D, Point3D, Line3D, Polygon3D, WireFrame3D, BezierCurve3D, BSplineCurve3D
 from window import Window
 from transformer import Transformer
 from clipper import Clipper
@@ -125,7 +125,7 @@ class CGSystem():
 
     # type can be "bspline" or "bezier"
     def add_curve(self, name: str, color: str, coord_matrices: list[list[tuple[float, float, float]]], type: str):
-        curve_class = BezierCurve3D if (type == "bezier") else None
+        curve_class = BezierCurve3D if (type == "bezier") else BSplineCurve3D
 
         if (curve_class is None): return
 
@@ -133,8 +133,10 @@ class CGSystem():
 
         self.display_file.append(plg)
         self.interface.objects_listbox.insert("end", "%s [%s - Curve]" % (name, color))
-
+        
         self.normalize_object_coordinates(plg)
+        print(plg.name)
+        print(plg.normalized_coordinates)
         self.update_viewport()
 
 
@@ -154,6 +156,7 @@ class CGSystem():
                 (600, 100, 0), (600, 200, 100), (600, 100, 200),   (600, 0, 300)
             ]
         ], "bezier")
+        self.add_curve("spline", "pink", [], "spline")
 
     def export_obj(self, path):
         self.obj_converter.export_obj()

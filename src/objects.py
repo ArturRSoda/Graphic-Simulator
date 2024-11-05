@@ -184,6 +184,92 @@ class BezierCurve3D(Object3D):
                     self.edges.append((p1, p2))
 
 
+class BSplineCurve3D(Object3D):
+    def __init__(self, system, name: str, color: str, control_matrices: list[list[tuple[float, float, float]]], normalized_coordinates: list[tuple[float, float, float]]):
+        super().__init__(system, name, color, "curve", [], normalized_coordinates, [])
+
+        self.ax = [[0, 0, 0, 0], [100, 100, 100, 100], [200, 200, 200, 200], [300, 300, 300, 300]]
+        self.ay = [[0, 100, 0, 100], [100, 200, 100, 200], [0, 100, 0, 100], [100, 200, 100, 0]]
+        self.az = [[0, 100, 200, 300], [0, 100, 200, 300], [0, 100, 200, 300], [0, 100, 200, 300]]
+
+        self.b = np.array([[-1, 3, -3, 1],
+                      [3, -6, 3, 0],
+                      [-3, 3, 0, 0],
+                      [1, 0, 0, 0]])
+
+        # Initialize matrices
+        self.Cx = np.zeros((4, 4))
+        self.Cy = np.zeros((4, 4))
+        self.Cz = np.zeros((4, 4))
+
+        self.Es = np.zeros((4, 4))
+        self.Et = np.zeros((4, 4))
+
+        self.DDx = np.zeros((4, 4))
+        self.DDy = np.zeros((4, 4))
+        self.DDz = np.zeros((4, 4))
+
+        self.draw_surface_fwd_dif(100, 100)
+
+
+    def calculate_coefficients(self):
+        self.Cx = self.b @ self.ax @ np.transpose(self.b)
+        self.Cy = self.b @ self.ay @ np.transpose(self.b)
+        self.Cz = self.b @ self.az @ np.transpose(self.b)
+        
+
+    def create_delta_matrices(self,delta_s, delta_t):
+        self.Es = np.array([[0, 0, 0, 1],
+                       [delta_s**3, delta_s**2, delta_s, 0],
+                       [6 * delta_s**3, 2 * delta_s**2, 0, 0],
+                       [6 * delta_s**3, 0, 0, 0]])
+
+        self.Et = np.array([[0, 0, 0, 1],
+                       [delta_t**3, delta_t**2, delta_t, 0],
+                       [6 * delta_t**3, 2 * delta_t**2, 0, 0],
+                       [6 * delta_t**3, 0, 0, 0]])
+
+        self.Et = np.transpose(self.Et)
+
+
+    def create_forward_diff_matrices(self):
+        self.DDx = self.Es @ self.Cx @ self.Et
+        self.DDy = self.Es @ self.Cy @ self.Et
+        self.DDz = self.Es @ self.Cz @ self.Et
+
+
+    def update_forward_diff_matrices(self):
+        for i in range(3):
+            self.DDx[i] += self.DDx[i+1]
+            self.DDy[i] += self.DDy[i+1]
+            self.DDz[i] += self.DDz[i+1]
+
+
+    def draw_curve_fwd_dif(self, n, x, Dx, D2x, D3x, y, Dy, D2y, D3y, z, Dz, D2z, D3z):
+        points = []
+        for _ in range(n):
+            x += Dx; Dx += D2x; D2x += D3x
+            y += Dy; Dy += D2y; D2y += D3y
+            z += Dz; Dz += D2z; D2z += D3z
+            points.append((x, y, z))
+        return points
+
+
+    def draw_surface_fwd_dif(self, ns, nt):
+        self.create_delta_matrices(1.0 / (ns - 1), 1.0 / (nt - 1))
+        self.create_forward_diff_matrices()
+
+        curves = []
+        for _ in range(ns):
+            curve = self.draw_curve_fwd_dif(nt, self.DDx[0][0], self.DDx[0][1], self.DDx[0][2], self.DDx[0][3],
+                                       self.DDy[0][0], self.DDy[0][1], self.DDy[0][2], self.DDy[0][3],
+                                       self.DDz[0][0], self.DDz[0][1], self.DDz[0][2], self.DDz[0][3])
+            curves.append(curve)
+            self.update_forward_diff_matrices()
+
+        self.coordinates = curves
+
+
 class Object:
     def __init__(self, name: str, 
                        color: str,
