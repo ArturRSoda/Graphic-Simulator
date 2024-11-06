@@ -356,7 +356,6 @@ class NewObjWindow:
                     message += "(%d, %d, %d)" % matrix[i*step+j]
                 coord_listbox.insert(0, message)
 
-
             coord_listbox.insert(0, "%d ->" % len(self.bezier_coord_list) if (surface_str == "bezier") else len(self.bspline_coord_list))
             app.destroy()
 

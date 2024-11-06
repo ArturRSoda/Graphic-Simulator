@@ -205,9 +205,10 @@ class BSplineCurve3D(Object3D):
 
     def get_GB(self, matrix: list[tuple[float, float, float]]) -> tuple:
         lcp = len(matrix)
-        GBx = np.array([[x for (x,_,_) in matrix[i:i+4]] for i in range(0, lcp, 4)])
-        GBy = np.array([[y for (_,y,_) in matrix[i:i+4]] for i in range(0, lcp, 4)])
-        GBz = np.array([[z for (_,_,z) in matrix[i:i+4]] for i in range(0, lcp, 4)])
+        step = int(lcp**(1/2))
+        GBx = np.array([[x for (x,_,_) in matrix[i:i+step]] for i in range(0, lcp, step)])
+        GBy = np.array([[y for (_,y,_) in matrix[i:i+step]] for i in range(0, lcp, step)])
+        GBz = np.array([[z for (_,_,z) in matrix[i:i+step]] for i in range(0, lcp, step)])
 
         return GBx, GBy, GBz
 
