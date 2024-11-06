@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import Button, ttk, messagebox
 
+from numpy import ma
+
 from CGSystemInterface import Label, Frame, Tab
 
 class NewObjWindow:
@@ -10,19 +12,22 @@ class NewObjWindow:
         self.line_tab                : Tab
         self.wireframe_tab           : Tab
         self.polygon_tab             : Tab
-        self.curve_tab               : Tab
+        self.bezier_tab              : Tab
+        self.bspline_tab             : Tab
         self.color_opt_frame         : Frame
         self.wireframe_coord_list    : list[tuple[float, float, float]]
         self.polygon_coord_list      : list[tuple[float, float]]
-        self.curve_coord_list        : list[list[tuple[float, float, float]]]
+        self.bezier_coord_list       : list[list[tuple[float, float, float]]]
+        self.bspline_coord_list      : list[list[tuple[float, float, float]]]
+        self.bspline_entry_list      : list[tk.Entry]
         self.wireframe_coord_listbox : tk.Listbox
         self.polygon_coord_listbox   : tk.Listbox
-        self.curve_coord_listbox     : tk.Listbox
+        self.bspline_coord_listbox   : tk.Listbox
         self.color_opt_var           : tk.StringVar
         self.obj_name_var            : tk.StringVar
-        self.curve_opt               : tk.StringVar
         self.tab_width               : float
         self.tab_height              : float
+        self.bspline_matrix_size     : tk.IntVar
 
         self.point_coord_tuple       : tuple[tk.IntVar, tk.IntVar, tk.IntVar]
         self.line_start_coord_tuple  : tuple[tk.IntVar, tk.IntVar, tk.IntVar]
@@ -71,7 +76,8 @@ class NewObjWindow:
         self.add_line_tab()
         self.add_wireframe_tab()
         #self.add_polygon_tab()
-        self.add_curve_tab()
+        self.add_bezier_tab()
+        self.add_bspline_tab()
 
         self.tab_menu.place(x=10, y=105)
 
@@ -164,25 +170,42 @@ class NewObjWindow:
         self.tab_menu.add(self.polygon_tab, text="Polygon")
 
 
-    def add_curve_tab(self):
-        self.curve_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
+    def add_bezier_tab(self):
+        self.bezier_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
 
-        self.curve_coord_list = list()
+        self.bezier_coord_list = list()
 
-        tk.Button(self.curve_tab, text="Add Matrix", command=self.add_matrix).place(x=10, y=40)
+        tk.Button(self.bezier_tab, text="Add Matrix", command=self.add_bezier_matrix).place(x=10, y=40)
 
-        Label(self.curve_tab, "Added Matrices", 10).place(x=130, y=10)
-        self.curve_coord_listbox = tk.Listbox(self.curve_tab, width=25, height=9)
-        self.curve_coord_listbox.place(x=130, y=40)
+        Label(self.bezier_tab, "Added Matrices", 10).place(x=130, y=10)
+        self.bezier_coord_listbox = tk.Listbox(self.bezier_tab, width=25, height=9)
+        self.bezier_coord_listbox.place(x=130, y=40)
 
-        self.curve_opt = tk.StringVar(self.curve_tab, "bezier")
-        tk.Radiobutton(self.curve_tab, text="B-Spline", variable=self.curve_opt, value="bspline").place(x=10, y=80)
-        tk.Radiobutton(self.curve_tab, text="Bezier", variable=self.curve_opt, value="bezier").place(x=10, y=110)
+        tk.Button(self.bezier_tab, text="Add", command=lambda: self.add_surface("bezier")).place(x=80, y=self.tab_height-45)
+        tk.Button(self.bezier_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
 
-        tk.Button(self.curve_tab, text="Add", command=self.add_curve).place(x=80, y=self.tab_height-45)
-        tk.Button(self.curve_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
+        self.tab_menu.add(self.bezier_tab, text="Bezier")
 
-        self.tab_menu.add(self.curve_tab, text="Curve")
+
+    def add_bspline_tab(self):
+        self.bspline_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
+
+        self.bspline_coord_list = list()
+
+        tk.Button(self.bspline_tab, text="Add Matrix", command=self.add_bspline_matrix).place(x=10, y=40)
+
+        Label(self.bspline_tab, "Matrix size: ", 10).place(x=20, y=70)
+        self.bspline_matrix_size = tk.IntVar(self.bspline_tab, 4)
+        tk.Entry(self.bspline_tab, textvariable=self.bspline_matrix_size, width=4).place(x=35, y=90)
+
+        Label(self.bspline_tab, "Added Matrices", 10).place(x=130, y=10)
+        self.bspline_coord_listbox = tk.Listbox(self.bspline_tab, width=25, height=9)
+        self.bspline_coord_listbox.place(x=130, y=40)
+
+        tk.Button(self.bspline_tab, text="Add", command=lambda: self.add_surface("bspline")).place(x=80, y=self.tab_height-45)
+        tk.Button(self.bspline_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
+
+        self.tab_menu.add(self.bspline_tab, text="BSpline")
 
 
     def add_wireframe_coord(self):
@@ -226,9 +249,54 @@ class NewObjWindow:
         self.polygon_coord_list.pop(id)
 
 
-    def add_matrix(self):
+    def add_bspline_matrix(self):
+        if (self.bspline_coord_list):
+            self.send_error("Matrix already added", "Its only possible add one matrix")
+            return
+
+        matrix_size = self.verify_num_entry(self.bspline_matrix_size)
+        if (matrix_size is None): return
+
+        if (matrix_size > 10) or (matrix_size < 4):
+            self.send_error("Invalid Matrix Size", "Matrix size must be between 4 and 10")
+
+        matrix_size = int(matrix_size)
+
+        app_width = 180 + 110*(matrix_size-1)
+        app_height = 80 + 20*(matrix_size-1)
+
         app = tk.Toplevel()
-        app.title("Add Matrix")
+        app.title("Add Bezier Matrix")
+        app.geometry("%dx%d" % (app_width, app_height))
+
+        Label(app, "Ctrl. Points", 10).grid(row=0, column=0)
+        c_acc = 1
+        for _ in range(matrix_size-1):
+            Label(app, "X", 10).grid(row=0, column=c_acc)
+            Label(app, "Y", 10).grid(row=0, column=c_acc+1)
+            Label(app, "Z", 10).grid(row=0, column=c_acc+2)
+            Label(app, "|", 10).grid(row=0, column=c_acc+3)
+            c_acc += 4
+        Label(app, "X", 10).grid(row=0, column=c_acc); Label(app, "Y", 10).grid(row=0, column=c_acc+1); Label(app, "Z", 10).grid(row=0, column=c_acc+2)
+
+        entries: list[tuple[tk.Entry, tk.Entry, tk.Entry]] = list()
+        for i in range(1, matrix_size+1):
+            Label(app, "%d" % i, 10).grid(row=i, column=0)
+
+            c_acc = 1
+            for _ in range(matrix_size):
+                ex, ey, ez = tk.Entry(app, width=4), tk.Entry(app, width=4), tk.Entry(app, width=4)
+                ex.grid(row=i, column=c_acc); ey.grid(row=i, column=c_acc+1); ez.grid(row=i, column=c_acc+2)
+                entries.append((ex, ey, ez))
+                c_acc += 4
+
+        cs = int((4*matrix_size+1)/2)
+        tk.Button(app, text="Add", command=lambda: self.add_coord_matrix(app, entries, "bspline")).grid(row=matrix_size+1, column=0, columnspan=8)
+        tk.Button(app, text="Cancel", command=app.destroy).grid(row=matrix_size+1, column=cs, columnspan=cs)
+
+    def add_bezier_matrix(self):
+        app = tk.Toplevel()
+        app.title("Add Bezier Matrix")
         app.geometry("600x150")
 
         Label(app, "Ctrl. Points", 10).grid(row=0, column=0)
@@ -254,11 +322,11 @@ class NewObjWindow:
             ex3.grid(row=i, column=9); ey3.grid(row=i, column=10); ez3.grid(row=i, column=11)
             ex4.grid(row=i, column=13); ey4.grid(row=i, column=14); ez4.grid(row=i, column=15)
 
-        tk.Button(app, text="Add", command=lambda: self.add_coord_matrix(app, entries)).grid(row=17, column=0, columnspan=8)
+        tk.Button(app, text="Add", command=lambda: self.add_coord_matrix(app, entries, "bezier")).grid(row=17, column=0, columnspan=8)
         tk.Button(app, text="Cancel", command=app.destroy).grid(row=17, column=8, columnspan=8)
 
 
-    def add_coord_matrix(self, app, entries: list[tuple[tk.Entry, tk.Entry, tk.Entry]]):
+    def add_coord_matrix(self, app, entries: list[tuple[tk.Entry, tk.Entry, tk.Entry]], surface_str: str):
         matrix = list()
         for (ex, ey, ez) in entries:
             x = self.verify_num_entry(ex)
@@ -270,15 +338,26 @@ class NewObjWindow:
 
             matrix.append((x, y, z))
         else:
-            if (not self.verify_continuity(matrix)):
-                self.send_error("Must have continuity", "Some side of the new matrix must be the same as some matrix already added, for continuity")
-                return
+            if (surface_str == "bezier"):
+                if (not self.verify_continuity(matrix)):
+                    self.send_error("Must have continuity", "Some side of the new matrix must be the same as some matrix already added, for continuity")
+                    return
 
-            self.curve_coord_list.append(matrix)
-            for i in range(0, len(matrix), 4):
-                message = "   (%d, %d, %d) (%d, %d, %d) (%d, %d, %d) (%d, %d, %d)" % (*matrix[i], *matrix[i+1], *matrix[i+2], *matrix[i+3])
-                self.curve_coord_listbox.insert(0, message)
-            self.curve_coord_listbox.insert(0, "%d ->" % len(self.curve_coord_list))
+                self.bezier_coord_list.append(matrix)
+                coord_listbox = self.bezier_coord_listbox
+            else:
+                self.bspline_coord_list.append(matrix)
+                coord_listbox = self.bspline_coord_listbox
+
+            step = int(len(matrix)**(1/2))
+            for i in range(0, step):
+                message = "   "
+                for j in range(step):
+                    message += "(%d, %d, %d)" % matrix[i*step+j]
+                coord_listbox.insert(0, message)
+
+
+            coord_listbox.insert(0, "%d ->" % len(self.bezier_coord_list) if (surface_str == "bezier") else len(self.bspline_coord_list))
             app.destroy()
 
 
@@ -291,10 +370,10 @@ class NewObjWindow:
 
 
     def verify_continuity(self, matrix: list[tuple[float, float, float]]) -> bool:
-        if (not self.curve_coord_list): return True
+        if (not self.bezier_coord_list): return True
 
         matrix_top, matrix_bottom, matrix_left, matrix_right = self.get_matrix_sides(matrix)
-        for added_m in self.curve_coord_list:
+        for added_m in self.bezier_coord_list:
             for side in self.get_matrix_sides(added_m):
                 if (side == matrix_top): return True
                 if (side == matrix_bottom): return True
@@ -390,32 +469,26 @@ class NewObjWindow:
         self.app.destroy()
 
 
-    def add_curve(self):
+    def add_surface(self, surface_str: str):
         name = self.obj_name_var.get()
         color = self.color_opt_var.get()
 
-        """
-        minimum_num_coord = 3 if (self.curve_opt.get() == "bezier") else 4
-        message = "Pleas insert at least %d coordinates to create a %s curve" % (minimum_num_coord, self.curve_opt.get())
-        if (len(self.curve_coord_list) < minimum_num_coord):
-            self.send_error("Minimum coordinates", message)
-            return
-        """
+        coord_list = self.bezier_coord_list if (surface_str == "bezier") else self.bspline_coord_list
 
-        if (not self.curve_coord_list):
+        if (not coord_list):
             self.send_error("Empty list of matrices", "At least one control coordinate matrix must be passed")
             return
 
-        self.system.add_curve(name, color, self.curve_coord_list, self.curve_opt.get())
+        self.system.add_surface(name, color, coord_list, surface_str)
 
         coords = ""
-        for m in self.curve_coord_list:
+        for m in self.bezier_coord_list:
             for c in m:
                 coords += "(%d, %d, %d) " % c
         self.system.interface.add_message("    - Coord:  %s" % coords)
         self.system.interface.add_message("    - Color:  %s" % color)
         self.system.interface.add_message("    - Name:  %s" % name)
-        self.system.interface.add_message("Curve added:")
+        self.system.interface.add_message("%s surface added:" % surface_str)
 
         self.app.destroy()
 

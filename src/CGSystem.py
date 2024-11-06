@@ -124,23 +124,21 @@ class CGSystem():
 
 
     # type can be "bspline" or "bezier"
-    def add_curve(self, name: str, color: str, coord_matrices: list[list[tuple[float, float, float]]], type: str):
+    def add_surface(self, name: str, color: str, coord_matrices: list[list[tuple[float, float, float]]], type: str):
         curve_class = BezierCurve3D if (type == "bezier") else BSplineCurve3D
-
-        if (curve_class is None): return
 
         plg = curve_class(self, name, color, coord_matrices, [])
 
         self.display_file.append(plg)
         self.interface.objects_listbox.insert("end", "%s [%s - Curve]" % (name, color))
-        
+
         self.normalize_object_coordinates(plg)
         self.update_viewport()
 
 
     def add_test(self):
         self.add_wireframe("cube", "green", [(100, 100, 100), (-100, 100, 100), (-100, -100, 100), (100, -100, 100), (100, 100, -100), (-100, 100, -100), (-100, -100, -100), (100, -100, -100)], [(0, 1), (1, 2), (2, 3), (3, 0), (0, 4), (1, 5), (2, 6), (3, 7), (4, 5), (5, 6), (6, 7), (7, 4)])
-        self.add_curve("curve", "blue", [
+        self.add_surface("curve", "blue", [
             [
                     (0, 0, 0),   (0, 100, 100),     (0, 0, 200),   (0, 100, 300),
                 (100, 100, 0), (100, 200, 100), (100, 100, 200), (100, 200, 300),
@@ -154,7 +152,15 @@ class CGSystem():
                 (600, 100, 0), (600, 200, 100), (600, 100, 200),   (600, 0, 300)
             ]
         ], "bezier")
-        self.add_curve("spline", "pink", [], "spline")
+
+        self.add_surface("spline", "pink", [
+            [
+                    (0, 0, 0),   (0, 100, 100),     (0, 0, 200),   (0, 100, 300),
+                (100, 100, 0), (100, 200, 100), (100, 100, 200), (100, 200, 300),
+                  (200, 0, 0), (200, 100, 100),   (200, 0, 200), (200, 100, 300),
+                (300, 100, 0), (300, 200, 100), (300, 100, 200),   (300, 0, 300)
+            ]
+        ], "bspline")
 
     def export_obj(self, path):
         self.obj_converter.export_obj()
@@ -294,7 +300,7 @@ class CGSystem():
         offset_y = coord[1] - w_center[1]
         offset_z = coord[2] - w_center[2]
 
-        self.window.move(self.transformer, offset_x, offset_y, offset_z)
+        self.window.move(offset_x, offset_y, offset_z)
         self.generate_normal_coordinates();
         self.update_viewport()
 
@@ -307,7 +313,7 @@ class CGSystem():
         offset_y = coord[1] - obj_center[1]
         offset_z = coord[2] - obj_center[2]
 
-        obj.move(self.transformer, offset_x, offset_y, offset_z)
+        obj.move(offset_x, offset_y, offset_z)
         self.normalize_object_coordinates(obj)
         self.update_viewport()
 

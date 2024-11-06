@@ -130,7 +130,6 @@ class BezierCurve3D(Object3D):
 
         self.control_matrices = control_matrices
 
-        #self.continuity(self.control_matrices)
         for i, m in enumerate(self.control_matrices):
             self.generate(i, m)
 
@@ -140,6 +139,7 @@ class BezierCurve3D(Object3D):
         for i in range(len(matrices)-1):
             matrices[i][-4:] = matrices[i+1][:4]
 
+
     def get_GB(self, matrix: list[tuple[float, float, float]]) -> tuple:
         lcp = len(matrix)
         GBx = np.array([[x for (x,_,_) in matrix[i:i+4]] for i in range(0, lcp, 4)])
@@ -147,6 +147,7 @@ class BezierCurve3D(Object3D):
         GBz = np.array([[z for (_,_,z) in matrix[i:i+4]] for i in range(0, lcp, 4)])
 
         return GBx, GBy, GBz
+
 
     def generate(self, mi: int, matrix: list[tuple[float, float, float]], step: int=15):
         Mb = np.array([
@@ -185,34 +186,45 @@ class BezierCurve3D(Object3D):
 
 
 class BSplineCurve3D(Object3D):
-    def __init__(self, system, name: str, color: str, control_matrix: list[list[tuple[float, float, float]]], normalized_coordinates: list[tuple[float, float, float]]):
+    def __init__(self, system, name: str, color: str, control_matrices: list[list[tuple[float, float, float]]], normalized_coordinates: list[tuple[float, float, float]]):
         super().__init__(system, name, color, "curve", [], normalized_coordinates, [])
 
         # control points
-        self.ax = [[0, 0, 0, 0], [100, 100, 100, 100], [200, 200, 200, 200], [300, 300, 300, 300]]
-        self.ay = [[0, 100, 0, 100], [100, 200, 100, 200], [0, 100, 0, 100], [100, 200, 100, 0]]
-        self.az = [[0, 100, 200, 300], [0, 100, 200, 300], [0, 100, 200, 300], [0, 100, 200, 300]]
+        self.ax, self.ay, self.az = self.get_GB(control_matrices[0])
 
         # method matrix
-        self.b = np.array([[-1, 3, -3, 1],
-                           [3, -6, 3, 0],
-                           [-3, 3, 0, 0],
-                           [1, 0, 0, 0]])
+        self.b = np.array([
+            [-1,  3, -3, 1],
+            [ 3, -6,  3, 0],
+            [-3,  3,  0, 0],
+            [ 1,  0,  0, 0]
+        ])
 
-        self.draw_surface_fwd_dif(10, 10)
+        self.draw_surface_fwd_dif()
+
+
+    def get_GB(self, matrix: list[tuple[float, float, float]]) -> tuple:
+        lcp = len(matrix)
+        GBx = np.array([[x for (x,_,_) in matrix[i:i+4]] for i in range(0, lcp, 4)])
+        GBy = np.array([[y for (_,y,_) in matrix[i:i+4]] for i in range(0, lcp, 4)])
+        GBz = np.array([[z for (_,_,z) in matrix[i:i+4]] for i in range(0, lcp, 4)])
+
+        return GBx, GBy, GBz
 
 
     def calculate_coefficients(self):
         self.cx = self.b @ self.ax @ self.b.T
         self.cy = self.b @ self.ay @ self.b.T
         self.cz = self.b @ self.az @ self.b.T
-        
 
-    def create_delta_matrices(self,delta_s, delta_t):
-        self.es = np.array([[0, 0, 0, 1],
-                            [delta_s**3, delta_s**2, delta_s, 0],
-                            [6 * delta_s**3, 2 * delta_s**2, 0, 0],
-                            [6 * delta_s**3, 0, 0, 0]])
+
+    def create_delta_matrices(self, delta_s):
+        self.es = np.array([
+            [             0,              0,       0, 1],
+            [    delta_s**3,     delta_s**2, delta_s, 0],
+            [6 * delta_s**3, 2 * delta_s**2,       0, 0],
+            [6 * delta_s**3,              0,       0, 0]
+        ])
 
 
     def create_forward_diff_matrices(self):
@@ -244,25 +256,26 @@ class BSplineCurve3D(Object3D):
         return points
 
 
-    def draw_surface_fwd_dif(self, ns, nt):
+    def draw_surface_fwd_dif(self, step=15):
         self.calculate_coefficients()
-        self.create_delta_matrices(1.0 / (ns - 1), 1.0 / (nt - 1))
+        self.create_delta_matrices(1.0 / (step - 1))
         self.create_forward_diff_matrices()
 
-        for i in range(ns):
-            curve = self.draw_curve_fwd_dif(nt, self.ddx[0][0], self.ddx[0][1], self.ddx[0][2], self.ddx[0][3],
-                                       self.ddy[0][0], self.ddy[0][1], self.ddy[0][2], self.ddy[0][3],
-                                       self.ddz[0][0], self.ddz[0][1], self.ddz[0][2], self.ddz[0][3])
+        for i in range(step):
+            curve = self.draw_curve_fwd_dif(step,
+                self.ddx[0][0], self.ddx[0][1], self.ddx[0][2], self.ddx[0][3],
+                self.ddy[0][0], self.ddy[0][1], self.ddy[0][2], self.ddy[0][3],
+                self.ddz[0][0], self.ddz[0][1], self.ddz[0][2], self.ddz[0][3]
+            )
 
             self.update_forward_diff_matrices()
             self.coordinates.extend(curve)
 
             # add edges
-            if (i < ns-1):
-                for t in range(ns):
-                    l = len(self.coordinates)
-                    p1 = i*ns+t
-                    p2 = p1+ns
+            if (i < step-1):
+                for t in range(step):
+                    p1 = i*step+t
+                    p2 = p1+step
                     self.edges.append((p1, p2))
 
 
