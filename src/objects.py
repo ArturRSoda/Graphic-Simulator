@@ -234,9 +234,14 @@ class BSplineCurve3D(Object3D):
             for j in range(0, n - 3):
                 # 4x4 cur matrix
                 submatrix = [
-                    self.control_points[(i+k) + (j+l)]
+                    self.control_points[n*(i+k) + (j+l)]
                     for k in range(4) for l in range(4)
                 ]
+
+                print(f"it {i}, {j}")
+                for p in range(4):
+                    print(submatrix[p*4:p*4+4])
+                print(submatrix[-1])
 
                 # control points matrices
                 self.ax, self.ay, self.az = self.get_GB(submatrix)
