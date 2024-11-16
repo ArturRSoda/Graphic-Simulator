@@ -11,17 +11,14 @@ class NewObjWindow:
         self.point_tab               : Tab
         self.line_tab                : Tab
         self.wireframe_tab           : Tab
-        self.polygon_tab             : Tab
         self.bezier_tab              : Tab
         self.bspline_tab             : Tab
         self.color_opt_frame         : Frame
         self.wireframe_coord_list    : list[tuple[float, float, float]]
-        self.polygon_coord_list      : list[tuple[float, float]]
         self.bezier_coord_list       : list[list[tuple[float, float, float]]]
         self.bspline_coord_list      : list[list[tuple[float, float, float]]]
         self.bspline_entry_list      : list[tk.Entry]
         self.wireframe_coord_listbox : tk.Listbox
-        self.polygon_coord_listbox   : tk.Listbox
         self.bspline_coord_listbox   : tk.Listbox
         self.color_opt_var           : tk.StringVar
         self.obj_name_var            : tk.StringVar
@@ -33,7 +30,6 @@ class NewObjWindow:
         self.line_start_coord_tuple  : tuple[tk.IntVar, tk.IntVar, tk.IntVar]
         self.line_end_coord_tuple    : tuple[tk.IntVar, tk.IntVar, tk.IntVar]
         self.wireframe_coord_tuple   : tuple[tk.IntVar, tk.IntVar, tk.IntVar]
-        self.polygon_coord_tuple     : tuple[tk.IntVar, tk.IntVar]
 
         self.system = system
         self.app = tk.Toplevel()
@@ -75,7 +71,6 @@ class NewObjWindow:
         self.add_point_tab()
         self.add_line_tab()
         self.add_wireframe_tab()
-        #self.add_polygon_tab()
         self.add_bezier_tab()
         self.add_bspline_tab()
 
@@ -149,27 +144,6 @@ class NewObjWindow:
         self.tab_menu.add(self.wireframe_tab, text="WireFrame")
 
 
-    def add_polygon_tab(self):
-        self.polygon_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
-
-        self.polygon_coord_list = list()
-        self.polygon_coord_tuple = (tk.IntVar(), tk.IntVar())
-
-        ttk.Label(self.polygon_tab, text="Coordinates").place(x=10, y=10)
-        self.add_coord_frame(self.polygon_tab, 10, 30, self.polygon_coord_tuple)
-
-        ttk.Label(self.polygon_tab, text="Added Coordinates").place(x=200, y=10)
-        self.polygon_coord_listbox = tk.Listbox(self.polygon_tab, width=10, height=7)
-        self.polygon_coord_listbox.place(x=200, y=30)
-
-        tk.Button(self.polygon_tab, text="Add Coord", command=self.add_polygon_coord).place(x=10, y=90)
-        tk.Button(self.polygon_tab, text="Del Coord", command=self.del_polygon_coord).place(x=10, y=130)
-        tk.Button(self.polygon_tab, text="Add", command=self.add_polygon).place(x=80, y=self.tab_height-45)
-        tk.Button(self.polygon_tab, text="Cancel", command=self.cancel).place(x=210, y=self.tab_height-45)
-
-        self.tab_menu.add(self.polygon_tab, text="Polygon")
-
-
     def add_bezier_tab(self):
         self.bezier_tab = Tab(self.tab_menu, width=self.tab_width, height=self.tab_height)
 
@@ -227,26 +201,6 @@ class NewObjWindow:
         id = tp[0]
         self.wireframe_coord_listbox.delete(id)
         self.wireframe_coord_list.pop(id)
-
-
-    def add_polygon_coord(self):
-        coord_x = self.verify_num_entry(self.polygon_coord_tuple[0])
-        coord_y = self.verify_num_entry(self.polygon_coord_tuple[1])
-
-        if (coord_x is not None) and (coord_y is not None):
-            self.polygon_coord_list.append((coord_x, coord_y))
-            self.polygon_coord_listbox.insert(tk.END, "(%d , %d)" % (coord_x, coord_y))
-
-
-    def del_polygon_coord(self):
-        tp = self.polygon_coord_listbox.curselection()
-        if (not tp):
-            self.send_error("Select an item", "Please select an item to delete!")
-            return
-
-        id = tp[0]
-        self.polygon_coord_listbox.delete(id)
-        self.polygon_coord_list.pop(id)
 
 
     def add_bspline_matrix(self):
@@ -448,22 +402,6 @@ class NewObjWindow:
         self.system.interface.add_message("    - Color:  %s" % color)
         self.system.interface.add_message("    - Name:  %s" % name)
         self.system.interface.add_message("Wireframe added:")
-
-        self.app.destroy()
-
-
-    def add_polygon(self):
-        name = self.obj_name_var.get()
-        color = self.color_opt_var.get()
-
-        self.system.add_polygon(name, color, self.polygon_coord_list)
-
-        coords = ""
-        for v in self.polygon_coord_list: coords += "(%d, %d) " % v
-        self.system.interface.add_message("    - Coord:  %s" % coords)
-        self.system.interface.add_message("    - Color:  %s" % color)
-        self.system.interface.add_message("    - Name:  %s" % name)
-        self.system.interface.add_message("Polygon added:")
 
         self.app.destroy()
 

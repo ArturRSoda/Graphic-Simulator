@@ -1,5 +1,4 @@
 import numpy as np
-from tkinter import Tk
 
 from transformer import Transformer
 
@@ -70,39 +69,6 @@ class Object3D:
 
         self.coordinates = self.system.transformer.transform(self.coordinates, transformation_list)
 
-    def generate_obj(self, offset):
-        types = {
-            "point": "p",
-            "line": "l",
-            "wireframe": "l",
-            "polygon": "f",
-            "curve": "c"
-        }
-
-        mtl = ""
-        """
-        rgb = tuple(((c//256)/255 for c in Tk().winfo_rgb(self.color)))
-
-        mtl += f"newmtl {self.name}\n"
-        mtl += f"Kd {rgb[0]} {rgb[1]} {rgb[2]}\n"
-        mtl += "\n"
-        """
-
-        vertices = ""
-        for point in self.coordinates:
-            vertices += f"v {point[0]} {point[1]} {point[2]}\n"
-
-        obj = ""
-        obj += f"o {self.name}\n"
-        #obj += f"usemtl {self.name}\n"
-        obj += f"{types[self.type]} "
-        obj += " ".join(str(i+offset+1) for i in range(len(self.coordinates))) + "\n"
-
-        offset += len(self.coordinates)
-
-        print(self.name, obj)
-        return mtl, vertices, obj, offset
-
 
 class Point3D(Object3D):
     def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], normalized_coordinates: list[tuple[float, float, float]]):
@@ -117,11 +83,6 @@ class Line3D(Object3D):
 class WireFrame3D(Object3D):
     def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[int, int]], normalized_coordinates: list[tuple[float, float, float]]):
         super().__init__(system, name, color, "wireframe", coordinates, normalized_coordinates, edges)
-
-
-class Polygon3D(Object3D):
-    def __init__(self, system, name: str, color: str, coordinates: list[tuple[float, float, float]], edges: list[tuple[int, int]], normalized_coordinates: list[tuple[float, float, float]]):
-        super().__init__(system, name, color, "polygon", coordinates, normalized_coordinates, edges)
 
 
 class BezierCurve3D(Object3D):
@@ -191,264 +152,123 @@ class BSplineCurve3D(Object3D):
 
         self.control_points = control_points[0]
 
-        self.draw_surface_fwd_dif()
+        self.generate()
 
 
-    def get_GB(self, matrix: list[tuple[float, float, float]]) -> tuple:
-        lcp = len(matrix)
-        step = int(lcp**(1/2))
-        GBx = np.array([[x for (x,_,_) in matrix[i:i+step]] for i in range(0, lcp, step)])
-        GBy = np.array([[y for (_,y,_) in matrix[i:i+step]] for i in range(0, lcp, step)])
-        GBz = np.array([[z for (_,_,z) in matrix[i:i+step]] for i in range(0, lcp, step)])
+    def get_control_point_matrices(self):
+        n = int(len(self.control_points) ** (1/2))
 
-        return GBx, GBy, GBz
+        x = self.control_points
+        matrices = list()
+        for i in range(0, n-3):
+            for j in range(0, n-3):
+                m = [
+                    [x[    i*n + j], x[    i*n + (j+1)], x[    i*n + (j+2)], x[    i*n + (j+3)]],
+                    [x[(i+1)*n + j], x[(i+1)*n + (j+1)], x[(i+1)*n + (j+2)], x[(i+1)*n + (j+3)]],
+                    [x[(i+2)*n + j], x[(i+2)*n + (j+1)], x[(i+2)*n + (j+2)], x[(i+2)*n + (j+3)]],
+                    [x[(i+3)*n + j], x[(i+3)*n + (j+1)], x[(i+3)*n + (j+2)], x[(i+3)*n + (j+3)]],
+                ]
+                matrices.append(m)
+
+        return matrices
 
 
-    def draw_curve_fwd_dif(self, n, x, dx, d2x, d3x, y, dy, d2y, d3y, z, dz, d2z, d3z):
-        points = []
-        for j in range(n):
-            x += dx; dx += d2x; d2x += d3x
-            y += dy; dy += d2y; d2y += d3y
-            z += dz; dz += d2z; d2z += d3z
-            points.append((x, y, z))
+    def get_G(self, matrix: list[list[tuple[float, float, float]]]) -> tuple:
+        Gx = np.array([[x for (x, _, _) in l] for l in matrix])
+        Gy = np.array([[y for (_, y, _) in l] for l in matrix])
+        Gz = np.array([[z for (_, _, z) in l] for l in matrix])
+        return Gx, Gy, Gz
 
-            # add edges
-            if (j < n-1):
-                l = len(self.coordinates) + j + 1
-                self.edges.append((l-1, l))
 
-        return points
+    def draw_fwd_diff_curve(self, n,
+                           x, Dx, D2x, D3x,
+                           y, Dy, D2y, D3y,
+                           z, Dz, D2z, D3z):
 
-    def draw_surface_fwd_dif(self, step=15):
-        n = int(len(self.control_points) ** (1/2)) 
+        old_x, old_y, old_z = x, y, z
+        for _ in range(1, n):
+            x += Dx;  Dx += D2x;  D2x += D3x;
+            y += Dy;  Dy += D2y;  D2y += D3y;
+            z += Dz;  Dz += D2z;  D2z += D3z;
 
-        # method matrix
-        self.b = np.array([
+            self.coordinates.append((old_x, old_y, old_z))
+            self.coordinates.append((x, y, z))
+
+            l = len(self.coordinates)
+            self.edges.append((l-2, l-1))
+
+            old_x, old_y, old_z = x, y, z
+
+        return 
+
+
+    def update_DD(self, DDx, DDy, DDz):
+        #row1 <- row1 + row2
+        DDx[0][0] += DDx[1][0]; DDx[0][1] += DDx[1][1]; DDx[0][2] += DDx[1][2]; DDx[0][3] += DDx[1][3];
+        DDy[0][0] += DDy[1][0]; DDy[0][1] += DDy[1][1]; DDy[0][2] += DDy[1][2]; DDy[0][3] += DDy[1][3];
+        DDz[0][0] += DDz[1][0]; DDz[0][1] += DDz[1][1]; DDz[0][2] += DDz[1][2]; DDz[0][3] += DDz[1][3];
+        #row2 <- row2 + row3
+        DDx[1][0] += DDx[2][0]; DDx[1][1] += DDx[2][1]; DDx[1][2] += DDx[2][2]; DDx[1][3] += DDx[2][3];
+        DDy[1][0] += DDy[2][0]; DDy[1][1] += DDy[2][1]; DDy[1][2] += DDy[2][2]; DDy[1][3] += DDy[2][3];
+        DDz[1][0] += DDz[2][0]; DDz[1][1] += DDz[2][1]; DDz[1][2] += DDz[2][2]; DDz[1][3] += DDz[2][3];
+        #row3 <- row3 + row4 
+        DDx[2][0] += DDx[3][0]; DDx[2][1] += DDx[3][1]; DDx[2][2] += DDx[3][2]; DDx[2][3] += DDx[3][3];
+        DDy[2][0] += DDy[3][0]; DDy[2][1] += DDy[3][1]; DDy[2][2] += DDy[3][2]; DDy[2][3] += DDy[3][3];
+        DDz[2][0] += DDz[3][0]; DDz[2][1] += DDz[3][1]; DDz[2][2] += DDz[3][2]; DDz[2][3] += DDz[3][3];  
+
+        return DDx, DDy, DDz
+
+
+    def draw_fwd_diff_surface(self, step, Cx, Cy, Cz, Es):
+        DDx = Es @ Cx @ Es.T
+        DDy = Es @ Cy @ Es.T
+        DDz = Es @ Cz @ Es.T
+
+        for _ in range(step):
+            self.draw_fwd_diff_curve(step,
+                DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3],
+                DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3],
+                DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3]
+            )
+            DDx, DDy, DDz = self.update_DD(DDx, DDy, DDz)
+
+        DDx = (Es @ Cx @ Es.T).T
+        DDy = (Es @ Cy @ Es.T).T
+        DDz = (Es @ Cz @ Es.T).T
+
+        for _ in range(step):
+            self.draw_fwd_diff_curve(step,
+                DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3],
+                DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3],
+                DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3]
+            )
+            DDx, DDy, DDz = self.update_DD(DDx, DDy, DDz)
+
+
+    def generate(self, step=10):
+        M = np.array([
             [-1,  3, -3, 1],
             [ 3, -6,  3, 0],
-            [-3,  3,  0, 0],
-            [ 1,  0,  0, 0]
-        ])
+            [-3,  0,  3, 0],
+            [ 1,  4,  1, 0]
+        ]) / 6
 
-        for i in range(0, n - 3):
-            for j in range(0, n - 3):
-                # 4x4 cur matrix
-                submatrix = [
-                    self.control_points[n*(i+k) + (j+l)]
-                    for k in range(4) for l in range(4)
-                ]
+        cp_matrices = self.get_control_point_matrices()
+        for control_points in cp_matrices:
+            Gx, Gy, Gz = self.get_G(control_points)
 
-                print(f"it {i}, {j}")
-                for p in range(4):
-                    print(submatrix[p*4:p*4+4])
-                print(submatrix[-1])
+            Cx = M @ Gx @ M.T
+            Cy = M @ Gy @ M.T
+            Cz = M @ Gz @ M.T
 
-                # control points matrices
-                self.ax, self.ay, self.az = self.get_GB(submatrix)
+            ds = 1 / (step - 1)
 
-                # coefficients
-                self.cx = self.b @ self.ax @ self.b.T
-                self.cy = self.b @ self.ay @ self.b.T
-                self.cz = self.b @ self.az @ self.b.T
+            Es = np.array([
+                [      0,       0,  0, 1],
+                [  ds**3,   ds**2, ds, 0],
+                [6*ds**3, 2*ds**2,  0, 0],
+                [6*ds**3,       0,  0, 0]
+            ])
 
-                # delta matrix
-                delta_s = 1.0 / (step - 1)
-                self.es = np.array([
-                    [             0,              0,       0, 1],
-                    [    delta_s**3,     delta_s**2, delta_s, 0],
-                    [6 * delta_s**3, 2 * delta_s**2,       0, 0],
-                    [6 * delta_s**3,              0,       0, 0]
-                ])
+            self.draw_fwd_diff_surface(step, Cx, Cy, Cz, Es)
 
-                # forward difference matrices
-                self.ddx = (self.es @ self.cx) @ self.es.T
-                self.ddy = (self.es @ self.cy) @ self.es.T
-                self.ddz = (self.es @ self.cz) @ self.es.T
-
-                # generate points
-                for k in range(step):
-                    curve = self.draw_curve_fwd_dif(step,
-                        self.ddx[0][0], self.ddx[0][1], self.ddx[0][2], self.ddx[0][3],
-                        self.ddy[0][0], self.ddy[0][1], self.ddy[0][2], self.ddy[0][3],
-                        self.ddz[0][0], self.ddz[0][1], self.ddz[0][2], self.ddz[0][3]
-                    )
-
-                    # update fwd diff matrices
-                    for p in range(3):
-                        self.ddx[p] += self.ddx[p+1]
-                        self.ddy[p] += self.ddy[p+1]
-                        self.ddz[p] += self.ddz[p+1]
-
-                    self.coordinates.extend(curve)
-
-                    # edges
-                    if (k < step - 1):
-                        for t in range(step):
-                            p1 = len(self.coordinates) - step + t
-                            p2 = p1 + step
-                            self.edges.append((p1, p2))
-
-
-class Object:
-    def __init__(self, name: str, 
-                       color: str,
-                       type: str,
-                       coordinates: list[tuple[float, float]],
-                       normalized_coordinates: list[tuple[float, float]]):
-
-        self.name = name
-        self.color = color
-        self.type = type
-        self.coordinates = coordinates
-        self.normalized_coordinates = normalized_coordinates
-
-    def get_center(self):
-        coordinates = self.coordinates
-        coords = [tuple(t) for t in coordinates]
-        if (coords[0] == coords[-1]) and (len(coords) > 1):
-            coords.pop()
-
-        average_x, average_y = 0, 0
-        for x, y in coords:
-            average_x += x
-            average_y += y
-        points_num = len(coords)
-        average_x /= points_num
-        average_y /= points_num
-
-        return (average_x, average_y)
-
-
-    def rotate(self, transformer: Transformer, degrees: int, rotation_point: tuple[float, float]):
-        transformation_list = []
-        transformer.add_rotation(transformation_list, degrees, rotation_point)
-        self.coordinates = transformer.transform(self.coordinates, transformation_list)
-
-
-    def scale(self, transformer: Transformer, factor: float):
-        transformation_list = []
-        transformer.add_scaling(transformation_list, factor, self.get_center())
-        self.coordinates = transformer.transform(self.coordinates, transformation_list)
-
-
-    def move(self, transformer: Transformer, offset_x: float, offset_y: float):
-        transformation_list = []
-        transformer.add_translation(transformation_list, offset_x, offset_y)
-        self.coordinates = transformer.transform(self.coordinates, transformation_list)
-
-
-class Point(Object):
-    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
-        super().__init__(name, color, "point", coordinates, normalized_coordinates)
-
-
-class Line(Object):
-    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
-        super().__init__(name, color, "line", coordinates, normalized_coordinates)
-
-
-class WireFrame(Object):
-    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
-        super().__init__(name, color, "wireframe", coordinates, normalized_coordinates)
-
-
-class Polygon(Object):
-    def __init__(self, name: str, color: str, coordinates: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
-        super().__init__(name, color, "polygon", coordinates, normalized_coordinates)
-
-
-class BezierCurve(Object):
-    def __init__(self, name: str, color: str, control_points: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]], n: int=100):
-        super().__init__(name, color, "curve", [], normalized_coordinates)
-
-        self.control_points = control_points
-        self.step = n
-        self.generate()
-
-
-    def cubic_bezier(self, p0, p1, p2, p3, t):
-        return (1 - t)**3 * np.array(p0) + \
-               3 * (1 - t)**2 * t * np.array(p1) + \
-               3 * (1 - t) * t**2 * np.array(p2) + \
-               t**3 * np.array(p3)
-
-
-    def generate(self):
-        t_values = np.linspace(0, 1, self.step)
-        cp_num = len(self.control_points)
-        for i in range(0, cp_num - 3, 3):
-            p0, p1, p2, p3 = self.control_points[i:i+4]
-
-            # g1 continuity
-            if i + 4 < cp_num:
-                self.control_points[i+4] = 2 * np.array(p3) - np.array(p2)
-
-            segment = [self.cubic_bezier(p0, p1, p2, p3, t) for t in t_values]
-            coords = [(float(x), float(y)) for (x, y) in segment]
-            self.coordinates.extend(coords)
-
-        # ensures all the points are used
-        if cp_num % 3 != 1:
-            p0, p1, p2 = self.control_points[-3:]
-            p3 = p2
-            segment = [self.cubic_bezier(p0, p1, p2, p3, t) for t in t_values]
-            coords = [(float(x), float(y)) for (x, y) in segment]
-            self.coordinates.extend(coords)
-
-
-class BSplineCurve(Object):
-    def __init__(self, name: str, color: str, control_points: list[tuple[float, float]], normalized_coordinates: list[tuple[float, float]]):
-        super().__init__(name, color, "curve", [], normalized_coordinates)
-
-        self.control_points = control_points
-        self.delta = 0.01
-
-        self.e_delta = np.array([
-            [              0,               0,          0, 1],
-            [  self.delta**3,   self.delta**2, self.delta, 0],
-            [6*self.delta**3, 2*self.delta**2,          0, 0],
-            [6*self.delta**3,               0,          0, 0]
-        ])
-
-        self.matriz_bs_base = (1/6) * np.array([
-                                          [-1,  3, -3,  1],
-                                          [ 3, -6,  3,  0],
-                                          [-3,  0,  3,  0],
-                                          [ 1,  4,  1,  0]
-                                      ])
-
-        self.generate()
-
-
-    def get_geometry_vector(self, vetor):
-        g_x = np.array([x for (x, _) in vetor])
-        g_y = np.array([y for (_, y) in vetor])
-        return g_x, g_y
-
-    def generate(self):
-        n = int(1/self.delta)
-        i = 0
-        while (i+4 <= len(self.control_points)):
-            points = self.control_points[i:i+4]
-            i += 1
-
-            g_x, g_y = self.get_geometry_vector(points)
-            m_bs = self.matriz_bs_base
-
-            c_x = np.matmul(m_bs, g_x)
-            c_y = np.matmul(m_bs, g_y)
-
-            fx, d_fx, d2_fx, d3_fx = np.matmul(self.e_delta, c_x)
-            fy, d_fy, d2_fy, d3_fy = np.matmul(self.e_delta, c_y)
-
-            self.fwd_diff(n, fx, d_fx, d2_fx, d3_fx, fy, d_fy, d2_fy, d3_fy)
-
-
-    def fwd_diff(self, n, x, dx, d2x, d3x, y, dy, d2y, d3y):
-        i = 1
-        self.coordinates.append((float(x), float(y)))
-        while (i < n):
-            i += 1
-            x, dx, d2x = x+dx, dx+d2x, d2x+d3x
-            y, dy, d2y = y+dy, dy+d2y, d2y+d3y
-            self.coordinates.append((float(x), float(y)))

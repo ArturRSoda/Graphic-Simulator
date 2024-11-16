@@ -1,11 +1,9 @@
 import math as m
-from tkinter import PROJECTING
-import numpy as np
 
 from CGSystemInterface import CGSystemInterface
 from newObjWindow import NewObjWindow
 from transformationWindow import TransformationWindow
-from objects import Object3D, Point3D, Line3D, Polygon3D, WireFrame3D, BezierCurve3D, BSplineCurve3D
+from objects import Object3D, Point3D, Line3D, WireFrame3D, BezierCurve3D, BSplineCurve3D
 from window import Window
 from transformer import Transformer
 from clipper import Clipper
@@ -155,20 +153,14 @@ class CGSystem():
 
         self.add_surface("spline", "pink", [
             [
-                    (0, 0, 0),   (0, 100, 100),     (0, 0, 200),   (0, 100, 300),
-                (100, 100, 0), (100, 200, 100), (100, 100, 200), (100, 200, 300),
-                  (200, 0, 0), (200, 100, 100),   (200, 0, 200), (200, 100, 300),
-                (300, 100, 0), (300, 200, 100), (300, 100, 200),   (300, 0, 300),
-                (300, 100, 0), (300, 200, 100), (300, 100, 200),   (300, 0, 300),
-                (400, 100, 0), (400, 200, 100), (400, 100, 200), (400, 200, 300),
-                  (500, 0, 0), (500, 100, 100),   (500, 0, 200), (500, 100, 300),
-                (600, 100, 0), (600, 200, 100), (600, 100, 200),   (600, 0, 300),
-                (600, 100, 0), (600, 200, 100), (600, 100, 200),   (600, 0, 300)
+                (  0,    0, 0), (  0, 100, 100), (  0, 200, 200), (  0, 100, 300), (  0,    0, 400), (  0, -100, 500),
+                (100,  100, 0), (100, 200, 100), (100, 300, 200), (100, 200, 300), (100,  100, 400), (100,    0, 500),
+                (200,  200, 0), (200, 300, 100), (200, 400, 200), (200, 300, 300), (200,  200, 400), (200,  100, 500),
+                (300,  100, 0), (300, 200, 100), (300, 300, 200), (300, 200, 300), (300,  100, 400), (300,    0, 500),
+                (400,    0, 0), (400, 100, 100), (400, 200, 200), (400, 100, 300), (400,    0, 400), (400, -100, 500),
+                (500, -100, 0), (500,   0, 100), (500, 100, 200), (500,   0, 300), (500, -100, 400), (500, -200, 500)
             ]
         ], "bspline")
-
-    def export_obj(self, path):
-        self.obj_converter.export_obj()
 
 
     def import_obj(self, path):
@@ -200,8 +192,6 @@ class CGSystem():
                 case "wireframe":
                     func_opt = self.interface.line_clip_opt_var.get()
                     clip_coords = self.clipper.clip_wireframe(obj.normalized_coordinates, obj.edges, func_opt)
-                case "polygon":
-                    clip_coords = self.clipper.clip_polygon(obj.normalized_coordinates)
                 case "curve":
                     func_opt = self.interface.line_clip_opt_var.get()
                     clip_coords = self.clipper.clip_curve(obj.normalized_coordinates, obj.edges, func_opt)
