@@ -43,7 +43,7 @@ To run the simulator, you need:
 
 3. Install the required libraries:
    ```bash
-   cd Graphic-Simulator
+   pip install -r requirements.txt
 
 You are now ready to run the application!
 
