@@ -36,19 +36,16 @@ To run the simulator, you need:
 1. Clone this repository to your local machine:
    ```bash
    git clone https://github.com/ArturRSoda/Graphic-Simulator.git
-   '''
 
 2. Navigate to the project directory:
    ```bash
    cd Graphic-Simulator
-   '''
 
 3. Install the required libraries:
    ```bash
    cd Graphic-Simulator
-   '''
 
-You are now ready to use run the application!
+You are now ready to run the application!
 
 ---
 
@@ -58,4 +55,3 @@ To run the simulator, navigate to the scr directory and execute the main script:
 ```bash
 cd scr
 python3 main.py
-'''
